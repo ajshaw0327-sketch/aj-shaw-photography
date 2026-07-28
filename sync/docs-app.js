@@ -10,6 +10,11 @@ const characterAnimations = {
   flowers: { gif: "snoopy-flowers.gif", duration: 3000 },
   woodstock: { gif: "woodstock-spin.gif", duration: 2000 },
 };
+const archiveCodes = {
+  travel: "TRV",
+  events: "EVT",
+  sports: "SPT",
+};
 
 let photographs = [];
 let galleryGroups = [];
@@ -414,18 +419,24 @@ function renderGallery() {
     grid.append(contactSheet);
   } else {
     let photoOffset = 0;
-    galleryGroups.forEach((group) => {
+    galleryGroups.forEach((group, groupIndex) => {
       const subsection = document.createElement("article");
       subsection.className = "gallery-subsection";
       subsection.id = `gallery-${group.id.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
 
       const heading = document.createElement("div");
       heading.className = "gallery-subsection-heading";
+      const titleGroup = document.createElement("div");
+      titleGroup.className = "gallery-subsection-title";
+      const stamp = document.createElement("span");
+      stamp.className = "gallery-subsection-stamp";
+      stamp.textContent = `${archiveCodes[currentPage] || "AJ"}-${String(groupIndex + 1).padStart(2, "0")}`;
       const title = document.createElement("h2");
       title.textContent = group.title;
       const count = document.createElement("p");
       count.textContent = `${String(group.photos.length).padStart(2, "0")} frames`;
-      heading.append(title, count);
+      titleGroup.append(stamp, title);
+      heading.append(titleGroup, count);
 
       const contactSheet = document.createElement("div");
       contactSheet.className = "photo-grid";

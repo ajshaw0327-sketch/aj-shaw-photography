@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Contact AJ Shaw for photography bookings and collaborations." />
-    <meta property="og:title" content="Contact — AJ Shaw Photography" />
+    <meta name="description" content="Sports photography by AJ Shaw." />
+    <meta property="og:title" content="Sports — AJ Shaw Photography" />
     <meta property="og:image" content="og.png" />
-    <title>Contact — AJ Shaw Photography</title>
+    <title>Sports — AJ Shaw Photography</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="style.css?v=20260728j" />
   </head>
-  <body data-page="contact" data-asset-root="./">
+  <body data-page="sports" data-asset-root="./">
     <header class="site-header">
       <div class="brand-lockup">
         <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">AJ Shaw <span>Photography</span></a>
@@ -25,34 +25,35 @@
       </nav>
     </header>
 
-    <main class="page page-contact">
-      <section class="contact-section" aria-labelledby="page-title">
-        <div class="contact-postcard reveal-up">
-          <p class="kicker">Bookings &amp; collaborations</p>
-          <h1 id="page-title">Let's make something <em>worth keeping.</em></h1>
-          <p>Available for events, editorial assignments, sports coverage, and thoughtful collaborations. Tell me where, when, and what you have in mind.</p>
-          <div class="contact-actions">
-            <a class="button button-primary" href="mailto:ajshaw0327@gmail.com">Start a conversation <span aria-hidden="true">↗</span></a>
-            <a class="instagram-link" href="https://www.instagram.com/aj.phots_/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">◎</span> @aj.phots_ <b aria-hidden="true">↗</b></a>
+    <main class="page page-portfolio">
+      <section class="gallery-section" data-gallery-view="sports" aria-labelledby="gallery-title">
+        <div class="portfolio-label">
+          <div>
+            <p class="portfolio-kicker"><span>Motion Study</span><b>Issue 03 · Sports</b></p>
+            <h1 id="gallery-title">Sports</h1>
           </div>
+          <p class="portfolio-note">Anticipation, momentum, and the split-second decisions that shape the game.</p>
         </div>
-        <aside class="contact-stamp reveal-right" aria-label="Availability note">
-          <span>AJ</span><strong>Open for<br />new stories</strong><small>Massachusetts<br />&amp; beyond</small>
-        </aside>
-      </section>
-      <section class="contact-notes" aria-label="Ways to work together">
-        <article><span>Events</span><p>Celebrations, ceremonies, live performance, and community gatherings.</p></article>
-        <article><span>Editorial</span><p>People, place, travel stories, and documentary-minded assignments.</p></article>
-        <article><span>Sports</span><p>Competition, training, portraits, and the moments around the action.</p></article>
+        <div class="gallery-groups" id="photo-grid" aria-live="polite"></div>
+        <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
       </section>
     </main>
 
     <footer class="site-footer">
-      <p>© 2026 AJ Shaw Photography</p><span class="character-sprite character-footer" data-character="snack" role="button" tabindex="0" aria-label="Play Snoopy snack animation"></span>
+      <p>© 2026 AJ Shaw Photography</p><span class="character-sprite character-footer" data-character="flowers" role="button" tabindex="0" aria-label="Play Snoopy flower-basket animation"></span>
       <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">GitHub ↗</a>
       <a href="https://www.instagram.com/aj.phots_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram, @aj.phots_">Instagram @aj.phots_ ↗</a>
       <a href="./">Back to cover ↑</a>
     </footer>
+    <div class="lightbox" id="lightbox" hidden aria-label="Photo viewer backdrop">
+      <button class="lightbox-backdrop" type="button" aria-label="Close photo viewer" tabindex="-1"></button>
+      <div class="lightbox-frame" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
+        <div class="lightbox-topline"><span><i aria-hidden="true"></i><b id="lightbox-count">Frame 1 / 1</b></span><button type="button" id="lightbox-close">Close ×</button></div>
+        <div class="lightbox-image"><img id="lightbox-photo" alt="" /></div>
+        <div class="lightbox-caption"><button type="button" id="lightbox-previous" aria-label="View previous photograph">← Previous</button><div><h2 id="lightbox-title"></h2><p id="lightbox-detail"></p></div><button type="button" id="lightbox-next" aria-label="View next photograph">Next →</button></div>
+      </div>
+    </div>
+    <script src="gallery-manifest.js?v=20260728a"></script>
     <script src="app.js?v=20260728g"></script>
   </body>
 </html>
