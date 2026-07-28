@@ -7,12 +7,15 @@
     <meta property="og:title" content="Sports — AJ Shaw Photography" />
     <meta property="og:image" content="og.png" />
     <title>Sports — AJ Shaw Photography</title>
-    <link rel="stylesheet" href="style.css?v=20260728e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="style.css?v=20260728g" />
   </head>
   <body data-page="sports" data-asset-root="./">
     <header class="site-header">
       <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">AJ Shaw <span>Photography</span></a>
-      <span class="character-sprite character-header pose-wave" aria-hidden="true"></span>
+      <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">Menu <span aria-hidden="true">＋</span></button>
       <nav id="primary-navigation" aria-label="Primary navigation">
         <span class="nav-marker" aria-hidden="true"><i class="marker-bird"></i></span>
@@ -21,18 +24,9 @@
     </header>
 
     <main class="page page-portfolio">
-      <section class="portfolio-intro" aria-labelledby="page-title">
-        <div class="issue-line"><span>Journal 03 / Sports</span><span>Instinct &amp; motion</span><span>Fujifilm X-T50</span></div>
-        <div class="portfolio-heading">
-          <div><p class="kicker">Split-second stories</p><h1 id="page-title">Made in <em>motion</em></h1></div>
-          <p>The concentration before the play, the release, and the reaction—photographs built around timing and human effort.</p>
-          <span class="folio-number" aria-hidden="true">03</span>
-        </div>
-      </section>
       <section class="gallery-section" data-gallery-view="sports" aria-labelledby="gallery-title">
-        <div class="section-heading">
-          <div><p class="kicker">Contact sheet / selected frames</p><h2 id="gallery-title">The sports journal</h2></div>
-          <p>Moderately sized frames keep the rhythm of a real contact sheet while preserving each photograph’s shape.</p>
+        <div class="portfolio-label">
+          <h1 id="gallery-title">Sports</h1>
         </div>
         <div class="photo-grid" id="photo-grid" aria-live="polite"></div>
         <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
@@ -40,7 +34,7 @@
     </main>
 
     <footer class="site-footer">
-      <p>© 2026 AJ Shaw Photography</p><span class="character-sprite character-footer pose-sit" aria-hidden="true"></span>
+      <p>© 2026 AJ Shaw Photography</p><span class="character-sprite character-footer" data-character="flowers" role="button" tabindex="0" aria-label="Play Snoopy flower-basket animation"></span>
       <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">GitHub ↗</a>
       <a href="https://www.instagram.com/aj.phots_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram, @aj.phots_">Instagram @aj.phots_ ↗</a>
       <a href="./">Back to cover ↑</a>
@@ -53,6 +47,6 @@
         <div class="lightbox-caption"><button type="button" id="lightbox-previous" aria-label="View previous photograph">← Previous</button><div><h2 id="lightbox-title"></h2><p id="lightbox-detail"></p></div><button type="button" id="lightbox-next" aria-label="View next photograph">Next →</button></div>
       </div>
     </div>
-    <script src="app.js?v=20260728c"></script>
+    <script src="app.js?v=20260728e"></script>
   </body>
 </html>

@@ -11,14 +11,17 @@
     <meta property="og:description" content="Small moments, kept with intention." />
     <meta property="og:image" content="og.png" />
     <title>AJ Shaw — Photographer</title>
-    <link rel="stylesheet" href="style.css?v=20260728e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="style.css?v=20260728g" />
   </head>
   <body data-page="home" data-asset-root="./">
     <header class="site-header">
       <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">
         AJ Shaw <span>Photography</span>
       </a>
-      <span class="character-sprite character-header pose-wave" aria-hidden="true"></span>
+      <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
       <button
         class="menu-toggle"
         type="button"
@@ -62,10 +65,7 @@
             </a>
           </div>
           <div class="hero-mosaic-wrap">
-            <span
-              class="character-sprite character-hero pose-camera"
-              aria-hidden="true"
-            ></span>
+            <span class="character-sprite character-hero" data-character="walk" role="button" tabindex="0" aria-label="Play Snoopy flower animation"></span>
             <div
               class="hero-mosaic"
               id="hero-mosaic"
@@ -108,7 +108,7 @@
 
     <footer class="site-footer">
       <p>© 2026 AJ Shaw Photography</p>
-      <span class="character-sprite character-footer pose-sit" aria-hidden="true"></span>
+      <span class="character-sprite character-footer" data-character="sleep" role="button" tabindex="0" aria-label="Play sleeping Snoopy animation"></span>
       <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">GitHub ↗</a>
       <a
         href="https://www.instagram.com/aj.phots_/"
@@ -154,6 +154,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=20260728c"></script>
+    <script src="app.js?v=20260728e"></script>
   </body>
 </html>

@@ -69,6 +69,22 @@ const photographDetails = {
   },
 };
 
+const photographDimensions = {
+  "travel-providence.jpg": [2400, 1600],
+  "travel-wave.jpg": [2400, 1600],
+  "travel-lightning.jpg": [2400, 1600],
+  "travel-movie.jpg": [2400, 1600],
+  "travel-sign.jpg": [1600, 2400],
+  "travel-chair.jpg": [2400, 1600],
+  "events-dragon-child.jpg": [1600, 2400],
+  "events-protest.jpg": [2400, 1599],
+  "events-protest-sign.jpg": [2400, 1600],
+  "events-beads.jpg": [2400, 1600],
+  "events-table.jpg": [2400, 1600],
+  "sports-catch.jpg": [2400, 1562],
+  "sports-chuck.jpg": [2400, 1600],
+};
+
 const fallbackFiles = Object.keys(photographDetails);
 const categories = ["travel", "events", "sports"];
 const retiredFiles = new Set([
@@ -88,6 +104,14 @@ const retiredFiles = new Set([
 const currentPage = document.body.dataset.page || "home";
 const assetRoot = document.body.dataset.assetRoot || "./";
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+const characterAnimations = {
+  walk: { gif: "snoopy-flower-walk.gif", duration: 1920 },
+  sleep: { gif: "snoopy-sleep.gif", duration: 1600 },
+  snack: { gif: "snoopy-snack.gif", duration: 4000 },
+  flowers: { gif: "snoopy-flowers.gif", duration: 3000 },
+  woodstock: { gif: "woodstock-spin.gif", duration: 2000 },
+};
 
 let photographs = [];
 let openPhotographs = [];
@@ -95,6 +119,7 @@ let openIndex = 0;
 let lastFocusedButton = null;
 let navigationTimer = 0;
 let resizeFrame = 0;
+let keyboardNavigation = false;
 
 const navigation = document.querySelector("#primary-navigation");
 const navigationLinks = [...document.querySelectorAll("[data-route]")];
@@ -133,6 +158,7 @@ function photoFromFilename(filename) {
   const category = categoryFromFilename(filename);
   if (!category) return null;
   const known = photographDetails[filename];
+  const [width, height] = photographDimensions[filename] || [];
   const generatedTitle = titleFromFilename(filename);
   return {
     filename,
@@ -141,7 +167,23 @@ function photoFromFilename(filename) {
     title: known?.title || generatedTitle,
     detail: known?.detail || `${category.charAt(0).toUpperCase()}${category.slice(1)} journal`,
     alt: known?.alt || `${generatedTitle}, a photograph in AJ Shaw’s ${category} portfolio`,
+    width,
+    height,
   };
+}
+
+function buildPhotographs(files) {
+  return files
+    .map(photoFromFilename)
+    .filter(Boolean)
+    .sort((a, b) => {
+      const knownA = fallbackFiles.indexOf(a.filename);
+      const knownB = fallbackFiles.indexOf(b.filename);
+      if (knownA >= 0 && knownB >= 0) return knownA - knownB;
+      if (knownA >= 0) return -1;
+      if (knownB >= 0) return 1;
+      return a.filename.localeCompare(b.filename);
+    });
 }
 
 function setActiveNavigation() {
@@ -244,13 +286,101 @@ function setupNavigation() {
   });
 }
 
+function setupCharacterAnimations() {
+  const characters = [...document.querySelectorAll("[data-character]")];
+  if (!characters.length) return;
+  const playTimers = new WeakMap();
+
+  const stopCharacter = (character) => {
+    window.clearTimeout(playTimers.get(character));
+    playTimers.delete(character);
+    character.classList.remove("is-playing");
+    character.setAttribute("aria-pressed", "false");
+  };
+
+  const playCharacter = (character, playOnce = false) => {
+    if (reducedMotion.matches || character.classList.contains("is-playing")) return;
+    const animation = characterAnimations[character.dataset.character];
+    if (!animation) return;
+    character.classList.add("is-playing");
+    character.setAttribute("aria-pressed", "true");
+    if (playOnce) {
+      const timer = window.setTimeout(
+        () => stopCharacter(character),
+        animation.duration + 80,
+      );
+      playTimers.set(character, timer);
+    }
+  };
+
+  document.addEventListener("keydown", () => {
+    keyboardNavigation = true;
+  });
+  document.addEventListener(
+    "pointerdown",
+    () => {
+      keyboardNavigation = false;
+    },
+    { capture: true },
+  );
+
+  characters.forEach((character) => {
+    character.setAttribute("aria-pressed", "false");
+    character.addEventListener("pointerenter", (event) => {
+      if (canHover.matches && event.pointerType !== "touch") playCharacter(character);
+    });
+    character.addEventListener("pointerleave", (event) => {
+      if (canHover.matches && event.pointerType !== "touch") stopCharacter(character);
+    });
+    character.addEventListener("pointerup", (event) => {
+      if (event.pointerType === "touch") playCharacter(character, true);
+    });
+    character.addEventListener("focus", () => {
+      if (keyboardNavigation) playCharacter(character);
+    });
+    character.addEventListener("blur", () => stopCharacter(character));
+    character.addEventListener("click", () => {
+      if (!canHover.matches) playCharacter(character, true);
+    });
+    character.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      playCharacter(character);
+    });
+  });
+
+  const preload = () => {
+    if (reducedMotion.matches) return;
+    Object.values(characterAnimations).forEach(({ gif }) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = `${assetRoot}${gif}`;
+    });
+  };
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(preload, { timeout: 1800 });
+  } else {
+    window.setTimeout(preload, 700);
+  }
+
+  reducedMotion.addEventListener?.("change", () => {
+    if (reducedMotion.matches) characters.forEach(stopCharacter);
+  });
+}
+
 async function loadPhotographs() {
   if (!grid && !heroMosaic) return;
-  let files = fallbackFiles;
+
+  // Render the bundled photo list immediately. Remote discovery is an enhancement,
+  // never a gate that keeps the page short or temporarily unscrollable.
+  photographs = buildPhotographs(fallbackFiles);
+  renderHero();
+  renderGallery();
+
   const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 
   try {
-    if (isLocalPreview) throw new Error("Use local portfolio files during preview.");
+    if (isLocalPreview) return;
     const response = await fetch(repositoryContentsUrl, {
       headers: { Accept: "application/vnd.github+json" },
     });
@@ -265,26 +395,20 @@ async function loadPhotographs() {
             !retiredFiles.has(entry.name),
         )
         .map((entry) => entry.name);
-      if (discovered.length) files = discovered;
+      const currentFiles = photographs.map((photo) => photo.filename);
+      const hasChanged =
+        discovered.length &&
+        (discovered.length !== currentFiles.length ||
+          discovered.some((filename) => !currentFiles.includes(filename)));
+      if (hasChanged) {
+        photographs = buildPhotographs(discovered);
+        renderHero();
+        renderGallery();
+      }
     }
   } catch {
     // The bundled list keeps the portfolio available if GitHub's API is busy.
   }
-
-  photographs = files
-    .map(photoFromFilename)
-    .filter(Boolean)
-    .sort((a, b) => {
-      const knownA = fallbackFiles.indexOf(a.filename);
-      const knownB = fallbackFiles.indexOf(b.filename);
-      if (knownA >= 0 && knownB >= 0) return knownA - knownB;
-      if (knownA >= 0) return -1;
-      if (knownB >= 0) return 1;
-      return a.filename.localeCompare(b.filename);
-    });
-
-  renderHero();
-  renderGallery();
 }
 
 function photosForView(view) {
@@ -294,6 +418,34 @@ function photosForView(view) {
     );
   }
   return photographs.filter((photo) => photo.category === view);
+}
+
+function prepareProgressiveImage(image, frame) {
+  const markLoaded = () => {
+    frame.classList.remove("is-loading", "is-error");
+    frame.classList.add("is-loaded");
+  };
+  const markError = () => {
+    frame.classList.remove("is-loading", "is-loaded");
+    frame.classList.add("is-error");
+  };
+
+  frame.classList.add("is-loading");
+  image.addEventListener("load", markLoaded, { once: true });
+  image.addEventListener("error", markError, { once: true });
+  if (image.complete) {
+    queueMicrotask(() => {
+      if (!image.complete) return;
+      if (image.naturalWidth) markLoaded();
+    });
+  }
+}
+
+function applyReservedPhotoLayout(figure, photo) {
+  if (!photo.width || !photo.height) return;
+  const ratio = photo.width / photo.height;
+  figure.classList.toggle("photo-card-portrait", ratio < 0.82);
+  figure.classList.toggle("photo-card-wide", ratio > 1.45);
 }
 
 function renderHero() {
@@ -310,8 +462,16 @@ function renderHero() {
     button.setAttribute("aria-label", `Open ${photo.title} in the photo viewer`);
 
     const image = document.createElement("img");
-    image.src = photo.src;
     image.alt = photo.alt;
+    image.loading = index === 0 ? "eager" : "lazy";
+    image.decoding = "async";
+    if (index === 0) image.fetchPriority = "high";
+    if (photo.width && photo.height) {
+      image.width = photo.width;
+      image.height = photo.height;
+    }
+    prepareProgressiveImage(image, button);
+    image.src = photo.src;
 
     const label = document.createElement("span");
     label.textContent = `0${index + 1} / ${photo.title}`;
@@ -331,6 +491,7 @@ function renderGallery() {
   selected.forEach((photo, index) => {
     const figure = document.createElement("figure");
     figure.className = `photo-card photo-card-size-${(index % 6) + 1}`;
+    applyReservedPhotoLayout(figure, photo);
     figure.style.setProperty("--card-rotate", `${[-0.3, 0.22, -0.12, 0.28][index % 4]}deg`);
     figure.style.setProperty("--card-delay", `${Math.min(index, 8) * 45}ms`);
 
@@ -346,9 +507,16 @@ function renderGallery() {
     windowElement.className = "photo-window";
 
     const image = document.createElement("img");
-    image.src = photo.src;
     image.alt = photo.alt;
-    image.loading = index < 3 ? "eager" : "lazy";
+    image.loading = index < 2 ? "eager" : "lazy";
+    image.decoding = "async";
+    if (index === 0) image.fetchPriority = "high";
+    if (photo.width && photo.height) {
+      image.width = photo.width;
+      image.height = photo.height;
+    }
+    prepareProgressiveImage(image, windowElement);
+    image.src = photo.src;
 
     const openMark = document.createElement("span");
     openMark.className = "open-mark";
@@ -361,11 +529,6 @@ function renderGallery() {
     const captionDetail = document.createElement("span");
     captionDetail.textContent = photo.detail;
 
-    image.addEventListener("load", () => {
-      const ratio = image.naturalWidth / image.naturalHeight;
-      figure.classList.toggle("photo-card-portrait", ratio < 0.82);
-      figure.classList.toggle("photo-card-wide", ratio > 1.45);
-    });
     button.addEventListener("click", () => openLightbox(selected, index, button));
 
     windowElement.append(image, openMark);
@@ -387,7 +550,7 @@ function renderGallery() {
 function setupRevealAnimations(scope = document) {
   const selector =
     ".issue-line, .hero-copy, .hero-mosaic-wrap, .hero-ticker, .section-heading, " +
-    ".portfolio-heading, .photo-card, .route-cards a, .approach-strip article, " +
+    ".portfolio-label, .photo-card, .route-cards a, .approach-strip article, " +
     ".contact-notes article, .contact-postcard, .contact-stamp, .about-layout > *, .site-footer";
   const elements = [...scope.querySelectorAll(selector)].filter(
     (element) => !element.classList.contains("reveal"),
@@ -503,6 +666,7 @@ function setupLightbox() {
 }
 
 setupNavigation();
+setupCharacterAnimations();
 setupLightbox();
 setupRevealAnimations();
 loadPhotographs();
