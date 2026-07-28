@@ -8,30 +8,37 @@
       content="Travel, event, and sports photography by AJ Shaw, photographed on Fujifilm X-T50."
     />
     <meta property="og:title" content="AJ Shaw — Photographer" />
-    <meta
-      property="og:description"
-      content="Small moments, kept with intention."
-    />
+    <meta property="og:description" content="Small moments, kept with intention." />
     <meta property="og:image" content="og.png" />
     <title>AJ Shaw — Photographer</title>
-    <link rel="stylesheet" href="style.css?v=20260728b" />
+    <link rel="stylesheet" href="style.css?v=20260728c" />
   </head>
-  <body>
+  <body data-page="home" data-asset-root="./">
     <header class="site-header">
-      <a class="wordmark" href="#home" aria-label="AJ Shaw Photography, home">
+      <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">
         AJ Shaw <span>Photography</span>
       </a>
-      <nav aria-label="Primary navigation">
-        <a href="#home" data-nav="home" aria-current="page">Home</a>
-        <button type="button" data-view="travel" data-nav="travel" aria-pressed="false">Travel</button>
-        <button type="button" data-view="events" data-nav="events" aria-pressed="false">Events</button>
-        <button type="button" data-view="sports" data-nav="sports" aria-pressed="false">Sports</button>
-        <a href="#about" data-nav="about">About</a>
-        <a href="#contact" data-nav="contact">Contact</a>
+      <span class="character-sprite character-header pose-wave" aria-hidden="true"></span>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="primary-navigation"
+      >
+        Menu <span aria-hidden="true">＋</span>
+      </button>
+      <nav id="primary-navigation" aria-label="Primary navigation">
+        <span class="nav-marker" aria-hidden="true"><i class="marker-bird"></i></span>
+        <a href="./" data-route="home">Home</a>
+        <a href="travel.html" data-route="travel">Travel</a>
+        <a href="events.html" data-route="events">Events</a>
+        <a href="sports.html" data-route="sports">Sports</a>
+        <a href="about.html" data-route="about">About</a>
+        <a href="contact.html" data-route="contact">Contact</a>
       </nav>
     </header>
 
-    <main id="home">
+    <main class="page page-home">
       <section class="hero" aria-labelledby="hero-title">
         <div class="issue-line">
           <span>AJ Shaw / Field journal</span>
@@ -50,11 +57,21 @@
               and the energy of play—made with a Fujifilm X-T50 and an eye for
               honest color.
             </p>
-            <button class="button button-primary" type="button" data-view="travel">
+            <a class="button button-primary" href="travel.html">
               Browse the archive <span aria-hidden="true">↗</span>
-            </button>
+            </a>
           </div>
-          <div class="hero-mosaic" id="hero-mosaic" aria-label="Selected photographs"></div>
+          <div class="hero-mosaic-wrap">
+            <span
+              class="character-sprite character-hero pose-camera"
+              aria-hidden="true"
+            ></span>
+            <div
+              class="hero-mosaic"
+              id="hero-mosaic"
+              aria-label="Selected photographs"
+            ></div>
+          </div>
         </div>
         <div class="hero-ticker" aria-label="Portfolio themes">
           <span>Places in passing</span>
@@ -64,97 +81,42 @@
         </div>
       </section>
 
-      <section class="gallery-section" aria-labelledby="gallery-title">
+      <section
+        class="gallery-section gallery-section-home"
+        aria-labelledby="gallery-title"
+        data-gallery-view="home"
+      >
         <div class="section-heading">
           <div>
-            <p class="kicker" id="gallery-kicker">Mixed-format edit / selected frames</p>
+            <p class="kicker">Mixed-format edit / selected frames</p>
             <h2 id="gallery-title">Recent work</h2>
           </div>
-          <p id="gallery-note">
-            Portrait, landscape, and wide frames arranged as one continuous
-            editorial sequence.
+          <p>
+            A short edit from the Travel, Events, and Sports journals. Open a
+            photograph for the full frame and field notes.
           </p>
-        </div>
-        <div class="gallery-tabs" role="group" aria-label="Photography galleries">
-          <button type="button" data-view="home" aria-pressed="true">Featured</button>
-          <button type="button" data-view="travel" aria-pressed="false">Travel &amp; Street</button>
-          <button type="button" data-view="events" aria-pressed="false">Events</button>
-          <button type="button" data-view="sports" aria-pressed="false">Sports</button>
         </div>
         <div class="photo-grid" id="photo-grid" aria-live="polite"></div>
         <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
-      </section>
-
-      <section class="about-section" id="about">
-        <figure class="about-photo">
-          <img
-            src="aj-portrait.jpg"
-            alt="AJ Shaw standing on a rocky coastline in Vieques with a camera bag"
-          />
-          <figcaption>Vieques, 2025 / photo from the road</figcaption>
-        </figure>
-        <div>
-          <p class="kicker">Behind the camera</p>
-          <h2>Hi, I’m AJ.</h2>
-          <p class="about-lead">
-            I make photographs that hold onto the atmosphere of a place—the
-            noise around a celebration, the pause before a throw, or the last
-            light over a city.
-          </p>
-          <p>
-            My approach is observant and story-first. I work with natural color,
-            honest gestures, and quick composition to make images that feel
-            personal without losing the energy of the moment.
-          </p>
-          <p class="hand-note">Keep looking. Stay curious. — AJ</p>
-        </div>
-      </section>
-
-      <section class="contact-section" id="contact">
-        <div>
-          <p class="kicker">Bookings / collaborations</p>
-          <h2>Let’s make something worth remembering.</h2>
-        </div>
-        <div class="contact-card">
-          <p>
-            Available for events, sports coverage, editorial stories, and
-            select creative projects in Massachusetts and beyond.
-          </p>
-          <a class="button button-light" href="mailto:hello@ajshaw.photo?subject=Photography%20inquiry">
-            Start an inquiry <span aria-hidden="true">↗</span>
-          </a>
-          <a
-            class="instagram-link"
-            href="https://www.instagram.com/aj.phots_/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Follow AJ Shaw Photography on Instagram, @aj.phots_"
-          >
-            <span class="instagram-mark" aria-hidden="true">◎</span>
-            <span>
-              Follow the latest work
-              <strong>@aj.phots_</strong>
-            </span>
-            <span class="instagram-arrow" aria-hidden="true">↗</span>
-          </a>
+        <div class="route-cards" aria-label="Explore photography portfolios">
+          <a href="travel.html"><span>01</span>Travel &amp; Street <b>↗</b></a>
+          <a href="events.html"><span>02</span>Events <b>↗</b></a>
+          <a href="sports.html"><span>03</span>Sports <b>↗</b></a>
         </div>
       </section>
     </main>
 
-    <footer>
+    <footer class="site-footer">
       <p>© 2026 AJ Shaw Photography</p>
-      <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">
-        View on GitHub ↗
-      </a>
+      <span class="character-sprite character-footer pose-sit" aria-hidden="true"></span>
+      <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">GitHub ↗</a>
       <a
         href="https://www.instagram.com/aj.phots_/"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Instagram, @aj.phots_"
-      >
-        Instagram @aj.phots_ ↗
-      </a>
-      <a href="#home">Back to cover ↑</a>
+      >Instagram @aj.phots_ ↗</a>
+      <a href="./">Back to cover ↑</a>
     </footer>
 
     <div class="lightbox" id="lightbox" hidden aria-label="Photo viewer backdrop">
@@ -192,6 +154,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=20260728b"></script>
+    <script src="app.js?v=20260728c"></script>
   </body>
 </html>
