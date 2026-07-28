@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Travel, event, and sports photography by AJ Shaw, photographed on Fujifilm X-T50."
+    />
+    <meta property="og:title" content="AJ Shaw — Photographer" />
+    <meta
+      property="og:description"
+      content="Small moments, kept with intention."
+    />
+    <meta property="og:image" content="og.png" />
+    <title>AJ Shaw — Photographer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="#home" aria-label="AJ Shaw Photography, home">
+        AJ Shaw <span>Photography</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#home">Home</a>
+        <button type="button" data-view="travel">Travel</button>
+        <button type="button" data-view="events">Events</button>
+        <button type="button" data-view="sports">Sports</button>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main id="home">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="issue-line">
+          <span>AJ Shaw / Field journal</span>
+          <span>Massachusetts · 2026</span>
+          <span>Fujifilm X-T50</span>
+        </div>
+        <div class="hero-layout">
+          <div class="hero-copy">
+            <p class="kicker">Travel · Events · Sport</p>
+            <h1 id="hero-title">
+              Small moments,
+              <em>kept with intention.</em>
+            </h1>
+            <p class="dek">
+              Documentary-minded photographs of new places, shared traditions,
+              and the energy of play—made with a Fujifilm X-T50 and an eye for
+              honest color.
+            </p>
+            <button class="button button-primary" type="button" data-view="travel">
+              Browse the archive <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <div class="hero-mosaic" id="hero-mosaic" aria-label="Selected photographs"></div>
+        </div>
+        <div class="hero-ticker" aria-label="Portfolio themes">
+          <span>Places in passing</span>
+          <span>People in motion</span>
+          <span>Light as it happened</span>
+          <span>Shot on Fujifilm X-T50</span>
+        </div>
+      </section>
+
+      <section class="gallery-section" aria-labelledby="gallery-title">
+        <div class="section-heading">
+          <div>
+            <p class="kicker" id="gallery-kicker">Mixed-format edit / selected frames</p>
+            <h2 id="gallery-title">Recent work</h2>
+          </div>
+          <p id="gallery-note">
+            Portrait, landscape, and wide frames arranged as one continuous
+            editorial sequence.
+          </p>
+        </div>
+        <div class="gallery-tabs" role="group" aria-label="Photography galleries">
+          <button type="button" data-view="home" aria-pressed="true">Featured</button>
+          <button type="button" data-view="travel" aria-pressed="false">Travel &amp; Street</button>
+          <button type="button" data-view="events" aria-pressed="false">Events</button>
+          <button type="button" data-view="sports" aria-pressed="false">Sports</button>
+        </div>
+        <div class="photo-grid" id="photo-grid" aria-live="polite"></div>
+        <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
+      </section>
+
+      <section class="about-section" id="about">
+        <figure class="about-photo">
+          <img
+            src="aj-portrait.jpg"
+            alt="AJ Shaw standing on a rocky coastline in Vieques with a camera bag"
+          />
+          <figcaption>Vieques, 2025 / photo from the road</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">Behind the camera</p>
+          <h2>Hi, I’m AJ.</h2>
+          <p class="about-lead">
+            I make photographs that hold onto the atmosphere of a place—the
+            noise around a celebration, the pause before a throw, or the last
+            light over a city.
+          </p>
+          <p>
+            My approach is observant and story-first. I work with natural color,
+            honest gestures, and quick composition to make images that feel
+            personal without losing the energy of the moment.
+          </p>
+          <p class="hand-note">Keep looking. Stay curious. — AJ</p>
+        </div>
+      </section>
+
+      <section class="contact-section" id="contact">
+        <div>
+          <p class="kicker">Bookings / collaborations</p>
+          <h2>Let’s make something worth remembering.</h2>
+        </div>
+        <div class="contact-card">
+          <p>
+            Available for events, sports coverage, editorial stories, and
+            select creative projects in Massachusetts and beyond.
+          </p>
+          <a class="button button-light" href="mailto:hello@ajshaw.photo?subject=Photography%20inquiry">
+            Start an inquiry <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>© 2026 AJ Shaw Photography</p>
+      <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">
+        View on GitHub ↗
+      </a>
+      <a href="#home">Back to cover ↑</a>
+    </footer>
+
+    <div class="lightbox" id="lightbox" hidden>
+      <div
+        class="lightbox-frame"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lightbox-title"
+      >
+        <div class="lightbox-topline">
+          <span id="lightbox-count">Frame 1 / 1</span>
+          <button type="button" id="lightbox-close">Close ×</button>
+        </div>
+        <div class="lightbox-image">
+          <img id="lightbox-photo" src="" alt="" />
+        </div>
+        <div class="lightbox-caption">
+          <button type="button" id="lightbox-previous" aria-label="View previous photograph">
+            ← Previous
+          </button>
+          <div>
+            <h2 id="lightbox-title"></h2>
+            <p id="lightbox-detail"></p>
+          </div>
+          <button type="button" id="lightbox-next" aria-label="View next photograph">
+            Next →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
