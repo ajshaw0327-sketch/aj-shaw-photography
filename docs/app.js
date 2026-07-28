@@ -2,70 +2,89 @@ const repositoryContentsUrl =
   "https://api.github.com/repos/ajshaw0327-sketch/aj-shaw-photography/contents/docs?ref=main";
 
 const photographDetails = {
-  "travel-afterglow.jpg": {
-    title: "Afterglow",
-    detail: "Puerto Rico · December 2025",
-    alt: "Purple storm clouds glowing above a Puerto Rican town at sunset",
+  "travel-providence.jpg": {
+    title: "Providence Light",
+    detail: "Providence · Travel journal",
+    alt: "Warm afternoon light falling across the rooftops and skyline of Providence",
   },
-  "travel-horses.jpg": {
-    title: "Wild Company",
-    detail: "Vieques · December 2025",
-    alt: "Three wild horses grazing beside dense tropical greenery in Vieques",
+  "travel-wave.jpg": {
+    title: "Breakwater",
+    detail: "Atlantic coast · Travel journal",
+    alt: "Ocean waves breaking around a dark rocky outcrop",
   },
-  "travel-ruin.jpg": {
-    title: "Salt & Brick",
-    detail: "Vieques · December 2025",
-    alt: "Weathered coastal building with exposed red brick under a blue sky",
+  "travel-lightning.jpg": {
+    title: "Night Weather",
+    detail: "On the road · Travel journal",
+    alt: "A dark stormy sky illuminated by a narrow opening in the clouds",
   },
-  "travel-night-transit.jpg": {
-    title: "Night Transit",
-    detail: "Massachusetts · April 2026",
-    alt: "Abstract streaks of red, white, and violet light captured at night",
+  "travel-movie.jpg": {
+    title: "Avon Afternoon",
+    detail: "Providence · Travel journal",
+    alt: "People walking beneath the vintage Avon Cinema marquee on a city street",
   },
-  "travel-keeper.jpg": {
-    title: "Borrowed Shelter",
-    detail: "Vieques · December 2025",
-    alt: "Colorful hermit crab held gently in an open shell",
+  "travel-sign.jpg": {
+    title: "A Sign in the Green",
+    detail: "Roadside study · Travel journal",
+    alt: "Parking and trash-free-zone signs surrounded by dense green foliage",
   },
-  "travel-echinacea.jpg": {
-    title: "Summer Study",
-    detail: "Massachusetts · July 2026",
-    alt: "Soft-focus pink coneflowers surrounded by muted green leaves",
+  "travel-chair.jpg": {
+    title: "Weather Break",
+    detail: "Coastline · Travel journal",
+    alt: "A faint rainbow arcing above a quiet beach and pale blue water",
   },
-  "events-stage.jpg": {
-    title: "Overture",
-    detail: "ACN · May 2026",
-    alt: "Performers on a violet-lit stage beside a grand piano",
+  "events-dragon-child.jpg": {
+    title: "Inside the Dragon",
+    detail: "Lunar New Year · Event journal",
+    alt: "A child in a red coat smiling through the mouth of a colorful dragon costume",
   },
-  "events-lions.jpg": {
-    title: "Lion Dance",
-    detail: "Lunar New Year · March 2026",
-    alt: "Red and yellow lion dancers performing for a gathered crowd",
+  "events-protest.jpg": {
+    title: "The Gathering",
+    detail: "Public demonstration · Event journal",
+    alt: "A large crowd carrying handmade signs during a city demonstration",
   },
-  "events-dance.jpg": {
-    title: "In Formation",
-    detail: "ACN · May 2026",
-    alt: "Dance ensemble performing together on a blue-lit theater stage",
+  "events-protest-sign.jpg": {
+    title: "A Sign in the Crowd",
+    detail: "Public demonstration · Event journal",
+    alt: "A handmade protest sign held above a crowd with city towers in the background",
   },
-  "sports-sky.jpg": {
-    title: "Sky Ball",
-    detail: "Ultimate · April 2026",
-    alt: "Two ultimate players jumping high for a flying disc",
+  "events-beads.jpg": {
+    title: "Beads of Tradition",
+    detail: "Community celebration · Event journal",
+    alt: "A child in a red coat arranging colorful beads on a patterned table",
   },
-  "sports-release.jpg": {
-    title: "The Release",
-    detail: "Ultimate · May 2026",
-    alt: "Ultimate player releasing a forehand throw during a game",
+  "events-table.jpg": {
+    title: "Shared at the Table",
+    detail: "Community celebration · Event journal",
+    alt: "A smiling volunteer greeting a child at a decorated activity table",
   },
-  "sports-layout.jpg": {
-    title: "Full Stretch",
-    detail: "Ultimate · May 2026",
-    alt: "Ultimate player diving at full stretch while defenders watch",
+  "sports-catch.jpg": {
+    title: "Eyes Up",
+    detail: "Ultimate · Sports journal",
+    alt: "An ultimate player tracking a flying disc while teammates wait downfield",
+  },
+  "sports-chuck.jpg": {
+    title: "Across the Field",
+    detail: "Ultimate · Sports journal",
+    alt: "An ultimate player launching a long throw as a defender closes in",
   },
 };
 
 const fallbackFiles = Object.keys(photographDetails);
 const categories = ["travel", "events", "sports"];
+const retiredFiles = new Set([
+  "travel-afterglow.jpg",
+  "travel-echinacea.jpg",
+  "travel-horses.jpg",
+  "travel-keeper.jpg",
+  "travel-night-transit.jpg",
+  "travel-ruin.jpg",
+  "events-stage.jpg",
+  "events-lions.jpg",
+  "events-dance.jpg",
+  "sports-sky.jpg",
+  "sports-release.jpg",
+  "sports-layout.jpg",
+]);
 const currentPage = document.body.dataset.page || "home";
 const assetRoot = document.body.dataset.assetRoot || "./";
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -228,8 +247,10 @@ function setupNavigation() {
 async function loadPhotographs() {
   if (!grid && !heroMosaic) return;
   let files = fallbackFiles;
+  const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 
   try {
+    if (isLocalPreview) throw new Error("Use local portfolio files during preview.");
     const response = await fetch(repositoryContentsUrl, {
       headers: { Accept: "application/vnd.github+json" },
     });
@@ -240,7 +261,8 @@ async function loadPhotographs() {
           (entry) =>
             entry.type === "file" &&
             /\.(jpe?g|png|webp)$/i.test(entry.name) &&
-            categoryFromFilename(entry.name),
+            categoryFromFilename(entry.name) &&
+            !retiredFiles.has(entry.name),
         )
         .map((entry) => entry.name);
       if (discovered.length) files = discovered;
