@@ -1,0 +1,55 @@
+name: Apply folder gallery update
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/sync-folder-gallery.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Apply tested portfolio files
+        run: |
+          mkdir -p docs scripts tests photos/sports/01-ultimate .github/workflows
+          cp sync/root-gitignore .gitignore
+          cp sync/root-README.md README.md
+          cp sync/root-package.json package.json
+          cp sync/docs-about.html docs/about.html
+          cp sync/docs-app.js docs/app.js
+          cp sync/docs-contact.html docs/contact.html
+          cp sync/docs-events.html docs/events.html
+          cp sync/docs-gallery-manifest.js docs/gallery-manifest.js
+          cp sync/docs-gallery-manifest.json docs/gallery-manifest.json
+          cp sync/docs-index.html docs/index.html
+          cp sync/docs-sports.html docs/sports.html
+          cp sync/docs-style.css docs/style.css
+          cp sync/docs-travel.html docs/travel.html
+          cp sync/scripts-build-pages.mjs scripts/build-pages.mjs
+          cp sync/scripts-generate-gallery-manifest.mjs scripts/generate-gallery-manifest.mjs
+          cp sync/tests-gallery-manifest.test.mjs tests/gallery-manifest.test.mjs
+          cp sync/photos-sports-01-eyes-up.jpg photos/sports/01-ultimate/01-eyes-up.jpg
+          cp sync/photos-sports-02-across-the-field.jpg photos/sports/01-ultimate/02-across-the-field.jpg
+          cp sync/pages.yml .github/workflows/pages.yml
+          rm -f docs/travel-providence.jpg docs/travel-wave.jpg docs/travel-lightning.jpg
+          rm -f docs/travel-movie.jpg docs/travel-sign.jpg docs/travel-chair.jpg
+          rm -f docs/events-dragon-child.jpg docs/events-protest.jpg
+          rm -f docs/events-protest-sign.jpg docs/events-beads.jpg docs/events-table.jpg
+          rm -f docs/sports-catch.jpg docs/sports-chuck.jpg
+          rm -rf sync
+          rm -f .github/workflows/sync-folder-gallery.yml
+
+      - name: Commit completed update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete folder-based photo galleries"
+          git push origin HEAD:main
