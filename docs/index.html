@@ -14,14 +14,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="style.css?v=20260728g" />
+    <link rel="stylesheet" href="style.css?v=20260728j" />
   </head>
   <body data-page="home" data-asset-root="./">
     <header class="site-header">
-      <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">
-        AJ Shaw <span>Photography</span>
-      </a>
-      <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
+      <div class="brand-lockup">
+        <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">
+          AJ Shaw <span>Photography</span>
+        </a>
+        <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
+      </div>
       <button
         class="menu-toggle"
         type="button"
@@ -96,7 +98,7 @@
             photograph for the full frame and field notes.
           </p>
         </div>
-        <div class="photo-grid" id="photo-grid" aria-live="polite"></div>
+        <div class="gallery-groups" id="photo-grid" aria-live="polite"></div>
         <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
         <div class="route-cards" aria-label="Explore photography portfolios">
           <a href="travel.html"><span>01</span>Travel &amp; Street <b>↗</b></a>
@@ -137,7 +139,7 @@
           <button type="button" id="lightbox-close">Close ×</button>
         </div>
         <div class="lightbox-image">
-          <img id="lightbox-photo" src="" alt="" />
+          <img id="lightbox-photo" alt="" />
         </div>
         <div class="lightbox-caption">
           <button type="button" id="lightbox-previous" aria-label="View previous photograph">
@@ -154,6 +156,7 @@
       </div>
     </div>
 
-    <script src="app.js?v=20260728e"></script>
+    <script src="gallery-manifest.js?v=20260728a"></script>
+    <script src="app.js?v=20260728g"></script>
   </body>
 </html>

@@ -10,12 +10,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="style.css?v=20260728g" />
+    <link rel="stylesheet" href="style.css?v=20260728j" />
   </head>
   <body data-page="events" data-asset-root="./">
     <header class="site-header">
-      <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">AJ Shaw <span>Photography</span></a>
-      <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
+      <div class="brand-lockup">
+        <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">AJ Shaw <span>Photography</span></a>
+        <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
+      </div>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">Menu <span aria-hidden="true">＋</span></button>
       <nav id="primary-navigation" aria-label="Primary navigation">
         <span class="nav-marker" aria-hidden="true"><i class="marker-bird"></i></span>
@@ -26,9 +28,13 @@
     <main class="page page-portfolio">
       <section class="gallery-section" data-gallery-view="events" aria-labelledby="gallery-title">
         <div class="portfolio-label">
-          <h1 id="gallery-title">Events</h1>
+          <div>
+            <p class="portfolio-kicker"><span>People Archive</span><b>Issue 02 · Events</b></p>
+            <h1 id="gallery-title">Events</h1>
+          </div>
+          <p class="portfolio-note">Shared traditions, public moments, and the gestures that hold a gathering together.</p>
         </div>
-        <div class="photo-grid" id="photo-grid" aria-live="polite"></div>
+        <div class="gallery-groups" id="photo-grid" aria-live="polite"></div>
         <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
       </section>
     </main>
@@ -43,10 +49,11 @@
       <button class="lightbox-backdrop" type="button" aria-label="Close photo viewer" tabindex="-1"></button>
       <div class="lightbox-frame" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
         <div class="lightbox-topline"><span><i aria-hidden="true"></i><b id="lightbox-count">Frame 1 / 1</b></span><button type="button" id="lightbox-close">Close ×</button></div>
-        <div class="lightbox-image"><img id="lightbox-photo" src="" alt="" /></div>
+        <div class="lightbox-image"><img id="lightbox-photo" alt="" /></div>
         <div class="lightbox-caption"><button type="button" id="lightbox-previous" aria-label="View previous photograph">← Previous</button><div><h2 id="lightbox-title"></h2><p id="lightbox-detail"></p></div><button type="button" id="lightbox-next" aria-label="View next photograph">Next →</button></div>
       </div>
     </div>
-    <script src="app.js?v=20260728e"></script>
+    <script src="gallery-manifest.js?v=20260728a"></script>
+    <script src="app.js?v=20260728g"></script>
   </body>
 </html>
