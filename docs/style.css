@@ -161,31 +161,31 @@ em {
 .character-sprite {
   display: block;
   width: 66px;
-  aspect-ratio: 2 / 3;
-  background-image: url("snoopy-woodstock-sprites.png");
+  aspect-ratio: 3 / 4;
+  background-image: url("snoopy-woodstock-action-sheet.png");
   background-repeat: no-repeat;
-  background-size: 300% 100%;
+  background-size: 400% 200%;
   filter: drop-shadow(0 4px 4px rgba(25, 63, 49, 0.13));
   pointer-events: none;
 }
 
 .pose-camera {
-  background-position: 0 0;
+  background-position: 100% 0;
 }
 
 .pose-wave {
-  background-position: 50% 0;
+  background-position: 66.666% 100%;
 }
 
 .pose-sit {
-  background-position: 100% 0;
+  background-position: 100% 100%;
 }
 
 .character-header {
   align-self: flex-end;
-  width: 44px;
+  width: 46px;
   margin: 0 10px -12px 8px;
-  animation: hello-character 650ms 700ms var(--ease) both;
+  animation: snoopy-camera-action 12s step-end infinite;
 }
 
 .site-header nav {
@@ -314,24 +314,7 @@ em {
 }
 
 .marker-bird {
-  position: absolute;
-  top: -21px;
-  right: -7px;
-  display: block;
-  width: 28px;
-  height: 27px;
-  opacity: 0;
-  background-image: url("snoopy-woodstock-sprites.png");
-  background-repeat: no-repeat;
-  background-position: 72.8% 43%;
-  background-size: 700px auto;
-  filter: drop-shadow(0 2px 1px rgba(25, 63, 49, 0.2));
-  transition: opacity 100ms ease;
-}
-
-.nav-marker.is-moving .marker-bird {
-  opacity: 1;
-  animation: bird-follow 220ms var(--ease) both;
+  display: none;
 }
 
 .menu-toggle {
@@ -553,12 +536,6 @@ em {
   bottom: -57px;
   z-index: 3;
   width: 106px;
-  transform: rotate(4deg);
-  transition: transform 220ms var(--ease);
-}
-
-.hero-mosaic-wrap:hover .character-hero {
-  transform: rotate(-3deg) translateY(-5px);
 }
 
 .hero-ticker {
@@ -936,12 +913,6 @@ em {
   right: 1%;
   bottom: -86px;
   width: 94px;
-  transform: rotate(3deg);
-  transition: transform 220ms var(--ease);
-}
-
-.about-layout:hover .character-about {
-  transform: rotate(-4deg) translateY(-5px);
 }
 
 .approach-strip,
@@ -1151,11 +1122,6 @@ em {
   right: 44%;
   bottom: 0;
   width: 64px;
-  transition: transform 220ms var(--ease);
-}
-
-.site-footer:hover .character-footer {
-  transform: rotate(3deg) translateY(-3px);
 }
 
 .lightbox[hidden] {
@@ -1377,26 +1343,32 @@ em {
   transform: none;
 }
 
-@keyframes hello-character {
-  from {
-    opacity: 0;
-    transform: translateY(9px) rotate(5deg);
+@keyframes snoopy-camera-action {
+  0%,
+  3% {
+    background-position: 0 0;
   }
-  to {
-    opacity: 1;
-    transform: none;
+  6% {
+    background-position: 33.333% 0;
   }
-}
-
-@keyframes bird-follow {
-  0% {
-    transform: translate(-7px, 4px) rotate(-8deg);
+  9% {
+    background-position: 66.666% 0;
   }
-  65% {
-    transform: translate(2px, -3px) rotate(5deg);
+  12% {
+    background-position: 100% 0;
   }
+  15% {
+    background-position: 0 100%;
+  }
+  18% {
+    background-position: 33.333% 100%;
+  }
+  21% {
+    background-position: 66.666% 100%;
+  }
+  24%,
   100% {
-    transform: none;
+    background-position: 100% 100%;
   }
 }
 
@@ -1405,10 +1377,6 @@ em {
     min-width: 60px;
     padding: 0 9px;
     font-size: 0.63rem;
-  }
-
-  .character-header {
-    display: none;
   }
 
   .hero-layout {
@@ -1439,6 +1407,11 @@ em {
     display: inline-flex;
     align-items: center;
     margin-left: auto;
+  }
+
+  .character-header {
+    width: 38px;
+    margin: 0 8px -10px 6px;
   }
 
   .site-header nav {
@@ -1583,6 +1556,12 @@ em {
 
   .wordmark {
     font-size: 1.55rem;
+  }
+
+  .character-header {
+    width: 34px;
+    margin-right: 6px;
+    margin-left: 5px;
   }
 
   .issue-line {
@@ -1810,6 +1789,11 @@ em {
   .photo-card {
     opacity: 1;
     transform: none;
+  }
+
+  .character-header {
+    animation: none !important;
+    background-position: 100% 100%;
   }
 
   .marker-bird {
