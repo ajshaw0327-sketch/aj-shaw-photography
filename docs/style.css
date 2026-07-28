@@ -96,13 +96,20 @@ nav a,
 nav button {
   position: relative;
   overflow: hidden;
+  height: 38px;
   min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   padding: 10px 11px;
   border-radius: 3px;
+  appearance: none;
   background: transparent;
   cursor: pointer;
   font-size: 8px;
   letter-spacing: 0.12em;
+  line-height: 1;
   text-transform: uppercase;
   isolation: isolate;
   transition: color 170ms ease, transform 170ms var(--ease-out);
@@ -126,6 +133,18 @@ nav button::before {
 nav a:active,
 nav button:active {
   transform: translateY(1px) rotate(0.5deg);
+}
+
+.site-header nav a[aria-current="page"],
+.site-header nav button[aria-pressed="true"] {
+  color: var(--cream);
+}
+
+.site-header nav a[aria-current="page"]::before,
+.site-header nav button[aria-pressed="true"]::before {
+  height: calc(100% - 10px);
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 .hero {
@@ -355,7 +374,6 @@ nav button:active {
 }
 
 .gallery-tabs {
-  position: relative;
   max-width: 1240px;
   display: flex;
   margin: 0 auto 34px;
@@ -364,8 +382,6 @@ nav button:active {
 }
 
 .gallery-tabs button {
-  position: relative;
-  z-index: 1;
   min-height: 40px;
   padding: 10px 14px;
   border: 1px solid var(--forest);
@@ -380,29 +396,13 @@ nav button:active {
 }
 
 .gallery-tabs button[aria-pressed="true"] {
+  background: var(--forest);
   color: var(--cream);
+  box-shadow: 3px 4px 0 var(--gold);
 }
 
 .gallery-tabs button:active {
   transform: translateY(2px);
-}
-
-.tab-indicator {
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  left: 0;
-  height: 40px;
-  border: 1px solid var(--forest);
-  border-radius: 3px;
-  background: var(--forest);
-  box-shadow: 3px 4px 0 var(--gold);
-  pointer-events: none;
-  transition: width 260ms var(--ease-out), transform 260ms var(--ease-out);
-}
-
-.tab-indicator.no-transition {
-  transition: none;
 }
 
 .photo-grid {
@@ -417,23 +417,6 @@ nav button:active {
   grid-auto-flow: dense;
   grid-auto-rows: 52px;
   gap: 20px;
-  transition: opacity 150ms ease, transform 150ms var(--ease-out);
-}
-
-.photo-grid.is-leaving {
-  opacity: 0;
-  transform: translateY(8px) scale(0.995);
-}
-
-.photo-grid.is-entering .photo-card {
-  opacity: 0;
-  transform: translateY(18px) rotate(var(--card-rotate));
-}
-
-.photo-grid.is-entering.is-visible .photo-card {
-  opacity: 1;
-  transform: translateY(0) rotate(0);
-  transition-delay: var(--card-delay);
 }
 
 .photo-card {
@@ -1249,8 +1232,6 @@ footer a:active {
   }
 
   .js .reveal,
-  .photo-grid.is-leaving,
-  .photo-grid.is-entering .photo-card,
   .lightbox-frame {
     opacity: 1;
     clip-path: none;

@@ -14,7 +14,7 @@
     />
     <meta property="og:image" content="og.png" />
     <title>AJ Shaw — Photographer</title>
-    <link rel="stylesheet" href="style.css?v=20260728" />
+    <link rel="stylesheet" href="style.css?v=20260728b" />
   </head>
   <body>
     <header class="site-header">
@@ -22,12 +22,12 @@
         AJ Shaw <span>Photography</span>
       </a>
       <nav aria-label="Primary navigation">
-        <a href="#home">Home</a>
-        <button type="button" data-view="travel">Travel</button>
-        <button type="button" data-view="events">Events</button>
-        <button type="button" data-view="sports">Sports</button>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
+        <a href="#home" data-nav="home" aria-current="page">Home</a>
+        <button type="button" data-view="travel" data-nav="travel" aria-pressed="false">Travel</button>
+        <button type="button" data-view="events" data-nav="events" aria-pressed="false">Events</button>
+        <button type="button" data-view="sports" data-nav="sports" aria-pressed="false">Sports</button>
+        <a href="#about" data-nav="about">About</a>
+        <a href="#contact" data-nav="contact">Contact</a>
       </nav>
     </header>
 
@@ -80,7 +80,6 @@
           <button type="button" data-view="travel" aria-pressed="false">Travel &amp; Street</button>
           <button type="button" data-view="events" aria-pressed="false">Events</button>
           <button type="button" data-view="sports" aria-pressed="false">Sports</button>
-          <span class="tab-indicator" aria-hidden="true"></span>
         </div>
         <div class="photo-grid" id="photo-grid" aria-live="polite"></div>
         <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
@@ -193,6 +192,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=20260728"></script>
+    <script src="app.js?v=20260728b"></script>
   </body>
 </html>

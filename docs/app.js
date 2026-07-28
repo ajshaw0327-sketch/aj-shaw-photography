@@ -94,9 +94,6 @@ let currentView = "home";
 let openPhotographs = [];
 let openIndex = 0;
 let lastFocusedButton = null;
-let galleryTransitionToken = 0;
-let galleryTransitionTimer = null;
-let galleryAnimationTimer = null;
 
 const grid = document.querySelector("#photo-grid");
 const status = document.querySelector("#gallery-status");
@@ -113,8 +110,7 @@ const lightboxCount = document.querySelector("#lightbox-count");
 const closeButton = document.querySelector("#lightbox-close");
 const backdropButton = document.querySelector(".lightbox-backdrop");
 const gallerySection = document.querySelector(".gallery-section");
-const galleryTabs = document.querySelector(".gallery-tabs");
-const tabIndicator = document.querySelector(".tab-indicator");
+const navigationControls = [...document.querySelectorAll(".site-header nav [data-nav]")];
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 document.documentElement.classList.add("js");
@@ -175,7 +171,7 @@ async function loadPhotographs() {
     .filter(Boolean)
     .sort((a, b) => a.filename.localeCompare(b.filename));
   renderHero();
-  renderGallery(true);
+  renderGallery();
   setupRevealAnimations();
 }
 
@@ -205,7 +201,7 @@ function renderHero() {
   });
 }
 
-function renderGallery(initial = false) {
+function renderGallery() {
   const selected = photosForView(currentView);
   title.textContent = copy[currentView].title;
   kicker.textContent = copy[currentView].kicker;
@@ -217,12 +213,11 @@ function renderGallery(initial = false) {
       control.setAttribute("aria-pressed", String(control.dataset.view === currentView));
     }
   });
-  positionTabIndicator(initial);
+  setActiveNavigation(currentView);
 
   selected.forEach((photo, index) => {
     const figure = document.createElement("figure");
     figure.className = `photo-card photo-card-size-${(index % 6) + 1}`;
-    figure.style.setProperty("--card-delay", `${Math.min(index, 8) * 55}ms`);
     figure.style.setProperty("--card-rotate", `${[-0.35, 0.25, -0.15, 0.35][index % 4]}deg`);
     figure.innerHTML = `
       <button type="button" aria-label="Open ${photo.title} in the photo viewer">
@@ -249,72 +244,29 @@ function renderGallery(initial = false) {
   status.textContent = selected.length
     ? `${String(selected.length).padStart(2, "0")} photographs`
     : "No photographs in this section yet.";
-
-  grid.classList.remove("is-leaving");
-  grid.classList.add("is-entering");
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      grid.classList.add("is-visible");
-      clearTimeout(galleryAnimationTimer);
-      galleryAnimationTimer = window.setTimeout(() => {
-        grid.classList.remove("is-entering", "is-visible");
-      }, reducedMotion.matches ? 0 : 680);
-    });
-  });
 }
 
-function positionTabIndicator(initial = false) {
-  const activeTab = galleryTabs.querySelector('[aria-pressed="true"]');
-  if (!activeTab) return;
-  if (initial) tabIndicator.classList.add("no-transition");
-  tabIndicator.style.width = `${activeTab.offsetWidth}px`;
-  tabIndicator.style.transform = `translate(${activeTab.offsetLeft}px, ${activeTab.offsetTop}px)`;
-  if (initial) requestAnimationFrame(() => tabIndicator.classList.remove("no-transition"));
-}
-
-function selectView(view, trigger) {
-  if (!copy[view]) return;
-  const shouldScroll = !trigger?.closest(".gallery-tabs");
-  if (view === currentView && !grid.hasAttribute("aria-busy")) {
-    if (shouldScroll) {
-      gallerySection.scrollIntoView({
-        behavior: reducedMotion.matches ? "auto" : "smooth",
-        block: "start",
-      });
+function setActiveNavigation(value) {
+  navigationControls.forEach((control) => {
+    const isActive = control.dataset.nav === value;
+    if (control.matches("button")) {
+      control.setAttribute("aria-pressed", String(isActive));
+    } else if (isActive) {
+      control.setAttribute("aria-current", "page");
+    } else {
+      control.removeAttribute("aria-current");
     }
-    return;
-  }
-
-  galleryTransitionToken += 1;
-  const token = galleryTransitionToken;
-  currentView = view;
-  clearTimeout(galleryTransitionTimer);
-  grid.style.minHeight = `${grid.offsetHeight}px`;
-  grid.setAttribute("aria-busy", "true");
-  grid.classList.remove("is-entering", "is-visible");
-  grid.classList.add("is-leaving");
-
-  document.querySelectorAll(".gallery-tabs button").forEach((control) => {
-    control.setAttribute("aria-pressed", String(control.dataset.view === currentView));
   });
-  positionTabIndicator();
+}
 
-  galleryTransitionTimer = window.setTimeout(() => {
-    if (token !== galleryTransitionToken) return;
-    renderGallery();
-    window.setTimeout(() => {
-      if (token !== galleryTransitionToken) return;
-      grid.style.minHeight = "";
-      grid.removeAttribute("aria-busy");
-    }, reducedMotion.matches ? 0 : 700);
-  }, reducedMotion.matches ? 0 : 150);
-
-  if (shouldScroll) {
-    gallerySection.scrollIntoView({
-      behavior: reducedMotion.matches ? "auto" : "smooth",
-      block: "start",
-    });
-  }
+function selectView(view) {
+  if (!copy[view]) return;
+  currentView = view;
+  renderGallery();
+  gallerySection.scrollIntoView({
+    behavior: reducedMotion.matches ? "auto" : "smooth",
+    block: "start",
+  });
 }
 
 function setupRevealAnimations() {
@@ -398,8 +350,12 @@ function updateLightbox() {
 }
 
 document.querySelectorAll("[data-view]").forEach((control) => {
-  control.addEventListener("click", () => selectView(control.dataset.view, control));
+  control.addEventListener("click", () => selectView(control.dataset.view));
 });
+document.querySelectorAll(".site-header nav a[data-nav]").forEach((link) => {
+  link.addEventListener("click", () => setActiveNavigation(link.dataset.nav));
+});
+document.querySelector(".wordmark").addEventListener("click", () => setActiveNavigation("home"));
 closeButton.addEventListener("click", closeLightbox);
 backdropButton.addEventListener("click", closeLightbox);
 document.querySelector("#lightbox-previous").addEventListener("click", () => moveLightbox(-1));
@@ -434,7 +390,5 @@ document.addEventListener("keydown", (event) => {
     }
   }
 });
-
-window.addEventListener("resize", () => positionTabIndicator(true));
 
 loadPhotographs();
