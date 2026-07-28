@@ -1,25 +1,33 @@
 # AJ Shaw Photography
 
-A responsive photography portfolio for AJ Shaw, featuring Travel & Street,
-Events, and Sports work photographed on a Fujifilm X-T50.
+A responsive GitHub Pages photography portfolio for AJ Shaw, featuring Travel
+& Street, Events, and Sports work photographed on a Fujifilm X-T50.
 
-## Managing photographs
+## Live website
 
-The live site includes a private photo manager at:
+[ajshaw0327-sketch.github.io/aj-shaw-photography](https://ajshaw0327-sketch.github.io/aj-shaw-photography/)
 
-`https://alex-morgan-photo-journal.ajshaw0327.chatgpt.site/manage`
+## Adding or replacing photographs
 
-Sign in with the AJ Shaw ChatGPT account. From there you can:
+The GitHub Pages edition discovers photographs in the `docs` folder
+automatically.
 
-- upload JPG, PNG, and WebP photographs up to 20 MB;
-- choose Travel & Street, Events, or Sports;
-- feature or remove a photograph from the homepage;
-- edit titles, locations, event details, and accessible descriptions;
-- replace an existing image without recreating its entry; and
-- remove work from the portfolio.
+1. Open the repository's `docs` folder on GitHub.
+2. Choose **Add file → Upload files**.
+3. Begin each filename with its portfolio section:
+   - `travel-`
+   - `events-`
+   - `sports-`
+4. Commit the upload to `main`.
 
-The gallery reads the live photo archive and automatically adapts its mixed
-portrait and landscape layouts after every change.
+For example, `travel-cape-cod-sunrise.jpg` appears in Travel & Street.
+Portrait and landscape dimensions are detected automatically. To replace a
+photograph, upload a new image with the same filename. To remove one, delete
+its file from `docs`.
+
+The homepage automatically selects up to two photographs from each section.
+New filenames become readable titles automatically; custom captions for the
+original portfolio are stored in `docs/app.js`.
 
 ## Local development
 
@@ -36,9 +44,6 @@ Create a production build with:
 npm run build
 ```
 
-The hosted version uses a D1 database for photo information and R2 object
-storage for image files. `ADMIN_EMAIL` controls access to the private manager.
-
 ## Project structure
 
 - `app/page.tsx` — public portfolio and accessible lightbox
@@ -48,3 +53,4 @@ storage for image files. `ADMIN_EMAIL` controls access to the private manager.
 - `db/schema.ts` — photo archive schema
 - `drizzle/` — database migration and original portfolio records
 - `public/photos/` — original photographs bundled with the site
+- `docs/` — standalone GitHub Pages website and its live photo folder
