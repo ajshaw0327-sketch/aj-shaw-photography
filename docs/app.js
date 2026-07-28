@@ -94,6 +94,9 @@ let currentView = "home";
 let openPhotographs = [];
 let openIndex = 0;
 let lastFocusedButton = null;
+let galleryTransitionToken = 0;
+let galleryTransitionTimer = null;
+let galleryAnimationTimer = null;
 
 const grid = document.querySelector("#photo-grid");
 const status = document.querySelector("#gallery-status");
@@ -108,6 +111,13 @@ const lightboxTitle = document.querySelector("#lightbox-title");
 const lightboxDetail = document.querySelector("#lightbox-detail");
 const lightboxCount = document.querySelector("#lightbox-count");
 const closeButton = document.querySelector("#lightbox-close");
+const backdropButton = document.querySelector(".lightbox-backdrop");
+const gallerySection = document.querySelector(".gallery-section");
+const galleryTabs = document.querySelector(".gallery-tabs");
+const tabIndicator = document.querySelector(".tab-indicator");
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+document.documentElement.classList.add("js");
 
 function categoryFromFilename(filename) {
   return categories.find((category) => filename.startsWith(`${category}-`));
@@ -165,7 +175,8 @@ async function loadPhotographs() {
     .filter(Boolean)
     .sort((a, b) => a.filename.localeCompare(b.filename));
   renderHero();
-  renderGallery();
+  renderGallery(true);
+  setupRevealAnimations();
 }
 
 function photosForView(view) {
@@ -194,7 +205,7 @@ function renderHero() {
   });
 }
 
-function renderGallery() {
+function renderGallery(initial = false) {
   const selected = photosForView(currentView);
   title.textContent = copy[currentView].title;
   kicker.textContent = copy[currentView].kicker;
@@ -206,10 +217,13 @@ function renderGallery() {
       control.setAttribute("aria-pressed", String(control.dataset.view === currentView));
     }
   });
+  positionTabIndicator(initial);
 
   selected.forEach((photo, index) => {
     const figure = document.createElement("figure");
     figure.className = `photo-card photo-card-size-${(index % 6) + 1}`;
+    figure.style.setProperty("--card-delay", `${Math.min(index, 8) * 55}ms`);
+    figure.style.setProperty("--card-rotate", `${[-0.35, 0.25, -0.15, 0.35][index % 4]}deg`);
     figure.innerHTML = `
       <button type="button" aria-label="Open ${photo.title} in the photo viewer">
         <span class="frame-index">${String(index + 1).padStart(2, "0")}</span>
@@ -235,12 +249,111 @@ function renderGallery() {
   status.textContent = selected.length
     ? `${String(selected.length).padStart(2, "0")} photographs`
     : "No photographs in this section yet.";
+
+  grid.classList.remove("is-leaving");
+  grid.classList.add("is-entering");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      grid.classList.add("is-visible");
+      clearTimeout(galleryAnimationTimer);
+      galleryAnimationTimer = window.setTimeout(() => {
+        grid.classList.remove("is-entering", "is-visible");
+      }, reducedMotion.matches ? 0 : 680);
+    });
+  });
 }
 
-function selectView(view) {
+function positionTabIndicator(initial = false) {
+  const activeTab = galleryTabs.querySelector('[aria-pressed="true"]');
+  if (!activeTab) return;
+  if (initial) tabIndicator.classList.add("no-transition");
+  tabIndicator.style.width = `${activeTab.offsetWidth}px`;
+  tabIndicator.style.transform = `translate(${activeTab.offsetLeft}px, ${activeTab.offsetTop}px)`;
+  if (initial) requestAnimationFrame(() => tabIndicator.classList.remove("no-transition"));
+}
+
+function selectView(view, trigger) {
+  if (!copy[view]) return;
+  const shouldScroll = !trigger?.closest(".gallery-tabs");
+  if (view === currentView && !grid.hasAttribute("aria-busy")) {
+    if (shouldScroll) {
+      gallerySection.scrollIntoView({
+        behavior: reducedMotion.matches ? "auto" : "smooth",
+        block: "start",
+      });
+    }
+    return;
+  }
+
+  galleryTransitionToken += 1;
+  const token = galleryTransitionToken;
   currentView = view;
-  renderGallery();
-  document.querySelector(".gallery-section").scrollIntoView({ behavior: "smooth" });
+  clearTimeout(galleryTransitionTimer);
+  grid.style.minHeight = `${grid.offsetHeight}px`;
+  grid.setAttribute("aria-busy", "true");
+  grid.classList.remove("is-entering", "is-visible");
+  grid.classList.add("is-leaving");
+
+  document.querySelectorAll(".gallery-tabs button").forEach((control) => {
+    control.setAttribute("aria-pressed", String(control.dataset.view === currentView));
+  });
+  positionTabIndicator();
+
+  galleryTransitionTimer = window.setTimeout(() => {
+    if (token !== galleryTransitionToken) return;
+    renderGallery();
+    window.setTimeout(() => {
+      if (token !== galleryTransitionToken) return;
+      grid.style.minHeight = "";
+      grid.removeAttribute("aria-busy");
+    }, reducedMotion.matches ? 0 : 700);
+  }, reducedMotion.matches ? 0 : 150);
+
+  if (shouldScroll) {
+    gallerySection.scrollIntoView({
+      behavior: reducedMotion.matches ? "auto" : "smooth",
+      block: "start",
+    });
+  }
+}
+
+function setupRevealAnimations() {
+  const revealGroups = [
+    [".issue-line", "reveal-fade"],
+    [".hero-copy", "reveal-rise"],
+    [".hero-mosaic", "reveal-soft-tilt"],
+    [".hero-ticker", "reveal-wipe"],
+    [".section-heading", "reveal-rise"],
+    [".gallery-tabs", "reveal-fade"],
+    [".about-photo", "reveal-soft-tilt"],
+    [".about-section > div", "reveal-drift"],
+    [".contact-section > div", "reveal-rise"],
+    ["footer", "reveal-fade"],
+  ];
+
+  const elements = revealGroups.flatMap(([selector, variant]) =>
+    [...document.querySelectorAll(selector)].map((element) => {
+      element.classList.add("reveal", variant);
+      return element;
+    }),
+  );
+
+  if (!("IntersectionObserver" in window)) {
+    elements.forEach((element) => element.classList.add("is-revealed"));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-revealed");
+        observer.unobserve(entry.target);
+      });
+    },
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+  );
+  elements.forEach((element) => observer.observe(element));
 }
 
 function openLightbox(photos, index, trigger) {
@@ -249,14 +362,19 @@ function openLightbox(photos, index, trigger) {
   lastFocusedButton = trigger;
   updateLightbox();
   lightbox.hidden = false;
+  requestAnimationFrame(() => lightbox.classList.add("is-open"));
   document.body.classList.add("lightbox-open");
   closeButton.focus();
 }
 
 function closeLightbox() {
-  lightbox.hidden = true;
+  lightbox.classList.remove("is-open");
   document.body.classList.remove("lightbox-open");
-  lastFocusedButton?.focus();
+  const restoreFocus = lastFocusedButton;
+  window.setTimeout(() => {
+    lightbox.hidden = true;
+    restoreFocus?.focus();
+  }, reducedMotion.matches ? 0 : 180);
 }
 
 function moveLightbox(direction) {
@@ -280,19 +398,43 @@ function updateLightbox() {
 }
 
 document.querySelectorAll("[data-view]").forEach((control) => {
-  control.addEventListener("click", () => selectView(control.dataset.view));
+  control.addEventListener("click", () => selectView(control.dataset.view, control));
 });
 closeButton.addEventListener("click", closeLightbox);
+backdropButton.addEventListener("click", closeLightbox);
 document.querySelector("#lightbox-previous").addEventListener("click", () => moveLightbox(-1));
 document.querySelector("#lightbox-next").addEventListener("click", () => moveLightbox(1));
 lightbox.addEventListener("click", (event) => {
-  if (event.target === lightbox) closeLightbox();
+  if (event.target === event.currentTarget) closeLightbox();
 });
 document.addEventListener("keydown", (event) => {
   if (lightbox.hidden) return;
-  if (event.key === "Escape") closeLightbox();
-  if (event.key === "ArrowLeft") moveLightbox(-1);
-  if (event.key === "ArrowRight") moveLightbox(1);
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeLightbox();
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    moveLightbox(-1);
+  }
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    moveLightbox(1);
+  }
+  if (event.key === "Tab") {
+    const focusable = [...lightboxFrame.querySelectorAll("button:not([disabled])")];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 });
+
+window.addEventListener("resize", () => positionTabIndicator(true));
 
 loadPhotographs();
