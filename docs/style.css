@@ -158,34 +158,38 @@ em {
   transform: rotate(-1deg) translateY(-1px);
 }
 
+/* Official Peanuts GIPHY asset: https://giphy.com/stickers/3u08aEOC3qRXhCeVvP */
 .character-sprite {
+  position: relative;
   display: block;
   width: 66px;
-  aspect-ratio: 3 / 4;
-  background-image: url("snoopy-woodstock-action-sheet.png");
+  aspect-ratio: 1;
+  background-image: url("snoopy-online-puffer-still.png");
   background-repeat: no-repeat;
-  background-size: 400% 200%;
+  background-position: center;
+  background-size: contain;
   filter: drop-shadow(0 4px 4px rgba(25, 63, 49, 0.13));
   pointer-events: none;
 }
 
-.pose-camera {
-  background-position: 100% 0;
-}
-
-.pose-wave {
-  background-position: 66.666% 100%;
-}
-
+.pose-camera,
+.pose-wave,
 .pose-sit {
-  background-position: 100% 100%;
+  background-position: center;
 }
 
 .character-header {
   align-self: flex-end;
   width: 46px;
   margin: 0 10px -12px 8px;
-  animation: snoopy-camera-action 12s step-end infinite;
+}
+
+.character-header::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: url("snoopy-online-puffer.gif") center / contain no-repeat;
+  animation: snoopy-online-interval 12.8s step-end infinite;
 }
 
 .site-header nav {
@@ -1343,32 +1347,14 @@ em {
   transform: none;
 }
 
-@keyframes snoopy-camera-action {
+@keyframes snoopy-online-interval {
   0%,
-  3% {
-    background-position: 0 0;
+  9.9% {
+    opacity: 1;
   }
-  6% {
-    background-position: 33.333% 0;
-  }
-  9% {
-    background-position: 66.666% 0;
-  }
-  12% {
-    background-position: 100% 0;
-  }
-  15% {
-    background-position: 0 100%;
-  }
-  18% {
-    background-position: 33.333% 100%;
-  }
-  21% {
-    background-position: 66.666% 100%;
-  }
-  24%,
+  10%,
   100% {
-    background-position: 100% 100%;
+    opacity: 0;
   }
 }
 
@@ -1791,9 +1777,9 @@ em {
     transform: none;
   }
 
-  .character-header {
+  .character-header::after {
+    display: none !important;
     animation: none !important;
-    background-position: 100% 100%;
   }
 
   .marker-bird {
