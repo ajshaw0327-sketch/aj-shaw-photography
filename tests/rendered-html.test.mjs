@@ -81,6 +81,8 @@ test("about and contact form one route while the legacy contact URL redirects", 
   );
   assert.doesNotMatch(about, /the clues that make a place or gathering feel real/);
   assert.match(about, /class="booking-envelope"/);
+  assert.doesNotMatch(about, /editorial assignments/i);
+  assert.doesNotMatch(about, />Editorial</);
   assert.doesNotMatch(about, /class="story-chapter/);
   assert.doesNotMatch(about, /class="field-kit-chapter/);
   assert.match(legacyContact, /url=about\.html\?from=contact#contact/);
