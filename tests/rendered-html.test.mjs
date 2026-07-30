@@ -32,6 +32,7 @@ test("every rendered route includes the shared launch experience and local typog
     assert.match(html, /aj-shaw-launch-seen-v1/);
     assert.match(html, /id="critical-route-colors"/);
     assert.match(html, /name="theme-color" content="#f2eddd"/);
+    assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
     assert.match(html, /:root \{ --route-panel-top: 72px; color-scheme: light; background: #f2eddd; \}/);
     assert.match(html, /id="route-curtain"/);
     assert.match(html, /aj-shaw-route-transition-v1/);
@@ -79,6 +80,7 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.match(legacyContact, /location\.replace\("about\.html\?from=contact#contact"\)/);
   assert.match(legacyContact, /id="critical-route-colors"/);
   assert.match(legacyContact, /background-color: #f2eddd/);
+  assert.match(legacyContact, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
   assert.doesNotMatch(home, /Recent work/);
   assert.doesNotMatch(home, /class="route-cards home-route-cards"/);
   assert.doesNotMatch(home, /class="route-card-label"/);

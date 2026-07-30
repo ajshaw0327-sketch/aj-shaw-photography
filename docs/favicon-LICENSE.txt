@@ -1,0 +1,10 @@
+Camera pixel-art favicon
+
+Source: "Retro Items" by knekko
+Source page: https://opengameart.org/content/retro-items
+Original file: camera.png
+License: Creative Commons CC0 1.0 Universal
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+The source states that attribution is not required and the work is released
+into the public domain. This file records the asset's origin and license.
