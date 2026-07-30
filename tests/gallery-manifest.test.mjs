@@ -17,7 +17,7 @@ const landscape = path.join(
 );
 const portrait = path.join(
   repositoryRoot,
-  "photos/events/01-lunar-new-year/01-inside-the-dragon.jpg",
+  "photos/events/01-BPAC-lunar-new-year-event/01-inside-the-dragon.jpg",
 );
 const gif = path.join(repositoryRoot, "docs/woodstock-spin.gif");
 const png = path.join(repositoryRoot, "docs/snoopy-flowers-still.png");
@@ -54,6 +54,14 @@ test("folder names become predictable gallery sections without empty or hidden e
   assert.deepEqual(
     manifest.galleries.travel.map((section) => section.title),
     ["Italy 2026", "Tokyo Nights"],
+  );
+  assert.deepEqual(
+    manifest.galleries.travel.map((section) => section.id),
+    ["01-italy-2026", "04-japan/01-tokyo_nights"],
+  );
+  assert.deepEqual(
+    manifest.galleries.travel.map((section) => section.photos.length),
+    [2, 1],
   );
   assert.deepEqual(
     manifest.galleries.travel[0].photos.map((photo) => photo.title),

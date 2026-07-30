@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f2eddd" />
+    <style id="critical-route-colors">
+      :root { color-scheme: light; background: #f2eddd; }
+      html, body { min-height: 100%; margin: 0; background-color: #f2eddd; }
+      .route-curtain { position: fixed; inset: 0; z-index: 2147483000; visibility: hidden; pointer-events: none; background: linear-gradient(90deg, #193f31 0 42px, #bd9450 42px 47px, transparent 47px), #f2eddd; transform: translate3d(100%, 0, 0); transition: transform 260ms cubic-bezier(0.22, 0.8, 0.24, 1); contain: strict; }
+      html[data-route-arrival="true"] .route-curtain, .route-curtain.is-covering, .route-curtain.is-revealing { visibility: visible; }
+      html[data-route-arrival="true"] .route-curtain, .route-curtain.is-covering { pointer-events: auto; transform: translate3d(0, 0, 0); }
+      .route-curtain.is-revealing { pointer-events: auto; transform: translate3d(-100%, 0, 0); }
+      @media (prefers-reduced-motion: reduce) { .route-curtain { transition: none; } }
+    </style>
+    <script>
+      (() => {
+        try {
+          if (window.sessionStorage.getItem("aj-shaw-route-transition-v1") === "1") {
+            document.documentElement.dataset.routeArrival = "true";
+          }
+        } catch {}
+      })();
+    </script>
     <meta
       name="description"
       content="Travel, event, and sports photography by AJ Shaw, photographed on Fujifilm X-T50."
@@ -11,12 +31,36 @@
     <meta property="og:description" content="Small moments, kept with intention." />
     <meta property="og:image" content="og.png" />
     <title>AJ Shaw — Photographer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="style.css?v=20260728j" />
+    <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="style.css?v=20260730h" />
   </head>
   <body data-page="home" data-asset-root="./">
+    <div class="route-curtain" id="route-curtain" aria-hidden="true"></div>
+    <dialog class="launch-dialog" id="launch-dialog" aria-labelledby="launch-title" aria-describedby="launch-description">
+      <form class="launch-panel" method="dialog">
+        <button class="launch-skip" type="submit" value="skip">Skip intro <span aria-hidden="true">↗</span></button>
+        <div class="launch-masthead"><span>Field archive · Issue 01</span><span>Fujifilm X-T50</span></div>
+        <div class="launch-contact-strip" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="launch-title-stage">
+          <h1 class="launch-title" id="launch-title" data-face="editorial"><span>AJ Shaw</span><span>Photography</span></h1>
+        </div>
+        <p class="launch-description" id="launch-description">A field journal of places, people, and motion.</p>
+        <div class="launch-actions">
+          <button class="button button-primary launch-enter" type="submit" value="enter" autofocus>Enter Portfolio <span aria-hidden="true">↗</span></button>
+          <button class="character-sprite launch-character" data-character="walk" type="button" aria-label="Play Snoopy flower animation"></button>
+        </div>
+        <p class="launch-camera-note">AJ / Massachusetts / Visual stories since 2026</p>
+      </form>
+    </dialog>
+    <script>
+      (() => {
+        const launch = document.querySelector("#launch-dialog");
+        try {
+          launch?.addEventListener("close", () => window.sessionStorage.setItem("aj-shaw-launch-seen-v1", "1"), { once: true });
+          if (window.sessionStorage.getItem("aj-shaw-launch-seen-v1") !== "1" && typeof launch?.showModal === "function") launch.showModal();
+        } catch {}
+      })();
+    </script>
     <header class="site-header">
       <div class="brand-lockup">
         <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">
@@ -33,93 +77,57 @@
         Menu <span aria-hidden="true">＋</span>
       </button>
       <nav id="primary-navigation" aria-label="Primary navigation">
-        <span class="nav-marker" aria-hidden="true"><i class="marker-bird"></i></span>
         <a href="./" data-route="home">Home</a>
         <a href="travel.html" data-route="travel">Travel</a>
         <a href="events.html" data-route="events">Events</a>
         <a href="sports.html" data-route="sports">Sports</a>
-        <a href="about.html" data-route="about">About</a>
-        <a href="contact.html" data-route="contact">Contact</a>
+        <a href="about.html" data-route="about">About / Contact</a>
       </nav>
     </header>
 
-    <main class="page page-home">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="issue-line">
-          <span>AJ Shaw / Field journal</span>
-          <span>Massachusetts · 2026</span>
-          <span>Fujifilm X-T50</span>
-        </div>
-        <div class="hero-layout">
-          <div class="hero-copy">
-            <p class="kicker">Travel · Events · Sport</p>
-            <h1 id="hero-title">
-              Small moments,
-              <em>kept with intention.</em>
-            </h1>
-            <p class="dek">
-              Documentary-minded photographs of new places, shared traditions,
-              and the energy of play—made with a Fujifilm X-T50 and an eye for
-              honest color.
-            </p>
-            <a class="button button-primary" href="travel.html">
-              Browse the archive <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-          <div class="hero-mosaic-wrap">
-            <span class="character-sprite character-hero" data-character="walk" role="button" tabindex="0" aria-label="Play Snoopy flower animation"></span>
-            <div
-              class="hero-mosaic"
-              id="hero-mosaic"
-              aria-label="Selected photographs"
-            ></div>
-          </div>
-        </div>
-        <div class="hero-ticker" aria-label="Portfolio themes">
-          <span>Places in passing</span>
-          <span>People in motion</span>
-          <span>Light as it happened</span>
-          <span>Shot on Fujifilm X-T50</span>
-        </div>
-      </section>
-
-      <section
-        class="gallery-section gallery-section-home"
-        aria-labelledby="gallery-title"
-        data-gallery-view="home"
-      >
-        <div class="section-heading">
-          <div>
-            <p class="kicker">Mixed-format edit / selected frames</p>
-            <h2 id="gallery-title">Recent work</h2>
-          </div>
-          <p>
-            A short edit from the Travel, Events, and Sports journals. Open a
-            photograph for the full frame and field notes.
-          </p>
-        </div>
-        <div class="gallery-groups" id="photo-grid" aria-live="polite"></div>
-        <p class="gallery-status" id="gallery-status">Preparing the contact sheet…</p>
-        <div class="route-cards" aria-label="Explore photography portfolios">
-          <a href="travel.html"><span>01</span>Travel &amp; Street <b>↗</b></a>
-          <a href="events.html"><span>02</span>Events <b>↗</b></a>
-          <a href="sports.html"><span>03</span>Sports <b>↗</b></a>
+    <main class="page page-home living-home">
+      <section class="category-portals" aria-labelledby="category-portals-title">
+        <header class="category-portals-heading">
+          <h2 id="category-portals-title">Choose a field file.</h2>
+          <span
+            class="character-sprite character-home-file"
+            data-character="walk"
+            role="button"
+            tabindex="0"
+            aria-label="Play Snoopy walking animation"
+          ></span>
+        </header>
+        <div class="category-portal-grid">
+          <a class="category-portal category-portal-travel" href="travel.html" data-category-preview="travel">
+            <span class="category-portal-code">TRV / 01</span>
+            <div class="category-portal-preview" aria-hidden="true"></div>
+            <div class="category-portal-copy">
+              <h3>Travel &amp; Street</h3>
+              <p>Layered like postcards collected on the way.</p>
+              <strong>Open travel archive <i aria-hidden="true">↗</i></strong>
+            </div>
+          </a>
+          <a class="category-portal category-portal-events" href="events.html" data-category-preview="events">
+            <span class="category-portal-code">EVT / 02</span>
+            <div class="category-portal-preview" aria-hidden="true"></div>
+            <div class="category-portal-copy">
+              <h3>Events</h3>
+              <p>Invitations, programs, gestures, and shared traditions.</p>
+              <strong>Open events archive <i aria-hidden="true">↗</i></strong>
+            </div>
+          </a>
+          <a class="category-portal category-portal-sports" href="sports.html" data-category-preview="sports">
+            <span class="category-portal-code">SPT / 03</span>
+            <div class="category-portal-preview" aria-hidden="true"></div>
+            <div class="category-portal-copy">
+              <h3>Sports</h3>
+              <p>Contact frames from the seconds before and after the play.</p>
+              <strong>Open sports archive <i aria-hidden="true">↗</i></strong>
+            </div>
+          </a>
         </div>
       </section>
     </main>
-
-    <footer class="site-footer">
-      <p>© 2026 AJ Shaw Photography</p>
-      <span class="character-sprite character-footer" data-character="sleep" role="button" tabindex="0" aria-label="Play sleeping Snoopy animation"></span>
-      <a href="https://github.com/ajshaw0327-sketch/aj-shaw-photography">GitHub ↗</a>
-      <a
-        href="https://www.instagram.com/aj.phots_/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Instagram, @aj.phots_"
-      >Instagram @aj.phots_ ↗</a>
-      <a href="./">Back to cover ↑</a>
-    </footer>
 
     <div class="lightbox" id="lightbox" hidden aria-label="Photo viewer backdrop">
       <button
@@ -133,6 +141,7 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="lightbox-title"
+        aria-describedby="lightbox-detail"
       >
         <div class="lightbox-topline">
           <span><i aria-hidden="true"></i><b id="lightbox-count">Frame 1 / 1</b></span>
@@ -157,6 +166,6 @@
     </div>
 
     <script src="gallery-manifest.js?v=20260728a"></script>
-    <script src="app.js?v=20260728g"></script>
+    <script src="app.js?v=20260730h"></script>
   </body>
 </html>
