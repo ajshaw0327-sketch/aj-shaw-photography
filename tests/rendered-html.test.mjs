@@ -75,6 +75,11 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.match(about, /Bookings &amp; collaborations/);
   assert.match(about, /@aj\.phots_/);
   assert.match(about, /class="profile-portrait"/);
+  assert.match(
+    about,
+    /I’m AJ Shaw, a Massachusetts-based photographer drawn to honest color, quick gestures, and the moments that make a place or gathering feel real\./,
+  );
+  assert.doesNotMatch(about, /the clues that make a place or gathering feel real/);
   assert.match(about, /class="booking-envelope"/);
   assert.doesNotMatch(about, /class="story-chapter/);
   assert.doesNotMatch(about, /class="field-kit-chapter/);
