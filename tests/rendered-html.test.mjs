@@ -25,6 +25,7 @@ test("every rendered route includes the shared launch experience and local typog
   for (const [filename, route] of pages) {
     const html = await readFile(path.join(outputRoot, filename), "utf8");
     assert.match(html, new RegExp(`<body[^>]+data-page="${route}"`));
+    assert.match(html, /content="width=device-width, initial-scale=1\.0, viewport-fit=cover"/);
     assert.match(html, /id="launch-dialog"/);
     assert.match(html, /id="launch-title"/);
     assert.match(html, /Enter Portfolio/);
@@ -34,6 +35,7 @@ test("every rendered route includes the shared launch experience and local typog
     assert.match(html, /name="theme-color" content="#f2eddd"/);
     assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
     assert.match(html, /:root \{ --route-panel-top: 72px; color-scheme: light; background: #f2eddd; \}/);
+    assert.match(html, /--route-panel-top: calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
     assert.match(html, /id="route-curtain"/);
     assert.match(html, /aj-shaw-route-transition-v1/);
     assert.match(html, /aj-shaw-route-transition-started-v1/);
@@ -79,6 +81,7 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.match(legacyContact, /url=about\.html\?from=contact#contact/);
   assert.match(legacyContact, /location\.replace\("about\.html\?from=contact#contact"\)/);
   assert.match(legacyContact, /id="critical-route-colors"/);
+  assert.match(legacyContact, /content="width=device-width, initial-scale=1\.0, viewport-fit=cover"/);
   assert.match(legacyContact, /background-color: #f2eddd/);
   assert.match(legacyContact, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
   assert.doesNotMatch(home, /Recent work/);
@@ -131,6 +134,9 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /\.route-curtain::after/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.route-curtain\s*\{[\s\S]*transition:\s*opacity 140ms ease/);
   assert.match(css, /@media \(max-width: 860px\)[\s\S]*body\[data-page="home"\] \.category-portal-grid/);
+  assert.match(css, /min-height:\s*calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
+  assert.match(css, /padding-top:\s*calc\(7px \+ env\(safe-area-inset-top, 0px\)\)/);
+  assert.match(css, /\.site-header\s*\{[\s\S]*background:\s*var\(--paper\);[\s\S]*backdrop-filter:\s*none;/);
   assert.doesNotMatch(css, /@view-transition|::view-transition|view-transition-name/);
   assert.doesNotMatch(css, /\.route-leaving \.page/);
   assert.doesNotMatch(css, /body:not\(\.route-ready\)[\s\S]{0,180}\.page/);

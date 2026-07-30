@@ -3320,11 +3320,13 @@ body[data-page="sports"] .portfolio-label h1 {
   }
 
   .site-header {
-    min-height: 64px;
-    padding-top: 7px;
+    min-height: calc(64px + env(safe-area-inset-top, 0px));
+    padding-top: calc(7px + env(safe-area-inset-top, 0px));
     padding-bottom: 7px;
     padding-right: 16px;
     padding-left: 16px;
+    background: var(--paper);
+    backdrop-filter: none;
   }
 
   .wordmark {
