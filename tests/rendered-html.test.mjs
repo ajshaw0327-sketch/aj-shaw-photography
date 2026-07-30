@@ -93,6 +93,9 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.doesNotMatch(home, /An archive that/);
   assert.equal((home.match(/data-category-preview=/g) || []).length, 3);
   assert.match(home, /Choose a field file\./);
+  assert.doesNotMatch(home, /Layered like postcards collected on the way/);
+  assert.doesNotMatch(home, /Invitations, programs, gestures, and shared traditions/);
+  assert.doesNotMatch(home, /Contact frames from the seconds before and after the play/);
   assert.match(home, /class="character-sprite character-home-file"/);
   assert.match(home, /data-character="walk"/);
   assert.doesNotMatch(home, /Three ways into the archive/);

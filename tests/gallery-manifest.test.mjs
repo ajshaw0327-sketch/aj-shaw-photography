@@ -11,14 +11,8 @@ import {
 } from "../scripts/generate-gallery-manifest.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const landscape = path.join(
-  repositoryRoot,
-  "photos/travel/01-providence/01-providence-light.jpg",
-);
-const portrait = path.join(
-  repositoryRoot,
-  "photos/events/01-BPAC-lunar-new-year-event/01-inside-the-dragon.jpg",
-);
+const landscape = path.join(repositoryRoot, "docs/aj-portrait.jpg");
+const portrait = path.join(repositoryRoot, "docs/snoopy-sleep-still.png");
 const gif = path.join(repositoryRoot, "docs/woodstock-spin.gif");
 const png = path.join(repositoryRoot, "docs/snoopy-flowers-still.png");
 
@@ -33,7 +27,7 @@ test("folder names become predictable gallery sections without empty or hidden e
   await copyFixture(landscape, path.join(root, "featured/01-opening # shot.JPG"));
   await copyFixture(landscape, path.join(root, "featured/nested/02-not-featured.jpg"));
   await copyFixture(landscape, path.join(root, "travel/01-italy-2026/01-opening-shot.jpg"));
-  await copyFixture(portrait, path.join(root, "travel/01-italy-2026/02-tall_portrait.jpeg"));
+  await copyFixture(portrait, path.join(root, "travel/01-italy-2026/02-tall_portrait.png"));
   await mkdir(path.join(root, "travel/02-empty"), { recursive: true });
   await writeFile(path.join(root, "travel/02-empty/.gitkeep"), "");
   await copyFixture(landscape, path.join(root, "travel/03-hidden/.secret.jpg"));
