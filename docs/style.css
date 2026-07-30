@@ -5035,7 +5035,8 @@ body[data-page="sports"] .portfolio-label h1 {
   grid-template-columns: minmax(300px, 0.65fr) minmax(470px, 1.35fr);
   align-items: center;
   gap: clamp(50px, 8vw, 125px);
-  min-height: calc(100vh - 82px);
+  min-height: 0;
+  padding-top: clamp(46px, 6vw, 84px);
   scroll-margin-top: 92px;
   background:
     radial-gradient(circle at 20% 25%, rgba(255, 255, 255, 0.48), transparent 26rem),

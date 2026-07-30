@@ -145,6 +145,8 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /min-height:\s*calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
   assert.match(css, /padding-top:\s*calc\(7px \+ env\(safe-area-inset-top, 0px\)\)/);
   assert.match(css, /\.site-header\s*\{[\s\S]*background:\s*var\(--paper\);[\s\S]*backdrop-filter:\s*none;/);
+  assert.match(css, /\.booking-chapter\s*\{[\s\S]{0,320}min-height:\s*0;/);
+  assert.doesNotMatch(css, /\.booking-chapter\s*\{[\s\S]{0,320}min-height:\s*calc\(100vh/);
   assert.doesNotMatch(css, /@view-transition|::view-transition|view-transition-name/);
   assert.doesNotMatch(css, /\.route-leaving \.page/);
   assert.doesNotMatch(css, /body:not\(\.route-ready\)[\s\S]{0,180}\.page/);
