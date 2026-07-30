@@ -13,6 +13,13 @@ const pages = [
   ["sports.html", "sports"],
   ["about.html", "about"],
 ];
+const routePanels = {
+  home: ["HOME / 00", "Home"],
+  travel: ["TRV / 01", "Travel"],
+  events: ["EVT / 02", "Events"],
+  sports: ["SPT / 03", "Sports"],
+  about: ["ABOUT / 04", "About"],
+};
 
 test("every rendered route includes the shared launch experience and local typography", async () => {
   for (const [filename, route] of pages) {
@@ -25,9 +32,16 @@ test("every rendered route includes the shared launch experience and local typog
     assert.match(html, /aj-shaw-launch-seen-v1/);
     assert.match(html, /id="critical-route-colors"/);
     assert.match(html, /name="theme-color" content="#f2eddd"/);
-    assert.match(html, /:root \{ color-scheme: light; background: #f2eddd; \}/);
+    assert.match(html, /:root \{ --route-panel-top: 72px; color-scheme: light; background: #f2eddd; \}/);
     assert.match(html, /id="route-curtain"/);
     assert.match(html, /aj-shaw-route-transition-v1/);
+    assert.match(html, /aj-shaw-route-transition-started-v1/);
+    assert.match(html, /data-route-curtain-code/);
+    assert.match(html, /data-route-curtain-title/);
+    assert.match(html, /class="route-curtain-progress-track"/);
+    assert.match(html, /data-route-curtain-retry/);
+    assert.ok(html.includes(routePanels[route][0]));
+    assert.ok(html.includes(`data-route-curtain-title>${routePanels[route][1]}`));
     assert.ok(
       html.indexOf('id="critical-route-colors"') < html.indexOf('<link rel="stylesheet"'),
       `${filename} must paint cream before loading the external stylesheet`,
@@ -113,7 +127,7 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.doesNotMatch(css, /\.archive-cursor/);
   assert.match(css, /\.route-curtain::before/);
   assert.match(css, /\.route-curtain::after/);
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.route-curtain\s*\{[\s\S]*transition:\s*none/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.route-curtain\s*\{[\s\S]*transition:\s*opacity 140ms ease/);
   assert.match(css, /@media \(max-width: 860px\)[\s\S]*body\[data-page="home"\] \.category-portal-grid/);
   assert.doesNotMatch(css, /@view-transition|::view-transition|view-transition-name/);
   assert.doesNotMatch(css, /\.route-leaving \.page/);
@@ -135,6 +149,14 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /const routeTransitionKey = "aj-shaw-route-transition-v1"/);
   assert.match(script, /function beginRouteNavigation/);
   assert.match(script, /routeNavigationLocked/);
+  assert.match(script, /function syncRouteCurtainBoundary/);
+  assert.match(script, /getBoundingClientRect\(\)\.bottom/);
+  assert.match(script, /setRouteCurtainLoading/);
+  assert.match(script, /showRouteCurtainError/);
+  assert.match(script, /fetch\(destination\.href/);
+  assert.match(script, /response\.text\(\)/);
+  assert.match(script, /window\.history\.pushState/);
+  assert.match(script, /focusNewRouteHeading/);
   assert.match(script, /classList\.add\("is-covering"\)/);
   assert.match(script, /classList\.add\("is-revealing"\)/);
   assert.match(script, /"transitionend"/);

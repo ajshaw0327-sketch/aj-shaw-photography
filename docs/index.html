@@ -6,19 +6,24 @@
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#f2eddd" />
     <style id="critical-route-colors">
-      :root { color-scheme: light; background: #f2eddd; }
+      :root { --route-panel-top: 72px; color-scheme: light; background: #f2eddd; }
       html, body { min-height: 100%; margin: 0; background-color: #f2eddd; }
-      .route-curtain { position: fixed; inset: 0; z-index: 2147483000; visibility: hidden; pointer-events: none; background: linear-gradient(90deg, #193f31 0 42px, #bd9450 42px 47px, transparent 47px), #f2eddd; transform: translate3d(100%, 0, 0); transition: transform 260ms cubic-bezier(0.22, 0.8, 0.24, 1); contain: strict; }
-      html[data-route-arrival="true"] .route-curtain, .route-curtain.is-covering, .route-curtain.is-revealing { visibility: visible; }
-      html[data-route-arrival="true"] .route-curtain, .route-curtain.is-covering { pointer-events: auto; transform: translate3d(0, 0, 0); }
-      .route-curtain.is-revealing { pointer-events: auto; transform: translate3d(-100%, 0, 0); }
-      @media (prefers-reduced-motion: reduce) { .route-curtain { transition: none; } }
+      .route-curtain { position: fixed; top: var(--route-panel-top); right: 0; bottom: 0; left: 0; z-index: 45; display: grid; place-items: center; visibility: hidden; pointer-events: none; color: #faf6e9; border-top: 3px solid #102e24; background: #193f31; transform: translate3d(0, calc(100% + 30px), 0); transition: transform 360ms cubic-bezier(0.24, 0.82, 0.3, 1); }
+      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading, .route-curtain.is-error, .route-curtain.is-revealing { visibility: visible; }
+      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading, .route-curtain.is-error { pointer-events: auto; transform: translate3d(0, 0, 0); }
+      .route-curtain.is-revealing { pointer-events: auto; transform: translate3d(0, calc(100% + 30px), 0); }
+      @media (max-width: 520px) { :root { --route-panel-top: 64px; } }
+      @media (prefers-reduced-motion: reduce) { .route-curtain { transform: none !important; transition: opacity 140ms ease; } .route-curtain.is-revealing { opacity: 0; background: #f2eddd; } }
     </style>
     <script>
       (() => {
         try {
           if (window.sessionStorage.getItem("aj-shaw-route-transition-v1") === "1") {
             document.documentElement.dataset.routeArrival = "true";
+            const started = Number(window.sessionStorage.getItem("aj-shaw-route-transition-started-v1"));
+            if (started) window.setTimeout(() => {
+              if (document.documentElement.dataset.routeArrival === "true") document.documentElement.dataset.routeLoading = "";
+            }, Math.max(0, 400 - (Date.now() - started)));
           }
         } catch {}
       })();
@@ -32,10 +37,24 @@
     <meta property="og:image" content="og.png" />
     <title>AJ Shaw — Photographer</title>
     <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260730h" />
+    <link rel="stylesheet" href="style.css?v=20260730i" />
   </head>
   <body data-page="home" data-asset-root="./">
-    <div class="route-curtain" id="route-curtain" aria-hidden="true"></div>
+    <div class="route-curtain" id="route-curtain" aria-hidden="true">
+      <div class="route-curtain-panel">
+        <span class="route-curtain-code" data-route-curtain-code>HOME / 00</span>
+        <strong class="route-curtain-title" data-route-curtain-title>Home</strong>
+        <span class="route-curtain-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="route-curtain-progress">
+          <span class="route-curtain-status" data-route-curtain-status aria-live="polite">Preparing archive</span>
+          <span class="route-curtain-progress-track" aria-hidden="true"></span>
+        </div>
+        <div class="route-curtain-error" role="alert">
+          <p>The archive could not be prepared. Check your connection and try again.</p>
+          <button class="route-curtain-retry" data-route-curtain-retry type="button">Try again</button>
+        </div>
+      </div>
+    </div>
     <dialog class="launch-dialog" id="launch-dialog" aria-labelledby="launch-title" aria-describedby="launch-description">
       <form class="launch-panel" method="dialog">
         <button class="launch-skip" type="submit" value="skip">Skip intro <span aria-hidden="true">↗</span></button>
@@ -166,6 +185,6 @@
     </div>
 
     <script src="gallery-manifest.js?v=20260728a"></script>
-    <script src="app.js?v=20260730h"></script>
+    <script src="app.js?v=20260730i"></script>
   </body>
 </html>
