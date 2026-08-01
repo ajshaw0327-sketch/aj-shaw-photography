@@ -21,16 +21,23 @@ const routePanels = {
   about: ["ABOUT / 04", "About"],
 };
 
-test("every rendered route includes the shared launch experience and local typography", async () => {
+test("every rendered route includes the automatic archive introduction and local typography", async () => {
   for (const [filename, route] of pages) {
     const html = await readFile(path.join(outputRoot, filename), "utf8");
     assert.match(html, new RegExp(`<body[^>]+data-page="${route}"`));
     assert.match(html, /content="width=device-width, initial-scale=1\.0, viewport-fit=cover"/);
-    assert.match(html, /id="launch-dialog"/);
+    assert.match(html, /id="launch-sequence"/);
     assert.match(html, /id="launch-title"/);
-    assert.match(html, /Enter Portfolio/);
-    assert.match(html, /Skip intro/);
-    assert.match(html, /aj-shaw-launch-seen-v1/);
+    assert.match(html, /class="launch-contact-frames"/);
+    assert.match(html, /Preparing archive/);
+    assert.match(html, /aria-label="AJ Shaw Photography"/);
+    assert.match(html, /data-typewriter-title/);
+    assert.match(html, /class="launch-typewriter-cursor"/);
+    assert.match(html, /aj-shaw-archive-intro-seen-v9/);
+    assert.doesNotMatch(html, /Enter Portfolio|Skip intro|<dialog/);
+    assert.doesNotMatch(html, /data-face=|launch-camera-burst|launch-character/);
+    assert.doesNotMatch(html, /launch-tagline|data-typewriter-tagline|Places\. People\. Motion\./);
+    assert.doesNotMatch(html, /aj-shaw-launch-seen-v1/);
     assert.match(html, /id="critical-route-colors"/);
     assert.match(html, /name="theme-color" content="#f2eddd"/);
     assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
@@ -50,7 +57,7 @@ test("every rendered route includes the shared launch experience and local typog
       `${filename} must paint cream before loading the external stylesheet`,
     );
     assert.ok(
-      html.indexOf('id="route-curtain"') < html.indexOf('id="launch-dialog"'),
+      html.indexOf('id="route-curtain"') < html.indexOf('id="launch-sequence"'),
       `${filename} must create the transition surface before visible page content`,
     );
     assert.match(html, /fonts\/cormorant-garamond-latin\.woff2/);
@@ -143,6 +150,20 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /\.route-curtain::before/);
   assert.match(css, /\.route-curtain::after/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.route-curtain\s*\{[\s\S]*transition:\s*opacity 140ms ease/);
+  assert.match(css, /\.launch-sequence\s*\{[\s\S]*position:\s*fixed;[\s\S]*background:[\s\S]*var\(--paper\)/);
+  assert.match(css, /\.launch-sequence\.is-settling \.launch-title-stage/);
+  assert.match(css, /\.launch-sequence\.is-waiting \.launch-status-row i::after/);
+  assert.match(css, /@keyframes launch-cursor-blink/);
+  assert.match(css, /\.launch-typewriter-card/);
+  assert.match(css, /\.launch-typewriter-cursor/);
+  assert.match(css, /photos\/featured\/01-big-catch\.jpg/);
+  assert.match(css, /photos\/featured\/02-inside-the-dragon\.jpg/);
+  assert.match(css, /photos\/featured\/03-Laying-of-hands\.jpg/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.launch-sequence\s*\{[\s\S]*transition:\s*opacity 140ms ease/);
+  assert.doesNotMatch(css, /\.launch-dialog|\.launch-enter|\.launch-skip/);
+  assert.doesNotMatch(css, /launch-camera-burst|data-face=|is-changing/);
+  assert.doesNotMatch(css, /launch-carriage-return|is-carriage-return/);
+  assert.doesNotMatch(css, /launch-tagline|url\("og\.png"\)/);
   assert.match(css, /@media \(max-width: 860px\)[\s\S]*body\[data-page="home"\] \.category-portal-grid/);
   assert.match(css, /min-height:\s*calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
   assert.match(css, /padding-top:\s*calc\(7px \+ env\(safe-area-inset-top, 0px\)\)/);
@@ -182,6 +203,17 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /"transitionend"/);
   assert.match(script, /window\.location\.assign\(destination\.href\)/);
   assert.match(script, /"pagehide"/);
+  assert.match(script, /setupLaunchExperience\(essentialRouteReady\)/);
+  assert.match(script, /"archiveintrocomplete"/);
+  assert.match(script, /launchSequence\.addEventListener\("pointerdown"/);
+  assert.match(script, /document\.addEventListener\("keydown", onKeydown/);
+  assert.match(script, /classList\.add\("is-waiting"\)/);
+  assert.match(script, /typeLine\(launchTypedTitle, "AJ Shaw Photography"/);
+  assert.doesNotMatch(script, /is-carriage-return|carriage-return/);
+  assert.match(script, /const launchSessionKey = "aj-shaw-archive-intro-seen-v9"/);
+  assert.doesNotMatch(script, /launchDialog|dismissLaunch/);
+  assert.doesNotMatch(script, /launchFaces|startLaunchTypography|data\.face|is-flashing/);
+  assert.doesNotMatch(script, /launchTypedTagline|is-typing-tagline|Places\. People\. Motion\./);
   assert.match(script, /lightboxSwapTimer/);
   assert.match(script, /element\.inert = true/);
   assert.doesNotMatch(script, /positionNavigationMarker|nav-proximity/);
