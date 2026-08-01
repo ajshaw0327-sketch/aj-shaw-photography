@@ -413,286 +413,471 @@ em {
   outline-offset: 4px;
 }
 
-.launch-dialog {
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
-  margin: 0;
-  padding:
-    max(24px, env(safe-area-inset-top))
-    max(24px, env(safe-area-inset-right))
-    max(24px, env(safe-area-inset-bottom))
-    max(24px, env(safe-area-inset-left));
-  overflow: auto;
-  border: 0;
-  color: var(--ink);
-  opacity: 1;
-  background:
-    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.54), transparent 22rem),
-    repeating-linear-gradient(
-      0deg,
-      rgba(25, 63, 49, 0.025) 0 1px,
-      transparent 1px 8px
-    ),
-    var(--paper);
-  transition:
-    opacity 220ms ease,
-    transform 240ms var(--ease);
-}
-
-.launch-dialog[open] {
+.launch-sequence {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
   display: grid;
   place-items: center;
+  padding:
+    max(22px, env(safe-area-inset-top))
+    max(22px, env(safe-area-inset-right))
+    max(22px, env(safe-area-inset-bottom))
+    max(22px, env(safe-area-inset-left));
+  overflow: hidden;
+  color: var(--forest);
+  opacity: 1;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.62), transparent 24rem),
+    repeating-linear-gradient(0deg, rgba(25, 63, 49, 0.022) 0 1px, transparent 1px 8px),
+    var(--paper);
+  transition: opacity 300ms ease;
+  isolation: isolate;
+  touch-action: manipulation;
 }
 
-.launch-dialog::backdrop {
-  background: rgba(25, 63, 49, 0.78);
+.launch-sequence[hidden] {
+  display: none;
 }
 
-.launch-dialog.is-closing {
+.launch-sequence.is-revealing {
   opacity: 0;
-  transform: translateY(-7px);
   pointer-events: none;
 }
 
-.launch-panel {
+.launch-sequence-canvas {
   position: relative;
-  display: grid;
-  width: min(980px, 100%);
-  min-height: min(690px, calc(100dvh - 48px));
-  margin: auto;
-  padding: clamp(24px, 5vw, 60px);
+  width: min(1180px, 100%);
+  height: min(720px, calc(100dvh - 44px));
+  min-height: 480px;
   overflow: hidden;
-  border: 2px solid var(--forest);
-  border-radius: 3px 8px 4px 5px;
+  border: 1px solid rgba(25, 63, 49, 0.5);
   background:
-    linear-gradient(rgba(250, 246, 233, 0.9), rgba(250, 246, 233, 0.9)),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 74px,
-      rgba(25, 63, 49, 0.05) 74px 75px
-    ),
-    var(--paper-light);
+    linear-gradient(90deg, rgba(25, 63, 49, 0.04) 1px, transparent 1px) 0 0 / 86px 100%,
+    linear-gradient(rgba(25, 63, 49, 0.035) 1px, transparent 1px) 0 0 / 100% 86px,
+    rgba(250, 246, 233, 0.74);
   box-shadow:
-    13px 15px 0 var(--gold),
-    0 28px 80px rgba(25, 45, 35, 0.24);
-  isolation: isolate;
+    12px 14px 0 rgba(189, 148, 80, 0.32),
+    0 28px 80px rgba(25, 45, 35, 0.16);
 }
 
-.launch-panel::before {
+.launch-sequence-canvas::before {
   position: absolute;
-  inset: 9px;
-  z-index: -1;
-  border: 1px dashed rgba(25, 63, 49, 0.3);
+  inset: 10px;
+  border: 1px dashed rgba(25, 63, 49, 0.24);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.88);
+  transition: opacity 180ms ease, transform 520ms var(--ease);
+}
+
+.launch-sequence.is-assembling .launch-sequence-canvas::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.launch-archive-header {
+  position: absolute;
+  top: 28px;
+  right: 34px;
+  left: 34px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--brown);
+  font-family: "AJ Geist Mono", "Courier New", monospace;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 180ms ease 70ms, transform 380ms var(--ease) 70ms;
+}
+
+.launch-sequence.is-assembling .launch-archive-header {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.launch-assembly-rule {
+  position: absolute;
+  top: 57px;
+  right: 34px;
+  left: 34px;
+  height: 2px;
+  background: var(--forest);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 500ms var(--ease) 100ms;
+}
+
+.launch-sequence.is-assembling .launch-assembly-rule {
+  transform: scaleX(1);
+}
+
+.launch-contact-numbers {
+  position: absolute;
+  top: 78px;
+  bottom: 28px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--gold);
+  font-family: "AJ Geist Mono", "Courier New", monospace;
+  font-size: 0.54rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 180ms ease 180ms, transform 380ms var(--ease) 180ms;
+}
+
+.launch-sequence.is-assembling .launch-contact-numbers {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.launch-title-stage {
+  position: absolute;
+  inset: 23% 12% 22%;
+  display: grid;
+  place-items: center;
+  z-index: 4;
+  min-height: 0;
+  transition: inset 520ms var(--ease), transform 520ms var(--ease);
+}
+
+.launch-typewriter-card {
+  position: relative;
+  width: min(780px, 100%);
+  min-height: clamp(210px, 30vw, 292px);
+  padding: clamp(34px, 5vw, 58px) clamp(27px, 5.4vw, 66px);
+  border: 1px solid var(--forest);
+  color: var(--forest);
+  opacity: 0;
+  background:
+    linear-gradient(90deg, transparent 0 11%, rgba(189, 148, 80, 0.1) 11% calc(11% + 1px), transparent calc(11% + 1px)),
+    repeating-linear-gradient(0deg, rgba(25, 63, 49, 0.025) 0 1px, transparent 1px 28px),
+    var(--paper-light);
+  box-shadow:
+    10px 12px 0 rgba(189, 148, 80, 0.38),
+    0 20px 48px rgba(25, 63, 49, 0.1);
+  transform: translateY(15px) rotate(-0.25deg);
+  transition: opacity 220ms ease, transform 520ms var(--ease), width 520ms var(--ease), padding 520ms var(--ease);
+}
+
+.launch-sequence.is-assembling .launch-typewriter-card {
+  opacity: 1;
+  transform: translateY(0) rotate(-0.25deg);
+}
+
+.launch-registration-marks,
+.launch-registration-marks::before,
+.launch-registration-marks::after {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-color: var(--gold);
   content: "";
   pointer-events: none;
 }
 
-.launch-skip {
-  position: absolute;
-  top: clamp(18px, 3vw, 31px);
-  right: clamp(18px, 3vw, 31px);
-  z-index: 3;
-  min-height: 42px;
-  padding: 0 11px;
-  border: 0;
-  border-bottom: 1px solid currentColor;
-  color: var(--forest);
-  background: transparent;
-  font-family: "AJ Geist Mono", "Courier New", monospace;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    color 150ms ease,
-    background 150ms ease,
-    box-shadow 150ms ease;
+.launch-registration-marks {
+  top: 12px;
+  left: 12px;
+  border-top: 1px solid;
+  border-left: 1px solid;
 }
 
-.launch-skip span {
-  display: inline-block;
-  margin-left: 5px;
-  transition: transform 150ms var(--ease);
+.launch-registration-marks::before {
+  top: 0;
+  left: calc(100% + min(710px, 64vw));
+  border-top: 1px solid;
+  border-right: 1px solid;
 }
 
-.launch-skip:hover,
-.launch-skip:focus-visible {
-  color: var(--paper-light);
-  background: var(--forest);
-  box-shadow: 3px 3px 0 var(--gold);
-}
-
-.launch-skip:hover span,
-.launch-skip:focus-visible span {
-  transform: translate(3px, -2px);
-}
-
-.launch-skip:active {
-  box-shadow: inset 0 0 0 2px rgba(250, 246, 233, 0.22);
-}
-
-.launch-masthead {
-  display: flex;
-  justify-content: space-between;
-  gap: 150px;
-  padding: 1px 118px 12px 0;
-  border-bottom: 1px solid rgba(25, 63, 49, 0.52);
-  color: var(--forest);
-  font-family: "AJ Geist Mono", "Courier New", monospace;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-.launch-contact-strip {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.launch-contact-strip span {
-  width: 34px;
-  height: 12px;
-  border: 1px solid rgba(25, 63, 49, 0.48);
-  background: var(--paper-deep);
-  box-shadow: inset 0 0 0 2px var(--paper-light);
-}
-
-.launch-title-stage {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  min-height: clamp(255px, 34vw, 390px);
-  padding: 18px 0 6px;
+.launch-registration-marks::after {
+  top: calc(100% + clamp(168px, 25vw, 238px));
+  left: 0;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
 }
 
 .launch-title {
-  --launch-face-scale: 1;
-  grid-area: 1 / 1;
-  width: min(100%, 850px);
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
   margin: 0;
   color: var(--forest);
-  font-size: clamp(4.2rem, 10.5vw, 8.9rem);
-  line-height: 0.72;
-  letter-spacing: -0.055em;
-  text-align: center;
-  text-wrap: balance;
+  font-family: "AJ Geist Mono", "Courier New", monospace;
   font-synthesis: none;
+  white-space: pre;
+}
+
+.launch-title {
+  min-height: 1.25em;
+  font-size: clamp(2.35rem, 6.2vw, 5.45rem);
+  font-weight: 720;
+  letter-spacing: -0.065em;
+  line-height: 1.08;
+  text-shadow: 0.5px 0 rgba(25, 63, 49, 0.34);
+}
+
+.launch-typewriter-cursor {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 0.58ch;
+  height: 0.88em;
+  margin-left: 0.15ch;
+  background: var(--gold);
+  opacity: 0;
+  transform: translateY(0.08em);
+}
+
+.launch-title .launch-typewriter-cursor {
+  height: 0.82em;
+}
+
+.launch-sequence.is-typing-title:not(.is-typed) .launch-title .launch-typewriter-cursor {
   opacity: 1;
-  transform: scale(var(--launch-face-scale));
-  transform-origin: center;
-  transition:
-    opacity 150ms ease,
-    color 180ms ease;
+  animation: launch-cursor-blink 620ms steps(1, end) infinite;
 }
 
-.launch-title span {
+.launch-sequence.is-typed .launch-typewriter-cursor {
+  opacity: 0;
+  animation: none;
+}
+
+.launch-contact-frames {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.launch-exposure {
+  position: absolute;
   display: block;
+  width: clamp(115px, 17vw, 210px);
+  aspect-ratio: 4 / 3;
+  padding: 9px 9px 21px;
+  border: 1px solid var(--forest);
+  opacity: 0;
+  background: var(--paper-light);
+  box-shadow: 8px 9px 0 rgba(189, 148, 80, 0.38);
+  transform: translateY(22px) rotate(var(--exposure-angle));
+  transition: opacity 100ms ease, transform 420ms var(--ease), filter 380ms ease;
 }
 
-.launch-title span + span {
-  margin-top: 0.12em;
-  font-size: 0.67em;
+.launch-exposure i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(rgba(25, 63, 49, 0.1), rgba(25, 63, 49, 0.02)),
+    var(--launch-photo) center / cover no-repeat,
+    var(--paper-deep);
+  filter: sepia(0.25) saturate(0.72) contrast(0.86) brightness(1.08);
+  transition: filter 420ms ease;
 }
 
-.launch-title[data-face="editorial"] {
-  --launch-face-scale: 1;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-weight: 700;
-}
-
-.launch-title[data-face="poster-display"] {
-  --launch-face-scale: 0.88;
+.launch-exposure b {
+  position: absolute;
+  right: 8px;
+  bottom: 3px;
   color: var(--brown);
-  font-family: "Cooper Black", "Rockwell Extra Bold", "Bookman Old Style", Georgia, serif;
-  font-weight: 900;
-  letter-spacing: -0.075em;
-  line-height: 0.78;
-}
-
-.launch-title[data-face="typewriter"] {
-  --launch-face-scale: 0.79;
   font-family: "AJ Geist Mono", "Courier New", monospace;
-  font-weight: 650;
-  letter-spacing: -0.07em;
-  line-height: 0.86;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
 }
 
-.launch-title[data-face="poster-script"] {
-  --launch-face-scale: 0.86;
-  color: var(--olive);
-  font-family: "Brush Script MT", "Segoe Script", "Marker Felt", cursive;
-  font-weight: 600;
-  letter-spacing: -0.06em;
-  line-height: 0.78;
+.launch-exposure-1 {
+  --exposure-angle: -5deg;
+  --launch-photo: url("photos/featured/01-big-catch.jpg");
+  top: 14%;
+  left: 8%;
 }
 
-.launch-title[data-face="grotesque"] {
-  --launch-face-scale: 0.82;
-  font-family: "AJ Geist", "Arial Black", sans-serif;
-  font-weight: 860;
-  letter-spacing: -0.075em;
-  line-height: 0.82;
+.launch-exposure-2 {
+  --exposure-angle: 4deg;
+  --launch-photo: url("photos/featured/02-inside-the-dragon.jpg");
+  right: 8%;
+  bottom: 13%;
+}
+
+.launch-exposure-2 i {
+  background-position: 68% 54%;
+}
+
+.launch-exposure-3 {
+  --exposure-angle: -2deg;
+  --launch-photo: url("photos/featured/03-Laying-of-hands.jpg");
+  bottom: 9%;
+  left: 20%;
+  width: clamp(100px, 13vw, 160px);
+}
+
+.launch-exposure-3 i {
+  background-position: 28% 72%;
+}
+
+.launch-sequence.is-developed .launch-exposure {
+  opacity: 0.9;
+  filter: none;
+  transform: translateY(0) rotate(var(--exposure-angle));
+}
+
+.launch-sequence.is-developed .launch-exposure i {
+  filter: sepia(0.06) saturate(0.96) contrast(0.98);
+}
+
+.launch-exposure-2 { transition-delay: 95ms; }
+.launch-exposure-3 { transition-delay: 185ms; }
+
+.launch-archive-stamp {
+  position: absolute;
+  right: 5.8%;
+  top: 15%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 94px;
+  aspect-ratio: 1.65;
+  border: 2px solid var(--forest);
+  border-radius: 50%;
+  color: var(--forest);
+  font-family: "AJ Geist Mono", "Courier New", monospace;
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
+  text-align: center;
   text-transform: uppercase;
+  opacity: 0;
+  transform: scale(1.45) rotate(8deg);
+  transition: opacity 100ms ease, transform 260ms cubic-bezier(0.2, 1.25, 0.42, 1);
 }
 
-.launch-title.is-changing {
-  opacity: 0.55;
+.launch-sequence.is-developed .launch-archive-stamp {
+  opacity: 0.75;
+  transform: scale(1) rotate(-4deg);
 }
 
-.launch-description {
-  justify-self: center;
-  max-width: 660px;
-  margin: 0 0 19px;
-  padding: 7px 13px 8px;
+.launch-destination-label {
+  position: absolute;
+  right: 5.5%;
+  bottom: 9%;
+  z-index: 6;
+  display: grid;
+  min-width: 260px;
+  padding: 13px 18px 14px;
+  border: 1px solid var(--forest);
   color: var(--paper-light);
+  opacity: 0;
   background: var(--forest);
-  box-shadow: 4px 5px 0 rgba(189, 148, 80, 0.55);
+  box-shadow: 7px 8px 0 rgba(189, 148, 80, 0.55);
+  transform: translateY(18px);
+  transition: opacity 180ms ease, transform 460ms var(--ease);
+}
+
+.launch-destination-label span {
+  color: var(--gold);
+  font-family: "AJ Geist Mono", "Courier New", monospace;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.launch-destination-label strong {
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.15rem, 2.3vw, 1.55rem);
-  font-style: italic;
-  line-height: 1.2;
-  text-align: center;
-  transform: rotate(-0.4deg);
+  font-size: clamp(2.1rem, 4.5vw, 3.8rem);
+  line-height: 0.9;
 }
 
-.launch-actions {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  min-height: 92px;
-  gap: 24px;
+.launch-sequence.is-settling .launch-title-stage {
+  inset: 7% 40% 57% 4.7%;
 }
 
-.launch-enter {
-  min-width: 224px;
-  cursor: pointer;
+.launch-sequence.is-settling .launch-typewriter-card {
+  min-height: 0;
+  padding: clamp(18px, 2.4vw, 26px);
+  box-shadow: 6px 7px 0 rgba(189, 148, 80, 0.32);
+  transform: translateY(0) rotate(0deg);
 }
 
-.launch-character {
-  width: 84px;
-  padding: 0;
-  border: 0;
-  background-color: transparent;
+.launch-sequence.is-settling .launch-title {
+  font-size: clamp(1.45rem, 3.35vw, 2.8rem);
 }
 
-.launch-camera-note {
-  align-self: end;
-  margin: 18px 0 0;
-  padding-top: 11px;
-  border-top: 1px solid rgba(25, 63, 49, 0.42);
+.launch-sequence.is-settling .launch-exposure-1 {
+  transform: translate(-12%, 145%) rotate(-2deg) scale(0.78);
+}
+
+.launch-sequence.is-settling .launch-exposure-2 {
+  transform: translate(-185%, -95%) rotate(2deg) scale(0.72);
+}
+
+.launch-sequence.is-settling .launch-exposure-3 {
+  opacity: 0.5;
+  transform: translate(85%, -30%) rotate(-1deg) scale(0.62);
+}
+
+.launch-sequence.is-settling .launch-archive-stamp {
+  top: 26%;
+  transform: scale(0.8) rotate(-4deg);
+}
+
+.launch-sequence.is-settling .launch-destination-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.launch-status-row {
+  position: absolute;
+  right: 5.5%;
+  bottom: 4.2%;
+  left: 5.5%;
+  z-index: 9;
+  display: grid;
+  grid-template-columns: auto minmax(80px, 1fr);
+  align-items: center;
+  gap: 13px;
   color: var(--brown);
   font-family: "AJ Geist Mono", "Courier New", monospace;
-  font-size: 0.52rem;
-  font-weight: 700;
+  font-size: 0.48rem;
+  font-weight: 800;
   letter-spacing: 0.14em;
-  text-align: center;
   text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.launch-status-row i {
+  position: relative;
+  display: block;
+  height: 2px;
+  overflow: hidden;
+  background: rgba(25, 63, 49, 0.18);
+}
+
+.launch-status-row i::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  content: "";
+  background: var(--gold);
+  transform: translateX(-110%);
+}
+
+.launch-sequence.is-waiting .launch-status-row {
+  opacity: 1;
+}
+
+.launch-sequence.is-waiting .launch-status-row i::after {
+  animation: launch-progress 900ms var(--ease) infinite;
 }
 
 .site-header {
@@ -3020,6 +3205,26 @@ body[data-page="sports"] .portfolio-label h1 {
   }
 }
 
+@keyframes launch-cursor-blink {
+  0%,
+  48% {
+    opacity: 0.86;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes launch-progress {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(290%);
+  }
+}
+
 @media (max-width: 1100px) {
   .site-header nav a {
     min-width: 60px;
@@ -3046,12 +3251,20 @@ body[data-page="sports"] .portfolio-label h1 {
 }
 
 @media (max-width: 860px) {
-  .launch-panel {
-    min-height: min(650px, calc(100dvh - 48px));
+  .launch-sequence-canvas {
+    height: min(680px, calc(100dvh - 44px));
   }
 
   .launch-title-stage {
-    min-height: clamp(240px, 47vw, 340px);
+    inset: 20% 7% 18%;
+  }
+
+  .launch-sequence.is-settling .launch-title-stage {
+    inset: 8% 30% 57% 6%;
+  }
+
+  .launch-sequence.is-settling .launch-exposure-2 {
+    transform: translate(-120%, -100%) rotate(2deg) scale(0.68);
   }
 
   .site-header {
@@ -3239,7 +3452,7 @@ body[data-page="sports"] .portfolio-label h1 {
     font-size: 14px;
   }
 
-  .launch-dialog {
+  .launch-sequence {
     padding:
       max(10px, env(safe-area-inset-top))
       max(10px, env(safe-area-inset-right))
@@ -3247,76 +3460,119 @@ body[data-page="sports"] .portfolio-label h1 {
       max(10px, env(safe-area-inset-left));
   }
 
-  .launch-panel {
-    min-height: calc(100dvh - 20px);
-    padding: 22px 18px 19px;
+  .launch-sequence-canvas {
+    height: calc(100dvh - 20px);
+    min-height: 460px;
     box-shadow:
       6px 7px 0 var(--gold),
       0 18px 48px rgba(25, 45, 35, 0.22);
   }
 
-  .launch-skip {
-    top: 13px;
-    right: 14px;
-    min-height: 38px;
-    font-size: 0.52rem;
-  }
-
-  .launch-masthead {
-    display: block;
-    padding: 2px 112px 10px 0;
+  .launch-archive-header {
+    top: 22px;
+    right: 20px;
+    left: 20px;
     font-size: 0.49rem;
     letter-spacing: 0.1em;
   }
 
-  .launch-masthead span:last-child {
+  .launch-archive-header span:last-child {
     display: none;
   }
 
-  .launch-contact-strip {
-    gap: 6px;
-    margin-top: 8px;
+  .launch-assembly-rule {
+    top: 49px;
+    right: 20px;
+    left: 20px;
   }
 
-  .launch-contact-strip span {
-    width: 24px;
-    height: 9px;
+  .launch-contact-numbers {
+    top: 66px;
+    bottom: 20px;
+    left: 15px;
   }
 
   .launch-title-stage {
-    min-height: clamp(225px, 70vw, 300px);
-    padding-top: 12px;
+    inset: 19% 5% 24%;
+  }
+
+  .launch-typewriter-card {
+    min-height: 220px;
+    padding: 36px 23px 30px;
   }
 
   .launch-title {
-    font-size: clamp(3.65rem, 18vw, 5.5rem);
+    font-size: clamp(1.18rem, 5.8vw, 1.72rem);
+    letter-spacing: -0.08em;
   }
 
-  .launch-description {
-    margin-bottom: 12px;
-    font-size: 1.05rem;
+  .launch-exposure {
+    width: clamp(100px, 32vw, 142px);
+    padding: 6px 6px 16px;
+    box-shadow: 5px 6px 0 rgba(189, 148, 80, 0.38);
   }
 
-  .launch-actions {
-    min-height: 78px;
-    gap: 11px;
+  .launch-exposure-1 {
+    top: 13%;
+    left: 10%;
   }
 
-  .launch-enter {
-    min-width: min(210px, calc(100vw - 138px));
-    padding-right: 13px;
-    padding-left: 13px;
-    font-size: 0.62rem;
+  .launch-exposure-2 {
+    right: 8%;
+    bottom: 16%;
   }
 
-  .launch-character {
-    width: 68px;
+  .launch-exposure-3 {
+    bottom: 10%;
+    left: 15%;
+    width: 92px;
   }
 
-  .launch-camera-note {
-    margin-top: 12px;
-    font-size: 0.46rem;
-    letter-spacing: 0.09em;
+  .launch-archive-stamp {
+    top: 13%;
+    right: 7%;
+    width: 78px;
+    font-size: 0.4rem;
+  }
+
+  .launch-sequence.is-settling .launch-title-stage {
+    inset: 7% 14% 69% 7%;
+  }
+
+  .launch-sequence.is-settling .launch-typewriter-card {
+    padding: 13px 14px;
+  }
+
+  .launch-sequence.is-settling .launch-title {
+    font-size: clamp(0.9rem, 4.3vw, 1.2rem);
+  }
+
+  .launch-sequence.is-settling .launch-exposure-1 {
+    transform: translate(-5%, 155%) rotate(-2deg) scale(0.72);
+  }
+
+  .launch-sequence.is-settling .launch-exposure-2 {
+    transform: translate(-35%, -125%) rotate(2deg) scale(0.65);
+  }
+
+  .launch-sequence.is-settling .launch-exposure-3 {
+    transform: translate(145%, -45%) rotate(-1deg) scale(0.58);
+  }
+
+  .launch-sequence.is-settling .launch-archive-stamp {
+    top: 25%;
+  }
+
+  .launch-destination-label {
+    right: 7%;
+    bottom: 9%;
+    left: 12%;
+    min-width: 0;
+  }
+
+  .launch-status-row {
+    right: 7%;
+    left: 7%;
   }
 
   .site-header {
@@ -3830,9 +4086,57 @@ body[data-page="sports"] .portfolio-label h1 {
     animation: route-page-fade 120ms ease both;
   }
 
-  .launch-title,
-  .launch-title.is-changing {
+  .launch-title {
     opacity: 1;
+    transform: none;
+  }
+
+  .launch-sequence {
+    transition: opacity 140ms ease !important;
+  }
+
+  .launch-sequence-canvas {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .launch-sequence-canvas::before,
+  .launch-archive-header,
+  .launch-assembly-rule,
+  .launch-contact-numbers,
+  .launch-contact-frames,
+  .launch-archive-stamp,
+  .launch-destination-label {
+    display: none;
+  }
+
+  .launch-title-stage,
+  .launch-sequence.is-settling .launch-title-stage {
+    inset: 18% 7%;
+  }
+
+  .launch-typewriter-card,
+  .launch-sequence.is-settling .launch-typewriter-card {
+    width: min(780px, 100%);
+    min-height: clamp(210px, 30vw, 292px);
+    padding: clamp(34px, 5vw, 58px) clamp(27px, 5.4vw, 66px);
+    opacity: 1;
+    transform: none;
+  }
+
+  .launch-sequence.is-settling .launch-title {
+    font-size: clamp(1.48rem, 6.2vw, 5.45rem);
+  }
+
+  .launch-typewriter-cursor {
+    display: none;
+  }
+
+  .launch-status-row i::after {
+    width: 46%;
+    animation: none !important;
+    transform: none;
   }
 
   .gallery-subsection-panel,

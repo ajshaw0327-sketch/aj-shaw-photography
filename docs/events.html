@@ -34,7 +34,7 @@
     <meta property="og:image" content="og.png" />
     <title>Events — AJ Shaw Photography</title>
     <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260730l" />
+    <link rel="stylesheet" href="style.css?v=20260801i" />
   </head>
   <body data-page="events" data-asset-root="./">
     <div class="route-curtain" id="route-curtain" aria-hidden="true">
@@ -52,27 +52,14 @@
         </div>
       </div>
     </div>
-    <dialog class="launch-dialog" id="launch-dialog" aria-labelledby="launch-title" aria-describedby="launch-description">
-      <form class="launch-panel" method="dialog">
-        <button class="launch-skip" type="submit" value="skip">Skip intro <span aria-hidden="true">↗</span></button>
-        <div class="launch-masthead"><span>Field archive · Issue 01</span><span>Fujifilm X-T50</span></div>
-        <div class="launch-contact-strip" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-        <div class="launch-title-stage"><h1 class="launch-title" id="launch-title" data-face="editorial"><span>AJ Shaw</span><span>Photography</span></h1></div>
-        <p class="launch-description" id="launch-description">A field journal of places, people, and motion.</p>
-        <div class="launch-actions">
-          <button class="button button-primary launch-enter" type="submit" value="enter" autofocus>Enter Portfolio <span aria-hidden="true">↗</span></button>
-          <button class="character-sprite launch-character" data-character="walk" type="button" aria-label="Play Snoopy flower animation"></button>
-        </div>
-        <p class="launch-camera-note">AJ / Massachusetts / Visual stories since 2026</p>
-      </form>
-    </dialog>
+    <section class="launch-sequence" id="launch-sequence" hidden aria-labelledby="launch-title">
+      <div class="launch-sequence-canvas"><div class="launch-archive-header"><span>Field archive · Issue 01</span><span data-intro-route>Events / 02</span><span>Fujifilm X-T50</span></div><span class="launch-assembly-rule" aria-hidden="true"></span><div class="launch-contact-numbers" aria-hidden="true"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span></div><div class="launch-contact-frames" aria-hidden="true"><span class="launch-exposure launch-exposure-1"><i></i><b>01</b></span><span class="launch-exposure launch-exposure-2"><i></i><b>02</b></span><span class="launch-exposure launch-exposure-3"><i></i><b>03</b></span></div><div class="launch-title-stage"><div class="launch-typewriter-card"><span class="launch-registration-marks" aria-hidden="true"></span><h1 class="launch-title" id="launch-title" aria-label="AJ Shaw Photography"><span data-typewriter-title aria-hidden="true"></span><i class="launch-typewriter-cursor" aria-hidden="true"></i></h1></div></div><span class="launch-archive-stamp" aria-hidden="true">AJ / 01<br />Filed 2026</span><div class="launch-destination-label" aria-hidden="true"><span data-intro-route-code>EVT / 02</span><strong data-intro-route-title>Events</strong></div><div class="launch-status-row" aria-hidden="true"><span id="launch-status" aria-live="polite">PREPARING ARCHIVE…</span><i aria-hidden="true"></i></div></div>
+    </section>
     <script>
       (() => {
-        const launch = document.querySelector("#launch-dialog");
-        try {
-          launch?.addEventListener("close", () => window.sessionStorage.setItem("aj-shaw-launch-seen-v1", "1"), { once: true });
-          if (window.sessionStorage.getItem("aj-shaw-launch-seen-v1") !== "1" && typeof launch?.showModal === "function") launch.showModal();
-        } catch {}
+        const launch = document.querySelector("#launch-sequence"); const key = "aj-shaw-archive-intro-seen-v9"; let seen = false;
+        try { seen = window.sessionStorage.getItem(key) === "1"; if (!seen) window.sessionStorage.setItem(key, "1"); } catch {}
+        if (!launch || seen) return; document.documentElement.classList.add("intro-active"); launch.hidden = false; launch.setAttribute("aria-hidden", "false"); window.__ajArchiveIntroSafety = window.setTimeout(() => { document.documentElement.classList.remove("intro-active"); launch.hidden = true; }, 4200);
       })();
     </script>
     <header class="site-header">
@@ -115,6 +102,6 @@
       </div>
     </div>
     <script src="gallery-manifest.js?v=20260728a"></script>
-    <script src="app.js?v=20260730i"></script>
+    <script src="app.js?v=20260801i"></script>
   </body>
 </html>

@@ -15,7 +15,7 @@ const archiveCodes = {
   events: "EVT",
   sports: "SPT",
 };
-const launchSessionKey = "aj-shaw-launch-seen-v1";
+const launchSessionKey = "aj-shaw-archive-intro-seen-v9";
 const routeTransitionKey = "aj-shaw-route-transition-v1";
 const routeTransitionStartedKey = "aj-shaw-route-transition-started-v1";
 const routeTransitionMeta = {
@@ -25,8 +25,6 @@ const routeTransitionMeta = {
   sports: { code: "SPT / 03", title: "Sports" },
   about: { code: "ABOUT / 04", title: "About" },
 };
-const launchFaces = ["editorial", "poster-display", "typewriter", "poster-script", "grotesque"];
-
 let photographs = [];
 let galleryGroups = [];
 let openPhotographs = [];
@@ -37,8 +35,6 @@ let routeSlowTimer = 0;
 let routeNavigationLocked = false;
 let failedRouteDestination = null;
 let keyboardNavigation = false;
-let launchFaceTimer = 0;
-let launchChangeTimer = 0;
 let launchCloseTimer = 0;
 let archiveManifest = null;
 let livingArchiveFrame = 0;
@@ -74,9 +70,12 @@ const lightboxDetail = document.querySelector("#lightbox-detail");
 const lightboxCount = document.querySelector("#lightbox-count");
 const closeButton = document.querySelector("#lightbox-close");
 const backdropButton = document.querySelector(".lightbox-backdrop");
-const launchDialog = document.querySelector("#launch-dialog");
-const launchForm = launchDialog?.querySelector(".launch-panel");
+const launchSequence = document.querySelector("#launch-sequence");
 const launchTitle = document.querySelector("#launch-title");
+const launchTypedTitle = launchSequence?.querySelector("[data-typewriter-title]");
+const launchRouteCode = launchSequence?.querySelector("[data-intro-route-code]");
+const launchRouteTitle = launchSequence?.querySelector("[data-intro-route-title]");
+const launchStatusRow = launchSequence?.querySelector(".launch-status-row");
 
 document.documentElement.classList.add("js");
 
@@ -88,99 +87,110 @@ function markLaunchSeen() {
   }
 }
 
-function stopLaunchTypography() {
-  window.clearInterval(launchFaceTimer);
-  window.clearTimeout(launchChangeTimer);
-  launchFaceTimer = 0;
-  launchChangeTimer = 0;
-  launchTitle?.classList.remove("is-changing");
-}
+function setupLaunchExperience(essentialReady) {
+  if (!launchSequence || launchSequence.hidden || !launchTitle) return;
+  const route = routeTransitionMeta[currentPage] || routeTransitionMeta.home;
+  const timings = reducedMotion.matches
+    ? { developed: 0, title: 0, typed: 0, settle: 80, minimum: 620, reveal: 140, maximum: 1800 }
+    : { developed: 680, title: 180, typed: 1580, settle: 2050, minimum: 2850, reveal: 300, maximum: 4100 };
+  let finished = false;
+  let essentialIsReady = false;
+  const timers = [];
 
-function startLaunchTypography() {
-  if (!launchDialog?.open || !launchTitle || reducedMotion.matches || launchFaceTimer) return;
-  let faceIndex = Math.max(0, launchFaces.indexOf(launchTitle.dataset.face));
-  launchFaceTimer = window.setInterval(() => {
-    if (document.hidden || !launchDialog.open) return;
-    launchTitle.classList.add("is-changing");
-    window.clearTimeout(launchChangeTimer);
-    launchChangeTimer = window.setTimeout(() => {
-      faceIndex = (faceIndex + 1) % launchFaces.length;
-      launchTitle.dataset.face = launchFaces[faceIndex];
-      requestAnimationFrame(() => launchTitle.classList.remove("is-changing"));
-    }, 120);
-  }, 1320);
-}
-
-function dismissLaunch(result = "enter") {
-  if (!launchDialog?.open || launchDialog.classList.contains("is-closing")) return;
+  if (launchRouteCode) launchRouteCode.textContent = route.code;
+  if (launchRouteTitle) launchRouteTitle.textContent = route.title;
   markLaunchSeen();
-  stopLaunchTypography();
-  launchDialog.classList.add("is-closing");
-  launchDialog.querySelectorAll("button").forEach((button) => {
-    button.disabled = true;
-  });
-  window.clearTimeout(launchCloseTimer);
-  launchCloseTimer = window.setTimeout(() => {
-    launchDialog.close(result);
-  }, reducedMotion.matches ? 0 : 240);
-}
 
-function setupLaunchExperience() {
-  if (!launchDialog || !launchForm || !launchTitle) return;
-  launchTitle.dataset.face = "editorial";
-
-  launchForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    dismissLaunch(event.submitter?.value || "enter");
-  });
-
-  launchDialog.addEventListener("cancel", (event) => {
-    event.preventDefault();
-    dismissLaunch("skip");
-  });
-
-  launchDialog.addEventListener("close", () => {
-    markLaunchSeen();
-    stopLaunchTypography();
-    launchDialog.classList.remove("is-closing");
-    launchDialog.querySelectorAll("button").forEach((button) => {
-      button.disabled = false;
-    });
-    const activeLink =
-      navigationLinks.find((link) => link.getAttribute("aria-current") === "page") ||
-      navigationLinks[0];
-    activeLink?.focus({ preventScroll: true });
-  });
-
-  const prepareLaunchFaces = async () => {
-    if (!launchDialog.open || reducedMotion.matches) return;
-    if (document.fonts?.load) {
-      await Promise.allSettled([
-        document.fonts.load('700 1em "Cormorant Garamond"'),
-        document.fonts.load('800 1em "AJ Geist"'),
-        document.fonts.load('600 1em "AJ Geist Mono"'),
-      ]);
-    }
-    startLaunchTypography();
+  const schedule = (callback, delay) => {
+    const timer = window.setTimeout(callback, delay);
+    timers.push(timer);
+    return timer;
   };
-  prepareLaunchFaces();
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      stopLaunchTypography();
+  const typeLine = (element, text, start, duration) => {
+    if (!element) return;
+    element.textContent = "";
+    const interval = duration / text.length;
+    [...text].forEach((character, index) => {
+      schedule(() => {
+        element.textContent += character;
+      }, start + interval * index);
+    });
+  };
+
+  const clearLaunchTimers = () => {
+    timers.forEach(window.clearTimeout);
+    timers.length = 0;
+    window.clearTimeout(launchCloseTimer);
+    launchCloseTimer = 0;
+    window.clearTimeout(window.__ajArchiveIntroSafety);
+    window.__ajArchiveIntroSafety = 0;
+  };
+
+  const finishLaunch = (immediate = false) => {
+    if (finished) return;
+    finished = true;
+    clearLaunchTimers();
+    launchSequence.classList.remove("is-waiting");
+    launchStatusRow?.setAttribute("aria-hidden", "true");
+    launchSequence.classList.add("is-revealing");
+    const finalize = () => {
+      launchSequence.hidden = true;
+      launchSequence.setAttribute("aria-hidden", "true");
+      launchSequence.className = "launch-sequence";
+      document.documentElement.classList.remove("intro-active");
+      launchSequence.dispatchEvent(new CustomEvent("archiveintrocomplete"));
+    };
+    if (immediate || reducedMotion.matches) {
+      requestAnimationFrame(finalize);
     } else {
-      startLaunchTypography();
+      launchCloseTimer = window.setTimeout(finalize, timings.reveal);
     }
+  };
+
+  const skipLaunch = () => finishLaunch(true);
+  const onKeydown = () => skipLaunch();
+  const onPointerdown = () => skipLaunch();
+  launchSequence.addEventListener("pointerdown", onPointerdown, { once: true });
+  document.addEventListener("keydown", onKeydown, { once: true, capture: true });
+  launchSequence.addEventListener(
+    "archiveintrocomplete",
+    () => {
+      launchSequence.removeEventListener("pointerdown", onPointerdown);
+      document.removeEventListener("keydown", onKeydown, { capture: true });
+    },
+    { once: true },
+  );
+
+  if (reducedMotion.matches) {
+    if (launchTypedTitle) launchTypedTitle.textContent = "AJ Shaw Photography";
+  } else {
+    typeLine(launchTypedTitle, "AJ Shaw Photography", timings.title, 1250);
+  }
+
+  requestAnimationFrame(() => launchSequence.classList.add("is-assembling"));
+  schedule(() => launchSequence.classList.add("is-developed"), timings.developed);
+  schedule(() => launchSequence.classList.add("is-typing-title"), timings.title);
+  schedule(() => launchSequence.classList.add("is-typed"), timings.typed);
+  schedule(() => {
+    launchSequence.classList.add("is-settling");
+  }, timings.settle);
+
+  const readyPromise = Promise.resolve(essentialReady).catch(() => undefined);
+  readyPromise.then(() => {
+    essentialIsReady = true;
+    if (launchSequence.classList.contains("is-waiting")) finishLaunch();
   });
 
-  reducedMotion.addEventListener?.("change", () => {
-    if (reducedMotion.matches) {
-      stopLaunchTypography();
-      launchTitle.dataset.face = "editorial";
+  schedule(() => {
+    if (essentialIsReady) {
+      finishLaunch();
     } else {
-      startLaunchTypography();
+      launchSequence.classList.add("is-waiting");
+      launchStatusRow?.setAttribute("aria-hidden", "false");
     }
-  });
+  }, timings.minimum);
+  schedule(() => finishLaunch(), timings.maximum);
 }
 
 function withAssetRoot(src) {
@@ -1408,8 +1418,8 @@ function renderGallery() {
     const unfoldArchive = () => {
       requestAnimationFrame(() => grid.classList.add("is-unfolded"));
     };
-    if (launchDialog?.open) {
-      launchDialog.addEventListener("close", unfoldArchive, { once: true });
+    if (launchSequence && !launchSequence.hidden) {
+      launchSequence.addEventListener("archiveintrocomplete", unfoldArchive, { once: true });
     } else {
       unfoldArchive();
     }
@@ -1633,12 +1643,12 @@ function setupLightbox() {
   });
 }
 
-setupLaunchExperience();
 cleanLegacyContactRedirect();
 setupCharacterAnimations();
 setupLightbox();
 setupRevealAnimations();
 const essentialRouteReady = loadPhotographs();
+setupLaunchExperience(essentialRouteReady);
 setupNavigation(essentialRouteReady);
 window.addEventListener("hashchange", () => {
   if (!openHashedSubsection({ scroll: true, animate: true })) {
