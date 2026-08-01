@@ -38,7 +38,7 @@
     <meta property="og:image" content="og.png" />
     <title>AJ Shaw — Photographer</title>
     <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260801i" />
+    <link rel="stylesheet" href="style.css?v=20260801m" />
   </head>
   <body data-page="home" data-asset-root="./">
     <div class="route-curtain" id="route-curtain" aria-hidden="true">
@@ -57,35 +57,35 @@
       </div>
     </div>
     <section class="launch-sequence" id="launch-sequence" hidden aria-labelledby="launch-title">
-      <div class="launch-sequence-canvas">
-        <div class="launch-archive-header"><span>Field archive · Issue 01</span><span data-intro-route>Home / 00</span><span>Fujifilm X-T50</span></div>
-        <span class="launch-assembly-rule" aria-hidden="true"></span>
-        <div class="launch-contact-numbers" aria-hidden="true"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span></div>
-        <div class="launch-contact-frames" aria-hidden="true">
-          <span class="launch-exposure launch-exposure-1"><i></i><b>01</b></span>
-          <span class="launch-exposure launch-exposure-2"><i></i><b>02</b></span>
-          <span class="launch-exposure launch-exposure-3"><i></i><b>03</b></span>
-        </div>
-        <div class="launch-title-stage"><div class="launch-typewriter-card"><span class="launch-registration-marks" aria-hidden="true"></span><h1 class="launch-title" id="launch-title" aria-label="AJ Shaw Photography"><span data-typewriter-title aria-hidden="true"></span><i class="launch-typewriter-cursor" aria-hidden="true"></i></h1></div></div>
-        <span class="launch-archive-stamp" aria-hidden="true">AJ / 01<br />Filed 2026</span>
-        <div class="launch-destination-label" aria-hidden="true"><span data-intro-route-code>HOME / 00</span><strong data-intro-route-title>Home</strong></div>
-        <div class="launch-status-row" aria-hidden="true"><span id="launch-status" aria-live="polite">PREPARING ARCHIVE…</span><i aria-hidden="true"></i></div>
-      </div>
+      <h1 class="launch-title" id="launch-title" aria-label="AJ Shaw Photography">
+        <span data-typewriter-title aria-hidden="true"></span><i class="launch-typewriter-cursor" aria-hidden="true"></i>
+      </h1>
+      <p class="launch-screenreader-copy" data-intro-announcement aria-live="polite" aria-atomic="true"></p>
     </section>
     <script>
       (() => {
         const launch = document.querySelector("#launch-sequence");
-        const key = "aj-shaw-archive-intro-seen-v9";
-        let seen = false;
-        try { seen = window.sessionStorage.getItem(key) === "1"; if (!seen) window.sessionStorage.setItem(key, "1"); } catch {}
-        if (!launch || seen) return;
+        const navigationEntry = window.performance?.getEntriesByType?.("navigation")?.[0];
+        const isReload = navigationEntry?.type === "reload";
+        const arrivingFromSite = document.documentElement.dataset.routeArrival === "true";
+        if (!launch || (arrivingFromSite && !isReload)) return;
+
+        const reveal = () => {
+          document.documentElement.classList.remove("intro-active");
+          launch.hidden = true;
+          launch.setAttribute("aria-hidden", "true");
+          window.clearTimeout(window.__ajArchiveIntroSafety);
+          window.removeEventListener("error", reveal);
+          window.removeEventListener("unhandledrejection", reveal);
+        };
+
+        window.__ajSimpleIntroFailSafe = reveal;
         document.documentElement.classList.add("intro-active");
         launch.hidden = false;
         launch.setAttribute("aria-hidden", "false");
-        window.__ajArchiveIntroSafety = window.setTimeout(() => {
-          document.documentElement.classList.remove("intro-active");
-          launch.hidden = true;
-        }, 4200);
+        window.addEventListener("error", reveal, { once: true });
+        window.addEventListener("unhandledrejection", reveal, { once: true });
+        window.__ajArchiveIntroSafety = window.setTimeout(reveal, 3500);
       })();
     </script>
     <header class="site-header">
@@ -190,6 +190,6 @@
     </div>
 
     <script src="gallery-manifest.js?v=20260728a"></script>
-    <script src="app.js?v=20260801i"></script>
+    <script src="app.js?v=20260801m"></script>
   </body>
 </html>

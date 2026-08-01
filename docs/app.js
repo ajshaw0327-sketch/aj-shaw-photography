@@ -15,7 +15,6 @@ const archiveCodes = {
   events: "EVT",
   sports: "SPT",
 };
-const launchSessionKey = "aj-shaw-archive-intro-seen-v9";
 const routeTransitionKey = "aj-shaw-route-transition-v1";
 const routeTransitionStartedKey = "aj-shaw-route-transition-started-v1";
 const routeTransitionMeta = {
@@ -73,33 +72,19 @@ const backdropButton = document.querySelector(".lightbox-backdrop");
 const launchSequence = document.querySelector("#launch-sequence");
 const launchTitle = document.querySelector("#launch-title");
 const launchTypedTitle = launchSequence?.querySelector("[data-typewriter-title]");
-const launchRouteCode = launchSequence?.querySelector("[data-intro-route-code]");
-const launchRouteTitle = launchSequence?.querySelector("[data-intro-route-title]");
-const launchStatusRow = launchSequence?.querySelector(".launch-status-row");
+const launchAnnouncement = launchSequence?.querySelector("[data-intro-announcement]");
 
 document.documentElement.classList.add("js");
 
-function markLaunchSeen() {
-  try {
-    window.sessionStorage.setItem(launchSessionKey, "1");
-  } catch {
-    // Storage can be unavailable in strict privacy modes; closing must still work.
-  }
-}
-
-function setupLaunchExperience(essentialReady) {
+function setupLaunchExperience() {
   if (!launchSequence || launchSequence.hidden || !launchTitle) return;
-  const route = routeTransitionMeta[currentPage] || routeTransitionMeta.home;
+  const typedCopy = "AJ Shaw Photography";
   const timings = reducedMotion.matches
-    ? { developed: 0, title: 0, typed: 0, settle: 80, minimum: 620, reveal: 140, maximum: 1800 }
-    : { developed: 680, title: 180, typed: 1580, settle: 2050, minimum: 2850, reveal: 300, maximum: 4100 };
+    ? { hold: 420, reveal: 140 }
+    : { start: 160, pace: 52, hold: 520, reveal: 320 };
   let finished = false;
-  let essentialIsReady = false;
+  let typingCompleted = false;
   const timers = [];
-
-  if (launchRouteCode) launchRouteCode.textContent = route.code;
-  if (launchRouteTitle) launchRouteTitle.textContent = route.title;
-  markLaunchSeen();
 
   const schedule = (callback, delay) => {
     const timer = window.setTimeout(callback, delay);
@@ -107,15 +92,13 @@ function setupLaunchExperience(essentialReady) {
     return timer;
   };
 
-  const typeLine = (element, text, start, duration) => {
-    if (!element) return;
-    element.textContent = "";
-    const interval = duration / text.length;
-    [...text].forEach((character, index) => {
-      schedule(() => {
-        element.textContent += character;
-      }, start + interval * index);
-    });
+  const completeTyping = () => {
+    if (typingCompleted) return;
+    typingCompleted = true;
+    if (launchTypedTitle) launchTypedTitle.textContent = typedCopy;
+    launchSequence.classList.remove("is-typing");
+    launchSequence.classList.add("is-typed");
+    if (launchAnnouncement) launchAnnouncement.textContent = typedCopy;
   };
 
   const clearLaunchTimers = () => {
@@ -125,14 +108,16 @@ function setupLaunchExperience(essentialReady) {
     launchCloseTimer = 0;
     window.clearTimeout(window.__ajArchiveIntroSafety);
     window.__ajArchiveIntroSafety = 0;
+    window.removeEventListener("error", window.__ajSimpleIntroFailSafe);
+    window.removeEventListener("unhandledrejection", window.__ajSimpleIntroFailSafe);
+    window.__ajSimpleIntroFailSafe = null;
   };
 
   const finishLaunch = (immediate = false) => {
     if (finished) return;
     finished = true;
+    completeTyping();
     clearLaunchTimers();
-    launchSequence.classList.remove("is-waiting");
-    launchStatusRow?.setAttribute("aria-hidden", "true");
     launchSequence.classList.add("is-revealing");
     const finalize = () => {
       launchSequence.hidden = true;
@@ -141,16 +126,15 @@ function setupLaunchExperience(essentialReady) {
       document.documentElement.classList.remove("intro-active");
       launchSequence.dispatchEvent(new CustomEvent("archiveintrocomplete"));
     };
-    if (immediate || reducedMotion.matches) {
+    if (immediate) {
       requestAnimationFrame(finalize);
     } else {
       launchCloseTimer = window.setTimeout(finalize, timings.reveal);
     }
   };
 
-  const skipLaunch = () => finishLaunch(true);
-  const onKeydown = () => skipLaunch();
-  const onPointerdown = () => skipLaunch();
+  const onKeydown = () => finishLaunch(true);
+  const onPointerdown = () => finishLaunch(true);
   launchSequence.addEventListener("pointerdown", onPointerdown, { once: true });
   document.addEventListener("keydown", onKeydown, { once: true, capture: true });
   launchSequence.addEventListener(
@@ -163,34 +147,26 @@ function setupLaunchExperience(essentialReady) {
   );
 
   if (reducedMotion.matches) {
-    if (launchTypedTitle) launchTypedTitle.textContent = "AJ Shaw Photography";
-  } else {
-    typeLine(launchTypedTitle, "AJ Shaw Photography", timings.title, 1250);
+    completeTyping();
+    schedule(() => finishLaunch(), timings.hold);
+    return;
   }
 
-  requestAnimationFrame(() => launchSequence.classList.add("is-assembling"));
-  schedule(() => launchSequence.classList.add("is-developed"), timings.developed);
-  schedule(() => launchSequence.classList.add("is-typing-title"), timings.title);
-  schedule(() => launchSequence.classList.add("is-typed"), timings.typed);
-  schedule(() => {
-    launchSequence.classList.add("is-settling");
-  }, timings.settle);
-
-  const readyPromise = Promise.resolve(essentialReady).catch(() => undefined);
-  readyPromise.then(() => {
-    essentialIsReady = true;
-    if (launchSequence.classList.contains("is-waiting")) finishLaunch();
-  });
-
-  schedule(() => {
-    if (essentialIsReady) {
-      finishLaunch();
-    } else {
-      launchSequence.classList.add("is-waiting");
-      launchStatusRow?.setAttribute("aria-hidden", "false");
+  if (launchTypedTitle) launchTypedTitle.textContent = "";
+  launchSequence.classList.add("is-typing");
+  const characters = [...typedCopy];
+  let characterIndex = 0;
+  const typeNextCharacter = () => {
+    if (characterIndex >= characters.length) {
+      completeTyping();
+      schedule(() => finishLaunch(), timings.hold);
+      return;
     }
-  }, timings.minimum);
-  schedule(() => finishLaunch(), timings.maximum);
+    if (launchTypedTitle) launchTypedTitle.textContent += characters[characterIndex];
+    characterIndex += 1;
+    schedule(typeNextCharacter, timings.pace);
+  };
+  schedule(typeNextCharacter, timings.start);
 }
 
 function withAssetRoot(src) {
@@ -1648,7 +1624,7 @@ setupCharacterAnimations();
 setupLightbox();
 setupRevealAnimations();
 const essentialRouteReady = loadPhotographs();
-setupLaunchExperience(essentialRouteReady);
+setupLaunchExperience();
 setupNavigation(essentialRouteReady);
 window.addEventListener("hashchange", () => {
   if (!openHashedSubsection({ scroll: true, animate: true })) {
