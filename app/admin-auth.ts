@@ -1,8 +1,8 @@
-import { getChatGPTUser } from "./chatgpt-auth";
+import { getSiteUser } from "./site-auth";
 import { getPhotoEnvironment } from "./photo-storage";
 
 export async function requirePhotoAdmin() {
-  const user = await getChatGPTUser();
+  const user = await getSiteUser();
   const adminEmail = getPhotoEnvironment().ADMIN_EMAIL?.trim().toLowerCase();
 
   if (!user) {

@@ -1,11 +1,11 @@
-import { requireChatGPTUser } from "../chatgpt-auth";
+import { requireSiteUser } from "../site-auth";
 import { getPhotoEnvironment } from "../photo-storage";
 import PhotoManager from "./photo-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function ManagePage() {
-  const user = await requireChatGPTUser("/manage");
+  const user = await requireSiteUser("/manage");
   const adminEmail = getPhotoEnvironment().ADMIN_EMAIL?.trim().toLowerCase();
 
   if (!adminEmail || user.email.toLowerCase() !== adminEmail) {
