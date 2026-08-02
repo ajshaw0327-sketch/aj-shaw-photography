@@ -3,12 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f2eddd" />
+    <script id="theme-bootstrap">
+      (() => {
+        const storageKey = "aj-shaw-color-theme";
+        const root = document.documentElement;
+        let savedTheme = null;
+        try { savedTheme = window.localStorage.getItem(storageKey); } catch {}
+        const theme = savedTheme === "light" || savedTheme === "dark"
+          ? savedTheme
+          : window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#142b23" : "#f2eddd");
+      })();
+    </script>
     <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
     <style id="critical-route-colors">
       :root { color-scheme: light; background: #f2eddd; }
+      :root[data-theme="dark"] { color-scheme: dark; background: #142b23; }
       html, body { min-height: 100%; margin: 0; color: #1c2c25; background-color: #f2eddd; }
+      html[data-theme="dark"], html[data-theme="dark"] body { color: #f2ead7; background-color: #142b23; }
     </style>
     <meta name="robots" content="noindex" />
     <meta http-equiv="refresh" content="0; url=about.html?from=contact#contact" />

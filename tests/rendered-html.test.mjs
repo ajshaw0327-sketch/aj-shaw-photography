@@ -15,8 +15,8 @@ const pages = [
 ];
 const routePanels = {
   home: ["HOME / 00", "Home"],
-  travel: ["TRV / 01", "Travel"],
-  events: ["EVT / 02", "Events"],
+  travel: ["TRV / 02", "Travel"],
+  events: ["EVT / 01", "Events"],
   sports: ["SPT / 03", "Sports"],
   about: ["ABOUT / 04", "About"],
 };
@@ -29,7 +29,9 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /id="launch-sequence"/);
     assert.match(html, /id="launch-title"/);
     assert.match(html, /aria-label="AJ Shaw Photography"/);
-    assert.match(html, /data-typewriter-title/);
+    assert.match(html, /data-typewriter-name/);
+    assert.match(html, /data-launch-photography[^>]*>Photography/);
+    assert.doesNotMatch(html, /data-typewriter-title/);
     assert.match(html, /data-intro-announcement aria-live="polite" aria-atomic="true"/);
     assert.match(html, /class="launch-typewriter-cursor"/);
     assert.match(html, /navigationEntry\?\.type === "reload"/);
@@ -45,6 +47,7 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /id="critical-route-colors"/);
     assert.match(html, /name="theme-color" content="#f2eddd"/);
     assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
+    assert.match(html, /rel="preload" href="fonts\/playfair-display-variable\.ttf" as="font" type="font\/ttf" crossorigin/);
     assert.match(html, /:root \{ --route-panel-top: 72px; color-scheme: light; background: #f2eddd; \}/);
     assert.match(html, /--route-panel-top: calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
     assert.match(html, /id="route-curtain"/);
@@ -77,6 +80,29 @@ test("every rendered route includes the minimal automatic typewriter introductio
   }
 });
 
+test("theme preference is applied before paint and exposed through a shared switch", async () => {
+  for (const [filename] of pages) {
+    const html = await readFile(path.join(outputRoot, filename), "utf8");
+    assert.match(html, /name="color-scheme" content="light dark"/);
+    assert.match(html, /id="theme-bootstrap"/);
+    assert.match(html, /aj-shaw-color-theme/);
+    assert.match(html, /prefers-color-scheme: dark/);
+    assert.match(html, /root\.dataset\.theme = theme/);
+    assert.match(html, /:root\[data-theme="dark"\] \{ color-scheme: dark; background: #142b23; \}/);
+    assert.ok(
+      html.indexOf('id="theme-bootstrap"') < html.indexOf('<link rel="stylesheet"'),
+      `${filename} must choose its theme before the external stylesheet loads`,
+    );
+    assert.equal((html.match(/data-theme-toggle/g) || []).length, 1);
+    assert.match(html, /role="switch" aria-checked="false" aria-label="Dark mode"/);
+    assert.match(html, /data-theme-label>Light/);
+  }
+
+  const legacyContact = await readFile(path.join(outputRoot, "contact.html"), "utf8");
+  assert.match(legacyContact, /id="theme-bootstrap"/);
+  assert.match(legacyContact, /:root\[data-theme="dark"\]/);
+});
+
 test("about and contact form one route while the legacy contact URL redirects", async () => {
   const about = await readFile(path.join(outputRoot, "about.html"), "utf8");
   const legacyContact = await readFile(path.join(outputRoot, "contact.html"), "utf8");
@@ -94,6 +120,7 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.match(about, /class="booking-envelope"/);
   assert.doesNotMatch(about, /editorial assignments/i);
   assert.doesNotMatch(about, />Editorial</);
+  assert.doesNotMatch(about, /of the story\./);
   assert.doesNotMatch(about, /class="story-chapter/);
   assert.doesNotMatch(about, /class="field-kit-chapter/);
   assert.match(legacyContact, /url=about\.html\?from=contact#contact/);
@@ -121,6 +148,24 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.doesNotMatch(home, /<footer class="site-footer">/);
 });
 
+test("Events precedes Travel in navigation and on the home archive", async () => {
+  for (const [filename] of pages) {
+    const html = await readFile(path.join(outputRoot, filename), "utf8");
+    assert.ok(
+      html.indexOf('data-route="events"') < html.indexOf('data-route="travel"'),
+      `${filename} must place Events before Travel in the navigation`,
+    );
+  }
+
+  const home = await readFile(path.join(outputRoot, "index.html"), "utf8");
+  assert.ok(
+    home.indexOf('data-category-preview="events"') < home.indexOf('data-category-preview="travel"'),
+    "the Events archive card must precede the Travel archive card",
+  );
+  assert.match(home, /EVT \/ 01/);
+  assert.match(home, /TRV \/ 02/);
+});
+
 test("portfolio routes retain generated galleries and the themed lightbox", async () => {
   for (const route of ["travel", "events", "sports"]) {
     const html = await readFile(path.join(outputRoot, `${route}.html`), "utf8");
@@ -137,6 +182,8 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
 test("interaction styles use content-sized archive drawers and reduced-motion fallbacks", async () => {
   const css = await readFile(path.join(outputRoot, "style.css"), "utf8");
   const script = await readFile(path.join(outputRoot, "app.js"), "utf8");
+  const playfair = await readFile(path.join(outputRoot, "fonts", "playfair-display-variable.ttf"));
+  const playfairLicense = await readFile(path.join(outputRoot, "fonts", "OFL-Playfair-Display.txt"), "utf8");
 
   assert.match(css, /\.gallery-subsection:not\(\.is-expanded\) \.photo-grid\s*\{[\s\S]*overflow-x:\s*auto/);
   assert.match(css, /scroll-snap-type:\s*inline mandatory/);
@@ -156,10 +203,18 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.route-curtain\s*\{[\s\S]*transition:\s*opacity 140ms ease/);
   assert.match(css, /\.launch-sequence\s*\{[\s\S]*position:\s*fixed;[\s\S]*background:[\s\S]*var\(--paper\)/);
   assert.match(css, /@keyframes launch-cursor-blink/);
-  assert.match(css, /\.launch-title\s*\{[\s\S]*font-family:\s*"AJ Geist Mono"/);
+  assert.match(css, /font-family:\s*"Playfair Display"/);
+  assert.match(css, /\.launch-title\s*\{[\s\S]*font-family:\s*"Playfair Display"/);
+  assert.match(css, /\.launch-photography\s*\{[\s\S]*font-family:\s*"Brisket Script"/);
+  assert.match(css, /\.launch-sequence\.is-photography-visible \.launch-photography\s*\{[\s\S]*opacity:\s*1/);
+  assert.match(css, /@keyframes launch-circle-reveal/);
+  assert.match(css, /body\[data-page="home"\] \.launch-sequence\.is-circle-revealing/);
   assert.match(css, /\.launch-typewriter-cursor/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.launch-sequence\s*\{[\s\S]*transition:\s*opacity 140ms ease/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.launch-typewriter-cursor\s*\{[\s\S]*display:\s*none/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.launch-photography\s*\{[\s\S]*transition:\s*none/);
+  assert.ok(playfair.length > 100_000);
+  assert.match(playfairLicense, /SIL OPEN FONT LICENSE Version 1\.1/);
   assert.doesNotMatch(css, /\.launch-dialog|\.launch-enter|\.launch-skip/);
   assert.doesNotMatch(css, /launch-camera-burst|data-face=|is-changing|launch-line-break-nudge|launch-progress/);
   assert.doesNotMatch(css, /launch-(?:sequence-canvas|archive-header|contact-frames|exposure|archive-stamp|destination-label|status-row|typewriter-card|document-line|tagline|document-meta)/);
@@ -168,6 +223,19 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /@media \(max-width: 860px\)[\s\S]*body\[data-page="home"\] \.category-portal-grid/);
   assert.match(css, /min-height:\s*calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
   assert.match(css, /padding-top:\s*calc\(7px \+ env\(safe-area-inset-top, 0px\)\)/);
+  assert.match(css, /\.theme-toggle\s*\{/);
+  assert.match(css, /html\[data-theme="dark"\] \.launch-sequence/);
+  assert.match(css, /html\[data-theme="dark"\] \.site-header/);
+  assert.match(css, /html\[data-theme="dark"\] \.category-portal/);
+  assert.match(css, /html\[data-theme="dark"\] \.photo-surface/);
+  assert.match(css, /html\[data-theme="dark"\] \.booking-card/);
+  assert.match(css, /html\[data-theme="dark"\] \.lightbox-frame/);
+  assert.match(css, /html\[data-theme="dark"\] \.site-footer/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.theme-toggle/);
+  assert.match(script, /localStorage\.setItem\(themeStorageKey, nextTheme\)/);
+  assert.match(script, /themeToggle\.setAttribute\("aria-checked", String\(isDark\)\)/);
+  assert.match(script, /systemColorScheme\.addEventListener\("change", followSystemTheme\)/);
+  assert.match(script, /nextTheme === "dark" \? "#142b23" : "#f2eddd"/);
   assert.match(css, /\.site-header\s*\{[\s\S]*background:\s*var\(--paper\);[\s\S]*backdrop-filter:\s*none;/);
   assert.match(css, /\.booking-chapter\s*\{[\s\S]{0,320}min-height:\s*0;/);
   assert.doesNotMatch(css, /\.booking-chapter\s*\{[\s\S]{0,320}min-height:\s*calc\(100vh/);
@@ -208,10 +276,14 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /"archiveintrocomplete"/);
   assert.match(script, /launchSequence\.addEventListener\("pointerdown"/);
   assert.match(script, /document\.addEventListener\("keydown", onKeydown/);
-  assert.match(script, /const typedCopy = "AJ Shaw Photography"/);
-  assert.match(script, /start: 160, pace: 52, hold: 520, reveal: 320/);
+  assert.match(script, /const typedCopy = "AJ Shaw"/);
+  assert.match(script, /const completeCopy = "AJ Shaw Photography"/);
+  assert.match(script, /const revealDuration = currentPage === "home" \? 580 : 320/);
+  assert.match(script, /start: 160, pace: 52, photographyDelay: 140, hold: 620, reveal: revealDuration/);
   assert.match(script, /const characters = \[\.\.\.typedCopy\]/);
   assert.match(script, /schedule\(typeNextCharacter, timings\.pace\)/);
+  assert.match(script, /launchSequence\.classList\.add\("is-photography-visible"\)/);
+  assert.match(script, /launchSequence\.classList\.add\("is-circle-revealing"\)/);
   assert.match(script, /launchAnnouncement\.textContent/);
   assert.doesNotMatch(script, /is-waiting|AJ SHAW PHOTOGRAPHIC ARCHIVE|Small moments, kept|launchTypedArchive|launchTypedTagline/);
   assert.doesNotMatch(script, /is-carriage-return|carriage-return|launchSessionKey|markLaunchSeen/);

@@ -19,8 +19,8 @@ const routeTransitionKey = "aj-shaw-route-transition-v1";
 const routeTransitionStartedKey = "aj-shaw-route-transition-started-v1";
 const routeTransitionMeta = {
   home: { code: "HOME / 00", title: "Home" },
-  travel: { code: "TRV / 01", title: "Travel" },
-  events: { code: "EVT / 02", title: "Events" },
+  events: { code: "EVT / 01", title: "Events" },
+  travel: { code: "TRV / 02", title: "Travel" },
   sports: { code: "SPT / 03", title: "Sports" },
   about: { code: "ABOUT / 04", title: "About" },
 };
@@ -42,6 +42,7 @@ let lightboxSwapTimer = 0;
 let lightboxCloseTimer = 0;
 let lightboxImageToken = 0;
 let cameraFlashTimer = 0;
+let themeTransitionTimer = 0;
 let lightboxInertElements = [];
 const subsectionLayoutTimers = new WeakMap();
 const subsectionLayoutFrames = new WeakMap();
@@ -51,6 +52,10 @@ const subsectionsById = new Map();
 const navigation = document.querySelector("#primary-navigation");
 const navigationLinks = [...document.querySelectorAll("[data-route]")];
 const menuToggle = document.querySelector(".menu-toggle");
+const themeToggle = document.querySelector("[data-theme-toggle]");
+const themeLabel = themeToggle?.querySelector("[data-theme-label]");
+const systemColorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+const themeStorageKey = window.__ajThemePreference?.storageKey || "aj-shaw-color-theme";
 const routeCurtain = document.querySelector("#route-curtain");
 const routeCurtainCode = routeCurtain?.querySelector("[data-route-curtain-code]");
 const routeCurtainTitle = routeCurtain?.querySelector("[data-route-curtain-title]");
@@ -71,19 +76,91 @@ const closeButton = document.querySelector("#lightbox-close");
 const backdropButton = document.querySelector(".lightbox-backdrop");
 const launchSequence = document.querySelector("#launch-sequence");
 const launchTitle = document.querySelector("#launch-title");
-const launchTypedTitle = launchSequence?.querySelector("[data-typewriter-title]");
+const launchTypedName = launchSequence?.querySelector("[data-typewriter-name]");
+const launchPhotography = launchSequence?.querySelector("[data-launch-photography]");
 const launchAnnouncement = launchSequence?.querySelector("[data-intro-announcement]");
 
 document.documentElement.classList.add("js");
 
+function readStoredTheme() {
+  try {
+    const savedTheme = window.localStorage.getItem(themeStorageKey);
+    return savedTheme === "light" || savedTheme === "dark" ? savedTheme : null;
+  } catch {
+    return null;
+  }
+}
+
+function updateThemeControl(theme) {
+  if (!themeToggle) return;
+  const isDark = theme === "dark";
+  themeToggle.setAttribute("aria-checked", String(isDark));
+  themeToggle.title = isDark ? "Use light mode" : "Use dark mode";
+  if (themeLabel) themeLabel.textContent = isDark ? "Dark" : "Light";
+}
+
+function applyTheme(theme, { persist = false, animate = false } = {}) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  const root = document.documentElement;
+  window.clearTimeout(themeTransitionTimer);
+  if (animate && !reducedMotion.matches) {
+    root.classList.add("theme-changing");
+    themeTransitionTimer = window.setTimeout(() => {
+      root.classList.remove("theme-changing");
+      themeTransitionTimer = 0;
+    }, 260);
+  } else {
+    root.classList.remove("theme-changing");
+  }
+  root.dataset.theme = nextTheme;
+  root.style.colorScheme = nextTheme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute(
+    "content",
+    nextTheme === "dark" ? "#142b23" : "#f2eddd",
+  );
+  updateThemeControl(nextTheme);
+  window.__ajThemePreference = { storageKey: themeStorageKey, theme: nextTheme };
+  if (persist) {
+    try {
+      window.localStorage.setItem(themeStorageKey, nextTheme);
+    } catch {}
+  }
+}
+
+function setupThemeToggle() {
+  const initialTheme = document.documentElement.dataset.theme
+    || readStoredTheme()
+    || (systemColorScheme.matches ? "dark" : "light");
+  applyTheme(initialTheme);
+  if (!themeToggle) return;
+
+  themeToggle.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme, { persist: true, animate: true });
+  });
+
+  const followSystemTheme = (event) => {
+    if (readStoredTheme()) return;
+    applyTheme(event.matches ? "dark" : "light", { animate: true });
+  };
+  if (typeof systemColorScheme.addEventListener === "function") {
+    systemColorScheme.addEventListener("change", followSystemTheme);
+  } else if (typeof systemColorScheme.addListener === "function") {
+    systemColorScheme.addListener(followSystemTheme);
+  }
+}
+
 function setupLaunchExperience() {
   if (!launchSequence || launchSequence.hidden || !launchTitle) return;
-  const typedCopy = "AJ Shaw Photography";
+  const typedCopy = "AJ Shaw";
+  const completeCopy = "AJ Shaw Photography";
+  const revealDuration = currentPage === "home" ? 580 : 320;
   const timings = reducedMotion.matches
     ? { hold: 420, reveal: 140 }
-    : { start: 160, pace: 52, hold: 520, reveal: 320 };
+    : { start: 160, pace: 52, photographyDelay: 140, hold: 620, reveal: revealDuration };
   let finished = false;
-  let typingCompleted = false;
+  let nameCompleted = false;
+  let photographyVisible = false;
   const timers = [];
 
   const schedule = (callback, delay) => {
@@ -92,13 +169,21 @@ function setupLaunchExperience() {
     return timer;
   };
 
-  const completeTyping = () => {
-    if (typingCompleted) return;
-    typingCompleted = true;
-    if (launchTypedTitle) launchTypedTitle.textContent = typedCopy;
+  const completeName = () => {
+    if (nameCompleted) return;
+    nameCompleted = true;
+    if (launchTypedName) launchTypedName.textContent = typedCopy;
     launchSequence.classList.remove("is-typing");
-    launchSequence.classList.add("is-typed");
-    if (launchAnnouncement) launchAnnouncement.textContent = typedCopy;
+    launchSequence.classList.add("is-name-typed");
+  };
+
+  const revealPhotography = () => {
+    completeName();
+    if (photographyVisible) return;
+    photographyVisible = true;
+    if (launchPhotography) launchPhotography.textContent = "Photography";
+    launchSequence.classList.add("is-photography-visible");
+    if (launchAnnouncement) launchAnnouncement.textContent = completeCopy;
   };
 
   const clearLaunchTimers = () => {
@@ -116,9 +201,12 @@ function setupLaunchExperience() {
   const finishLaunch = (immediate = false) => {
     if (finished) return;
     finished = true;
-    completeTyping();
+    revealPhotography();
     clearLaunchTimers();
     launchSequence.classList.add("is-revealing");
+    if (currentPage === "home" && !immediate && !reducedMotion.matches) {
+      launchSequence.classList.add("is-circle-revealing");
+    }
     const finalize = () => {
       launchSequence.hidden = true;
       launchSequence.setAttribute("aria-hidden", "true");
@@ -147,22 +235,25 @@ function setupLaunchExperience() {
   );
 
   if (reducedMotion.matches) {
-    completeTyping();
+    revealPhotography();
     schedule(() => finishLaunch(), timings.hold);
     return;
   }
 
-  if (launchTypedTitle) launchTypedTitle.textContent = "";
+  if (launchTypedName) launchTypedName.textContent = "";
   launchSequence.classList.add("is-typing");
   const characters = [...typedCopy];
   let characterIndex = 0;
   const typeNextCharacter = () => {
     if (characterIndex >= characters.length) {
-      completeTyping();
-      schedule(() => finishLaunch(), timings.hold);
+      completeName();
+      schedule(() => {
+        revealPhotography();
+        schedule(() => finishLaunch(), timings.hold);
+      }, timings.photographyDelay);
       return;
     }
-    if (launchTypedTitle) launchTypedTitle.textContent += characters[characterIndex];
+    if (launchTypedName) launchTypedName.textContent += characters[characterIndex];
     characterIndex += 1;
     schedule(typeNextCharacter, timings.pace);
   };
@@ -696,7 +787,7 @@ function homeSequencePhotos() {
   const sequence = [...photographs];
   const usedSources = new Set(sequence.map((photo) => photo.src));
 
-  ["travel", "events", "sports"].forEach((category) => {
+  ["events", "travel", "sports"].forEach((category) => {
     const groups = archiveManifest?.galleries?.[category];
     if (!Array.isArray(groups)) return;
     for (const group of groups) {
@@ -1620,6 +1711,7 @@ function setupLightbox() {
 }
 
 cleanLegacyContactRedirect();
+setupThemeToggle();
 setupCharacterAnimations();
 setupLightbox();
 setupRevealAnimations();
