@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -56,7 +56,7 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /data-route-curtain-code/);
     assert.match(html, /data-route-curtain-title/);
     assert.match(html, /class="route-curtain-progress-track"/);
-    assert.match(html, /data-route-curtain-retry/);
+    assert.doesNotMatch(html, /data-route-curtain-retry|route-curtain-error/);
     assert.ok(html.includes(routePanels[route][0]));
     assert.ok(html.includes(`data-route-curtain-title>${routePanels[route][1]}`));
     assert.ok(
@@ -176,6 +176,80 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.match(html, /aria-describedby="lightbox-detail"/);
     assert.match(html, /gallery-manifest\.js/);
     assert.match(html, /app\.js/);
+    assert.doesNotMatch(html, /class="gallery-subsection is-expanded"/);
+    assert.doesNotMatch(html, /class="gallery-subsection-toggle"[^>]+aria-expanded="true"/);
+    assert.match(html, /class="gallery-subsection-toggle"[^>]+aria-expanded="false"/);
+    assert.match(html, /data-default-expanded="false"/);
+    assert.match(html, />Expand collection</);
+    assert.match(html, /class="photo-trigger" href="photos\//);
+    assert.match(html, /<figure class="photo-card/);
+    assert.match(html, /<picture><source type="image\/webp" srcset=/);
+    assert.match(html, /<img[^>]+srcset=[^>]+sizes=[^>]+width="\d+" height="\d+"/);
+    assert.match(html, /loading="(?:eager|lazy)" decoding="async"/);
+    assert.match(html, /alt="Photograph of/);
+    assert.match(html, /<figcaption><strong>[^<]+<\/strong><span>[^<]+<\/span><\/figcaption>/);
+    assert.doesNotMatch(html, /<div class="gallery-groups" id="photo-grid">\s*<\/div>/);
+  }
+});
+
+test("homepage covers are curated, responsive, and present without JavaScript", async () => {
+  const html = await readFile(path.join(outputRoot, "index.html"), "utf8");
+  const manifest = JSON.parse(await readFile(path.join(outputRoot, "gallery-manifest.json"), "utf8"));
+
+  assert.match(html, /Photography by AJ Shaw · Massachusetts/);
+  assert.match(html, /href="about\.html#contact">Book \/ Contact/);
+  assert.equal((html.match(/data-cover-id=/g) || []).length, 9);
+  assert.equal((html.match(/class="category-portal-print"/g) || []).length, 9);
+  assert.equal((html.match(/category-portal-preview"><span/g) || []).length, 3);
+  assert.match(html, /photos\/responsive\/covers\/events\//);
+  assert.match(html, /photos\/responsive\/covers\/travel\//);
+  assert.match(html, /photos\/responsive\/covers\/sports\//);
+  assert.deepEqual(Object.keys(manifest.covers), ["events", "travel", "sports"]);
+  Object.values(manifest.covers).forEach((covers) => assert.equal(covers.length, 3));
+});
+
+test("major pages include canonical sharing metadata and photographer data", async () => {
+  for (const [filename] of pages) {
+    const html = await readFile(path.join(outputRoot, filename), "utf8");
+    assert.match(html, /<link rel="canonical" href="https:\/\/ajshaw0327-sketch\.github\.io\/aj-shaw-photography\//);
+    assert.match(html, /<meta property="og:url" content="https:\/\/ajshaw0327-sketch\.github\.io\/aj-shaw-photography\//);
+    assert.match(html, /<meta property="og:type" content="(?:website|profile)"/);
+    assert.match(html, /<meta property="og:image" content="https:\/\//);
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    assert.match(html, /<script type="application\/ld\+json">[\s\S]*"@type":"Person"[\s\S]*"name":"AJ Shaw"/);
+  }
+});
+
+test("all built page links and image candidates resolve inside the Pages artifact", async () => {
+  const localTargets = [];
+
+  for (const [filename] of pages) {
+    const html = await readFile(path.join(outputRoot, filename), "utf8");
+    for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
+      localTargets.push([filename, match[1]]);
+    }
+    for (const match of html.matchAll(/srcset="([^"]+)"/g)) {
+      for (const candidate of match[1].split(",")) {
+        localTargets.push([filename, candidate.trim().split(/\s+/)[0]]);
+      }
+    }
+  }
+
+  for (const [filename, rawTarget] of localTargets) {
+    if (
+      !rawTarget ||
+      rawTarget.startsWith("#") ||
+      /^(?:https?:|mailto:|data:)/.test(rawTarget)
+    ) {
+      continue;
+    }
+
+    assert.ok(!rawTarget.startsWith("/"), `${filename} must keep ${rawTarget} subdirectory-safe`);
+    const target = decodeURIComponent(rawTarget.split(/[?#]/)[0] || ".");
+    await assert.doesNotReject(
+      stat(path.resolve(outputRoot, target)),
+      `${filename} references missing local target ${rawTarget}`,
+    );
   }
 });
 
@@ -262,15 +336,13 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /function syncRouteCurtainBoundary/);
   assert.match(script, /getBoundingClientRect\(\)\.bottom/);
   assert.match(script, /setRouteCurtainLoading/);
-  assert.match(script, /showRouteCurtainError/);
-  assert.match(script, /fetch\(destination\.href/);
-  assert.match(script, /response\.text\(\)/);
-  assert.match(script, /window\.history\.pushState/);
+  assert.doesNotMatch(script, /showRouteCurtainError|loadRouteDestination|retryFailedRoute/);
+  assert.doesNotMatch(script, /fetch\(destination\.href|response\.text\(\)|window\.history\.pushState/);
   assert.match(script, /focusNewRouteHeading/);
   assert.match(script, /classList\.add\("is-covering"\)/);
   assert.match(script, /classList\.add\("is-revealing"\)/);
-  assert.match(script, /"transitionend"/);
-  assert.match(script, /window\.location\.assign\(destination\.href\)/);
+  assert.doesNotMatch(script, /waitForRouteCurtainMotion|"transitionend"/);
+  assert.doesNotMatch(script, /event\.preventDefault\(\);\s*if \(routeNavigationLocked\)/);
   assert.match(script, /"pagehide"/);
   assert.match(script, /setupLaunchExperience\(\)/);
   assert.match(script, /"archiveintrocomplete"/);
@@ -293,9 +365,14 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /lightboxSwapTimer/);
   assert.match(script, /element\.inert = true/);
   assert.doesNotMatch(script, /positionNavigationMarker|nav-proximity/);
-  assert.match(script, /function randomPhotoSelection/);
-  assert.match(script, /Math\.random\(\)/);
-  assert.match(css, /body\[data-page="home"\][\s\S]{0,220}overflow:\s*hidden/);
-  assert.match(css, /body\[data-page="home"\] \.category-portal-travel\s*\{[\s\S]*grid-column:\s*1 \/ 8/);
+  assert.doesNotMatch(script, /function randomPhotoSelection|Math\.random\(\)/);
+  assert.match(script, /function hydrateStaticGallery/);
+  assert.match(script, /document\.documentElement\.classList\.add\("gallery-enhanced"\)/);
+  assert.match(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}min-height:\s*100dvh;[\s\S]{0,120}overflow-y:\s*auto/);
+  assert.doesNotMatch(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}\n\s*height:\s*100dvh/);
+  assert.match(css, /body\[data-page="home"\] \.category-portal-travel\s*\{[\s\S]*grid-column:\s*8 \/ 13/);
   assert.match(css, /body\[data-page="home"\] \.category-portal-sports\s*\{[\s\S]*grid-column:\s*2 \/ 12/);
+  assert.match(css, /\.photo-card\s*\{[\s\S]{0,180}opacity:\s*1/);
+  assert.match(css, /html\.gallery-enhanced \.photo-card\s*\{[\s\S]{0,100}opacity:\s*0/);
+  assert.match(css, /\.photo-window img\s*\{[\s\S]{0,180}opacity:\s*1/);
 });

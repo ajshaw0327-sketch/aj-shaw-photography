@@ -129,7 +129,6 @@ body.archive-camera-flash::after {
 
 .route-curtain.is-covering,
 .route-curtain.is-loading,
-.route-curtain.is-error,
 html[data-route-arrival="true"] .route-curtain,
 html[data-route-loading] .route-curtain {
   visibility: visible;
@@ -231,8 +230,7 @@ html[data-route-loading] .route-curtain {
   animation-delay: 200ms;
 }
 
-.route-curtain-progress,
-.route-curtain-error {
+.route-curtain-progress {
   display: none;
   width: min(360px, 100%);
   margin: 26px auto 0;
@@ -270,42 +268,6 @@ html[data-route-loading] .route-curtain-progress {
   background: var(--gold);
   transform: translateX(-110%);
   animation: route-progress 920ms ease-in-out infinite;
-}
-
-.route-curtain.is-error .route-curtain-progress {
-  display: none;
-}
-
-.route-curtain.is-error .route-curtain-error {
-  display: block;
-}
-
-.route-curtain-error p {
-  margin-bottom: 16px;
-  color: var(--paper-light);
-  font-size: 0.84rem;
-}
-
-.route-curtain-retry {
-  min-height: 42px;
-  padding: 8px 18px;
-  border: 1px solid var(--paper-light);
-  color: var(--forest);
-  background: var(--paper-light);
-  font-family: "AJ Geist Mono", "Courier New", monospace;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 4px 5px 0 var(--gold);
-}
-
-.route-curtain-retry:hover,
-.route-curtain-retry:focus-visible {
-  color: var(--paper-light);
-  background: var(--forest-2);
-  transform: translateY(-2px);
 }
 
 body.route-transitioning .site-header {
@@ -1451,12 +1413,12 @@ em {
   animation: archive-sheet-release 360ms var(--ease) both;
 }
 
-.js .page-portfolio .gallery-groups:not(.is-unfolded) .gallery-subsection {
+html.gallery-enhanced .page-portfolio .gallery-groups:not(.is-unfolded) .gallery-subsection {
   opacity: 0;
   transform: translateY(14px) scaleY(0.985);
 }
 
-.js .page-portfolio .gallery-groups.is-unfolded .gallery-subsection {
+html.gallery-enhanced .page-portfolio .gallery-groups.is-unfolded .gallery-subsection {
   opacity: 1;
   transform: none;
   transition:
@@ -1509,6 +1471,11 @@ em {
 .photo-card {
   grid-column: span 4;
   margin: 0;
+  opacity: 1;
+  transform: rotate(var(--card-rotate));
+}
+
+html.gallery-enhanced .photo-card {
   opacity: 0;
   transform: translateY(12px) rotate(var(--card-rotate));
   transition:
@@ -1549,12 +1516,15 @@ em {
   grid-column: span 3;
 }
 
-.photo-card button {
+.photo-card .photo-trigger {
+  display: block;
   position: relative;
   width: 100%;
   padding: 6px;
   border: 0;
+  color: inherit;
   background: transparent;
+  text-decoration: none;
   text-align: left;
   cursor: zoom-in;
 }
@@ -1593,8 +1563,8 @@ em {
     10px 12px 18px rgba(25, 63, 49, 0.07);
 }
 
-.photo-card button:hover .photo-surface,
-.photo-card button:focus-visible .photo-surface {
+.photo-card .photo-trigger:hover .photo-surface,
+.photo-card .photo-trigger:focus-visible .photo-surface {
   --surface-lift: -3px;
   border-color: #0f2e23;
   box-shadow:
@@ -1602,7 +1572,7 @@ em {
     13px 16px 22px rgba(25, 63, 49, 0.1);
 }
 
-.photo-card button:active .photo-surface {
+.photo-card .photo-trigger:active .photo-surface {
   --surface-lift: 2px;
   --surface-scale: 0.995;
   box-shadow: 3px 4px 0 rgba(25, 63, 49, 0.28);
@@ -1647,19 +1617,30 @@ em {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: 0;
+  opacity: 1;
   transition:
     opacity 180ms ease,
     transform 320ms var(--ease),
     filter 200ms ease;
 }
 
-.photo-window.is-loaded img {
+.photo-window picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+html.gallery-enhanced .photo-window img {
+  opacity: 0;
+}
+
+.photo-window.is-loaded img,
+html.gallery-enhanced .photo-window.is-loaded img {
   opacity: 1;
 }
 
-.photo-card button:hover img,
-.photo-card button:focus-visible img {
+.photo-card .photo-trigger:hover img,
+.photo-card .photo-trigger:focus-visible img {
   filter: saturate(1.04) contrast(1.02);
   transform: scale(1.025);
 }
@@ -1714,19 +1695,19 @@ em {
   transform: translate3d(var(--label-x, 0px), 7px, 0) rotate(1deg) !important;
 }
 
-.photo-card button:hover .photo-metadata > span,
-.photo-card button:focus-visible .photo-metadata > span {
+.photo-card .photo-trigger:hover .photo-metadata > span,
+.photo-card .photo-trigger:focus-visible .photo-metadata > span {
   opacity: 1;
   transform: translate3d(var(--label-x, 0px), 0, 0) rotate(-1deg);
 }
 
-.photo-card button:hover .photo-meta-camera,
-.photo-card button:focus-visible .photo-meta-camera {
+.photo-card .photo-trigger:hover .photo-meta-camera,
+.photo-card .photo-trigger:focus-visible .photo-meta-camera {
   transform: translate3d(var(--label-x, 0px), 0, 0) rotate(0.7deg) !important;
 }
 
-.photo-card button:hover .photo-meta-frame,
-.photo-card button:focus-visible .photo-meta-frame {
+.photo-card .photo-trigger:hover .photo-meta-frame,
+.photo-card .photo-trigger:focus-visible .photo-meta-frame {
   transform: translate3d(var(--label-x, 0px), 0, 0) rotate(1deg) !important;
 }
 
@@ -1749,8 +1730,8 @@ em {
     transform 150ms var(--ease);
 }
 
-.photo-card button:hover .open-mark,
-.photo-card button:focus-visible .open-mark {
+.photo-card .photo-trigger:hover .open-mark,
+.photo-card .photo-trigger:focus-visible .open-mark {
   opacity: 1;
   transform: translate(0);
 }
@@ -1799,13 +1780,13 @@ em {
     transform 200ms var(--ease);
 }
 
-.photo-card button:hover + figcaption strong,
-.photo-card button:focus-visible + figcaption strong {
+.photo-card .photo-trigger:hover + figcaption strong,
+.photo-card .photo-trigger:focus-visible + figcaption strong {
   transform: translateX(3px);
 }
 
-.photo-card button:hover + figcaption > span,
-.photo-card button:focus-visible + figcaption > span {
+.photo-card .photo-trigger:hover + figcaption > span,
+.photo-card .photo-trigger:focus-visible + figcaption > span {
   color: var(--forest-2);
   transform: translateX(-3px);
 }
@@ -2942,8 +2923,7 @@ body[data-page="sports"] .portfolio-label h1 {
     font-size: clamp(3rem, 16vw, 5rem);
   }
 
-  .route-curtain-progress,
-  .route-curtain-error {
+  .route-curtain-progress {
     width: min(300px, 100%);
   }
 
@@ -3525,16 +3505,16 @@ body[data-page="sports"] .portfolio-label h1 {
     --label-x: 0px !important;
   }
 
-  .photo-card button:hover .photo-surface {
+  .photo-card .photo-trigger:hover .photo-surface {
     --surface-lift: 0px;
   }
 
-  .photo-card button:hover img {
+  .photo-card .photo-trigger:hover img {
     filter: none;
     transform: none;
   }
 
-  .photo-card button:hover .photo-metadata,
+  .photo-card .photo-trigger:hover .photo-metadata,
   .photo-metadata {
     display: none;
   }
@@ -3816,7 +3796,7 @@ body[data-page="sports"] .portfolio-label h1 {
 }
 
 .living-contact-heading h2,
-.category-portals-heading h2,
+.category-portals-heading h1,
 .archive-closing h2 {
   margin: 8px 0 0;
   color: var(--forest);
@@ -4120,7 +4100,7 @@ body[data-page="sports"] .portfolio-label h1 {
   margin-bottom: clamp(45px, 7vw, 88px);
 }
 
-.category-portals-heading h2 {
+.category-portals-heading h1 {
   max-width: 800px;
 }
 
@@ -4246,11 +4226,14 @@ body[data-page="sports"] .portfolio-label h1 {
   align-self: end;
 }
 
-.category-portal-copy h3 {
+.category-portal-copy h2 {
   margin: 0 0 6px;
   color: inherit;
+  font-family: "AJ Geist", "Inter", sans-serif;
   font-size: clamp(2.8rem, 5vw, 5.2rem);
+  font-weight: 720;
   letter-spacing: -0.045em;
+  line-height: 0.96;
 }
 
 .category-portal-copy p {
@@ -5239,7 +5222,7 @@ body[data-page="sports"] .portfolio-label h1 {
   }
 
   .living-contact-heading h2,
-  .category-portals-heading h2,
+  .category-portals-heading h1,
   .archive-closing h2 {
     font-size: clamp(3.4rem, 17vw, 5rem);
   }
@@ -5317,7 +5300,7 @@ body[data-page="sports"] .portfolio-label h1 {
     grid-row: 3;
   }
 
-  .category-portal-copy h3 {
+  .category-portal-copy h2 {
     font-size: clamp(2.8rem, 14vw, 4.2rem);
   }
 
@@ -5482,11 +5465,9 @@ body[data-page="sports"] .portfolio-label h1 {
 /* Static home field-file screen */
 
 body[data-page="home"] {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 100dvh;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body[data-page="home"] .site-header {
@@ -5495,17 +5476,17 @@ body[data-page="home"] .site-header {
 }
 
 body[data-page="home"] .page-home {
-  min-height: 0;
-  overflow: hidden;
+  min-height: calc(100dvh - 72px);
+  overflow: visible;
 }
 
 body[data-page="home"] .category-portals {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(14px, 2.4vh, 28px);
-  height: 100%;
-  min-height: 0;
-  padding: clamp(16px, 2.8vh, 34px) clamp(18px, 4vw, 68px);
+  grid-template-rows: auto minmax(520px, 1fr);
+  gap: clamp(18px, 2.8vh, 32px);
+  min-height: calc(100dvh - 72px);
+  height: auto;
+  padding: clamp(20px, 3.4vh, 42px) clamp(18px, 4vw, 68px) clamp(26px, 4vh, 48px);
 }
 
 body[data-page="home"] .category-portals-heading {
@@ -5516,11 +5497,54 @@ body[data-page="home"] .category-portals-heading {
   margin: 0;
 }
 
-body[data-page="home"] .category-portals-heading h2 {
+body[data-page="home"] .category-portals-heading-copy {
+  display: grid;
+  gap: 10px;
+}
+
+body[data-page="home"] .category-portals-heading h1 {
   max-width: none;
   margin: 0;
-  font-size: clamp(3.4rem, 8vh, 6.8rem);
+  font-size: clamp(3.4rem, 7.5vh, 6.7rem);
   line-height: 0.86;
+}
+
+body[data-page="home"] .home-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 18px;
+  margin: 0;
+  color: var(--muted);
+  font-family: "AJ Geist Mono", "Courier New", monospace;
+  font-size: clamp(0.55rem, 1vw, 0.68rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body[data-page="home"] .home-identity a {
+  position: relative;
+  color: var(--forest);
+  text-decoration: none;
+}
+
+body[data-page="home"] .home-identity a::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: var(--gold);
+  transform: scaleX(0.35);
+  transform-origin: left;
+  transition: transform 170ms var(--ease);
+}
+
+body[data-page="home"] .home-identity a:hover::after,
+body[data-page="home"] .home-identity a:focus-visible::after {
+  transform: scaleX(1);
 }
 
 body[data-page="home"] .character-home-file {
@@ -5531,15 +5555,15 @@ body[data-page="home"] .character-home-file {
 
 body[data-page="home"] .category-portal-grid {
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  grid-template-rows: minmax(285px, 1.12fr) minmax(235px, 0.88fr);
   gap: clamp(10px, 1.7vh, 18px) clamp(12px, 2vw, 30px);
-  min-height: 0;
+  min-height: 520px;
 }
 
 body[data-page="home"] .category-portal {
   display: grid;
   align-items: stretch;
-  min-height: 0;
+  min-height: 220px;
   height: 100%;
   padding: clamp(12px, 1.7vw, 24px);
 }
@@ -5582,15 +5606,68 @@ body[data-page="home"] .category-portal-events .category-portal-preview,
 body[data-page="home"] .category-portal-sports .category-portal-preview {
   grid-column: 1;
   grid-row: 2;
-  min-height: 0;
+  min-height: 150px;
   margin: clamp(4px, 1vh, 12px) 0;
 }
 
-body[data-page="home"] .category-portal-preview img,
-body[data-page="home"] .category-portal-events .category-portal-preview img,
-body[data-page="home"] .category-portal-sports .category-portal-preview img {
-  width: min(66%, 210px);
-  max-height: min(21vh, 170px);
+body[data-page="home"] .category-portal-print {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: min(72%, 260px);
+  transform: translate(-50%, -50%) rotate(calc((var(--portal-index) - 1) * 3deg));
+  transition: transform 270ms var(--ease);
+}
+
+body[data-page="home"] .category-portal-print picture {
+  display: block;
+}
+
+body[data-page="home"] .category-portal-print img {
+  position: static;
+  width: 100%;
+  max-height: min(23vh, 190px);
+  border: 7px solid var(--paper-light);
+  object-fit: cover;
+  box-shadow: 5px 7px 0 rgba(118, 91, 59, 0.34);
+  transform: none !important;
+}
+
+body[data-page="home"] .category-portal-travel .category-portal-print:nth-child(1) {
+  transform: translate(-60%, -48%) rotate(-5deg);
+}
+
+body[data-page="home"] .category-portal-travel .category-portal-print:nth-child(2) {
+  transform: translate(-42%, -52%) rotate(4deg);
+}
+
+body[data-page="home"] .category-portal-events .category-portal-print {
+  width: min(66%, 235px);
+  transform: translate(calc(-50% + (var(--portal-index) - 1) * 24px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 2deg));
+}
+
+body[data-page="home"] .category-portal-events .category-portal-print img {
+  border-bottom-width: 24px;
+}
+
+body[data-page="home"] .category-portal-sports .category-portal-print {
+  width: min(58%, 255px);
+}
+
+body[data-page="home"] .category-portal:hover .category-portal-print:nth-child(1),
+body[data-page="home"] .category-portal:focus-visible .category-portal-print:nth-child(1) {
+  transform: translate(-72%, -51%) rotate(-7deg);
+}
+
+body[data-page="home"] .category-portal:hover .category-portal-print:nth-child(2),
+body[data-page="home"] .category-portal:focus-visible .category-portal-print:nth-child(2) {
+  transform: translate(-30%, -53%) rotate(6deg);
+}
+
+body[data-page="home"] .category-portal:hover .category-portal-print:nth-child(3),
+body[data-page="home"] .category-portal:focus-visible .category-portal-print:nth-child(3) {
+  transform: translate(-49%, -45%) rotate(1deg);
 }
 
 body[data-page="home"] .category-portal-copy,
@@ -5609,7 +5686,7 @@ body[data-page="home"] .category-portal-sports .category-portal-code {
 body[data-page="home"] .category-portal-sports .category-portal-preview {
   grid-column: 2;
   grid-row: 1 / 3;
-  min-height: 0;
+  min-height: 170px;
   margin: 0;
 }
 
@@ -5619,7 +5696,7 @@ body[data-page="home"] .category-portal-sports .category-portal-copy {
   align-self: end;
 }
 
-body[data-page="home"] .category-portal-copy h3 {
+body[data-page="home"] .category-portal-copy h2 {
   margin-bottom: clamp(7px, 1vh, 11px);
   font-size: clamp(2rem, 4.8vh, 4.2rem);
   line-height: 0.92;
@@ -5633,12 +5710,14 @@ body[data-page="home"] .category-portal-copy p {
 
 @media (max-width: 860px) {
   body[data-page="home"] .category-portals {
-    gap: 9px;
-    padding: 10px 13px 12px;
+    grid-template-rows: auto auto;
+    gap: 15px;
+    min-height: calc(100dvh - 72px);
+    padding: 16px 13px 24px;
   }
 
-  body[data-page="home"] .category-portals-heading h2 {
-    font-size: clamp(2.35rem, 7.5vh, 4.2rem);
+  body[data-page="home"] .category-portals-heading h1 {
+    font-size: clamp(2.35rem, 10vw, 4.2rem);
   }
 
   body[data-page="home"] .character-home-file {
@@ -5648,8 +5727,9 @@ body[data-page="home"] .category-portal-copy p {
 
   body[data-page="home"] .category-portal-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-rows: repeat(3, minmax(190px, auto));
+    gap: 12px;
+    min-height: 0;
   }
 
   body[data-page="home"] .category-portal,
@@ -5660,7 +5740,7 @@ body[data-page="home"] .category-portal-copy p {
     grid-row: auto;
     grid-template-columns: minmax(92px, 0.7fr) minmax(0, 1.3fr);
     grid-template-rows: auto minmax(0, 1fr);
-    min-height: 0;
+    min-height: clamp(190px, 32vh, 250px);
     margin: 0;
     padding: 9px 13px;
   }
@@ -5682,11 +5762,16 @@ body[data-page="home"] .category-portal-copy p {
     margin: 0 8px 0 0;
   }
 
-  body[data-page="home"] .category-portal-preview img,
-  body[data-page="home"] .category-portal-events .category-portal-preview img,
-  body[data-page="home"] .category-portal-sports .category-portal-preview img {
-    width: min(72%, 112px);
-    max-height: 76px;
+  body[data-page="home"] .category-portal-print,
+  body[data-page="home"] .category-portal-events .category-portal-print,
+  body[data-page="home"] .category-portal-sports .category-portal-print {
+    width: min(78%, 126px);
+  }
+
+  body[data-page="home"] .category-portal-print img,
+  body[data-page="home"] .category-portal-events .category-portal-print img,
+  body[data-page="home"] .category-portal-sports .category-portal-print img {
+    max-height: 96px;
     border-width: 4px;
   }
 
@@ -5699,7 +5784,7 @@ body[data-page="home"] .category-portal-copy p {
     align-self: center;
   }
 
-  body[data-page="home"] .category-portal-copy h3 {
+  body[data-page="home"] .category-portal-copy h2 {
     margin: 0 0 4px;
     font-size: clamp(1.55rem, 5.4vh, 2.5rem);
   }
@@ -5720,7 +5805,7 @@ body[data-page="home"] .category-portal-copy p {
     padding-bottom: 10px;
   }
 
-  body[data-page="home"] .category-portals-heading h2 {
+  body[data-page="home"] .category-portals-heading h1 {
     font-size: clamp(2.4rem, 8vh, 3.6rem);
   }
 
@@ -5728,10 +5813,16 @@ body[data-page="home"] .category-portal-copy p {
     display: none;
   }
 
-  body[data-page="home"] .category-portal-preview img,
-  body[data-page="home"] .category-portal-events .category-portal-preview img,
-  body[data-page="home"] .category-portal-sports .category-portal-preview img {
+  body[data-page="home"] .category-portal-print img,
+  body[data-page="home"] .category-portal-events .category-portal-print img,
+  body[data-page="home"] .category-portal-sports .category-portal-print img {
     max-height: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="home"] .category-portal-print {
+    transition: none;
   }
 }
 
@@ -5945,8 +6036,7 @@ html[data-theme="dark"] .route-curtain-panel {
 }
 
 html[data-theme="dark"] .route-curtain-title,
-html[data-theme="dark"] .route-curtain-status,
-html[data-theme="dark"] .route-curtain-error p {
+html[data-theme="dark"] .route-curtain-status {
   color: var(--night-cream);
 }
 
@@ -6038,13 +6128,8 @@ html[data-theme="dark"] .theme-toggle .theme-toggle-track > span:last-child {
   color: var(--night-cream);
 }
 
-html[data-theme="dark"] .theme-toggle-label {
-  font-size: 0;
-}
-
-html[data-theme="dark"] .theme-toggle-label::before {
-  content: "Dark";
-  font-size: 0.54rem;
+html[data-theme="dark"] .home-identity a {
+  color: var(--night-cream);
 }
 
 html[data-theme="dark"] .menu-toggle {
@@ -6066,7 +6151,7 @@ html[data-theme="dark"] :where(
   .home-cover-copy h1,
   .home-cover-index > p,
   .home-cover-index li,
-  .category-portals-heading h2,
+  .category-portals-heading h1,
   .sheet-focus-note b,
   .profile-introduction h1,
   .profile-margin-note p,
@@ -6200,8 +6285,8 @@ html[data-theme="dark"] .booking-card {
     10px 12px 18px rgba(6, 18, 14, 0.3);
 }
 
-html[data-theme="dark"] .photo-card button:hover .photo-surface,
-html[data-theme="dark"] .photo-card button:focus-visible .photo-surface {
+html[data-theme="dark"] .photo-card .photo-trigger:hover .photo-surface,
+html[data-theme="dark"] .photo-card .photo-trigger:focus-visible .photo-surface {
   border-color: var(--gold);
   box-shadow:
     10px 13px 0 rgba(210, 168, 91, 0.38),
@@ -6320,6 +6405,10 @@ html[data-theme="dark"] .booking-card {
   background:
     linear-gradient(rgba(28, 56, 46, 0.94), rgba(28, 56, 46, 0.94)),
     repeating-linear-gradient(0deg, transparent 0 29px, rgba(241, 232, 212, 0.08) 29px 30px);
+}
+
+html[data-theme="dark"] .booking-actions > a:last-child {
+  color: var(--night-cream);
 }
 
 html[data-theme="dark"] .booking-envelope:hover .booking-card,

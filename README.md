@@ -9,6 +9,10 @@ All portfolio photographs live in the repository's `photos` folder:
 ```text
 photos/
 ├── featured/
+├── covers/
+│   ├── travel/
+│   ├── events/
+│   └── sports/
 ├── travel/
 │   ├── 01-italy-2026/
 │   └── 02-new-york/
@@ -22,8 +26,31 @@ photos/
 
 - Create a folder inside `travel`, `events`, or `sports` to make a gallery
   subsection.
+- Put homepage cover copies in `covers/travel`, `covers/events`, or
+  `covers/sports`. The homepage uses these small, curated sets instead of
+  selecting a random gallery image.
 - Supported formats are JPG, JPEG, PNG, WebP, GIF, and AVIF. Hidden files and
   other formats are ignored.
+
+### Curating the homepage covers
+
+Edit `portfolio.config.json` to list two or three cover files for each category
+in the order they should be layered. Paths are relative to `photos/`:
+
+```json
+{
+  "covers": {
+    "travel": ["covers/travel/01-providence-light.jpg"],
+    "events": ["covers/events/01-inside-the-dragon.jpg"],
+    "sports": ["covers/sports/01-tall-pass.jpg"]
+  }
+}
+```
+
+Cover photographs are intentionally copied into `photos/covers/`; the config
+does not reference another gallery file. If a configured cover is missing, the
+build uses the remaining cover files in filename order, then the first gallery
+photographs as a deterministic fallback. Reloading never changes the selection.
 
 ### Numbered sorting
 
@@ -32,6 +59,19 @@ precise control:
 
 The numbers are hidden on the website. Hyphens and underscores become spaces,
 and names are displayed in normal title capitalization.
+
+Examples:
+
+- Add: open the destination folder on GitHub, choose **Add file → Upload
+  files**, and commit the upload.
+- Replace: upload a new file with the same path and filename, then confirm the
+  replacement commit.
+- Move: edit the file path in GitHub or upload it to the new subsection and
+  delete the old copy.
+- Delete: open the photograph on GitHub, use **Delete file**, and commit.
+
+Each committed photo change automatically rebuilds and republishes GitHub
+Pages. You do not need to edit the gallery HTML or JavaScript.
 
 ### Image recommendations
 
@@ -59,6 +99,7 @@ still be run with `npm run dev`.
 ## Project structure
 
 - `photos/` — folder to manage portfolio photographs
+- `portfolio.config.json` — curated homepage cover order and identity line
 - `scripts/generate-gallery-manifest.mjs` — scans folders and creates gallery data
 - `scripts/build-pages.mjs` — assembles the deployable GitHub Pages site
 - `.github/workflows/pages.yml` — rebuilds and deploys the site after pushes

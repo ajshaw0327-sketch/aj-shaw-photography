@@ -27,8 +27,8 @@
       html, body { min-height: 100%; margin: 0; background-color: #f2eddd; }
       html[data-theme="dark"], html[data-theme="dark"] body { color: #f2ead7; background-color: #142b23; }
       .route-curtain { position: fixed; top: var(--route-panel-top); right: 0; bottom: 0; left: 0; z-index: 45; display: grid; place-items: center; visibility: hidden; pointer-events: none; color: #faf6e9; border-top: 3px solid #102e24; background: #193f31; transform: translate3d(0, calc(100% + 30px), 0); transition: transform 360ms cubic-bezier(0.24, 0.82, 0.3, 1); }
-      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading, .route-curtain.is-error, .route-curtain.is-revealing { visibility: visible; }
-      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading, .route-curtain.is-error { pointer-events: auto; transform: translate3d(0, 0, 0); }
+      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading, .route-curtain.is-revealing { visibility: visible; }
+      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading { pointer-events: auto; transform: translate3d(0, 0, 0); }
       .route-curtain.is-revealing { pointer-events: auto; transform: translate3d(0, calc(100% + 30px), 0); }
       @media (max-width: 520px) { :root { --route-panel-top: calc(64px + env(safe-area-inset-top, 0px)); } }
       @media (prefers-reduced-motion: reduce) { .route-curtain { transform: none !important; transition: opacity 140ms ease; } .route-curtain.is-revealing { opacity: 0; background: #f2eddd; } }
@@ -46,17 +46,22 @@
         } catch {}
       })();
     </script>
-    <meta
-      name="description"
-      content="Travel, event, and sports photography by AJ Shaw, photographed on Fujifilm X-T50."
-    />
+    <meta name="description" content="The Massachusetts photography archive of AJ Shaw, featuring events, travel and street scenes, and sports photographed on Fujifilm X-T50." />
+    <link rel="canonical" href="https://ajshaw0327-sketch.github.io/aj-shaw-photography/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ajshaw0327-sketch.github.io/aj-shaw-photography/" />
     <meta property="og:title" content="AJ Shaw — Photographer" />
-    <meta property="og:description" content="Small moments, kept with intention." />
-    <meta property="og:image" content="og.png" />
+    <meta property="og:description" content="Explore AJ Shaw’s field-journal archive of events, travel, street, and sports photography." />
+    <meta property="og:image" content="https://ajshaw0327-sketch.github.io/aj-shaw-photography/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AJ Shaw — Photographer" />
+    <meta name="twitter:description" content="Events, travel, street, and sports photography from Massachusetts photographer AJ Shaw." />
+    <meta name="twitter:image" content="https://ajshaw0327-sketch.github.io/aj-shaw-photography/og.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"AJ Shaw","jobTitle":"Photographer","url":"https://ajshaw0327-sketch.github.io/aj-shaw-photography/","image":"https://ajshaw0327-sketch.github.io/aj-shaw-photography/aj-portrait.jpg","homeLocation":{"@type":"Place","name":"Massachusetts"},"sameAs":["https://www.instagram.com/aj.phots_/"]}</script>
     <title>AJ Shaw — Photographer</title>
     <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/playfair-display-variable.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260802d" />
+    <link rel="stylesheet" href="style.css?v=20260808a" />
   </head>
   <body data-page="home" data-asset-root="./">
     <div class="route-curtain" id="route-curtain" aria-hidden="true">
@@ -67,10 +72,6 @@
         <div class="route-curtain-progress">
           <span class="route-curtain-status" data-route-curtain-status aria-live="polite">Preparing archive</span>
           <span class="route-curtain-progress-track" aria-hidden="true"></span>
-        </div>
-        <div class="route-curtain-error" role="alert">
-          <p>The archive could not be prepared. Check your connection and try again.</p>
-          <button class="route-curtain-retry" data-route-curtain-retry type="button">Try again</button>
         </div>
       </div>
     </div>
@@ -138,7 +139,10 @@
     <main class="page page-home living-home">
       <section class="category-portals" aria-labelledby="category-portals-title">
         <header class="category-portals-heading">
-          <h2 id="category-portals-title">Choose a field file.</h2>
+          <div class="category-portals-heading-copy">
+            <h1 id="category-portals-title">Choose a field file.</h1>
+            <p class="home-identity"><span><!-- BUILD:HOME:IDENTITY --></span><a href="about.html#contact">Book / Contact ↗</a></p>
+          </div>
           <span
             class="character-sprite character-home-file"
             data-character="walk"
@@ -150,25 +154,25 @@
         <div class="category-portal-grid">
           <a class="category-portal category-portal-events" href="events.html" data-category-preview="events">
             <span class="category-portal-code">EVT / 01</span>
-            <div class="category-portal-preview" aria-hidden="true"></div>
+            <div class="category-portal-preview"><!-- BUILD:HOME:COVERS:events --></div>
             <div class="category-portal-copy">
-              <h3>Events</h3>
+              <h2>Events</h2>
               <strong>Open events archive <i aria-hidden="true">↗</i></strong>
             </div>
           </a>
           <a class="category-portal category-portal-travel" href="travel.html" data-category-preview="travel">
             <span class="category-portal-code">TRV / 02</span>
-            <div class="category-portal-preview" aria-hidden="true"></div>
+            <div class="category-portal-preview"><!-- BUILD:HOME:COVERS:travel --></div>
             <div class="category-portal-copy">
-              <h3>Travel &amp; Street</h3>
+              <h2>Travel &amp; Street</h2>
               <strong>Open travel archive <i aria-hidden="true">↗</i></strong>
             </div>
           </a>
           <a class="category-portal category-portal-sports" href="sports.html" data-category-preview="sports">
             <span class="category-portal-code">SPT / 03</span>
-            <div class="category-portal-preview" aria-hidden="true"></div>
+            <div class="category-portal-preview"><!-- BUILD:HOME:COVERS:sports --></div>
             <div class="category-portal-copy">
-              <h3>Sports</h3>
+              <h2>Sports</h2>
               <strong>Open sports archive <i aria-hidden="true">↗</i></strong>
             </div>
           </a>
@@ -212,7 +216,7 @@
       </div>
     </div>
 
-    <script src="gallery-manifest.js?v=20260728a"></script>
-    <script src="app.js?v=20260802d"></script>
+    <script src="gallery-manifest.js?v=20260808a"></script>
+    <script src="app.js?v=20260809a"></script>
   </body>
 </html>

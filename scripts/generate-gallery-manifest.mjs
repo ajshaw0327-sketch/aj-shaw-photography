@@ -11,7 +11,7 @@ export const SUPPORTED_IMAGE_EXTENSIONS = new Set([
   ".avif",
 ]);
 
-const categories = ["travel", "events", "sports"];
+const categories = ["events", "travel", "sports"];
 const naturalSort = new Intl.Collator("en", {
   numeric: true,
   sensitivity: "base",
@@ -30,7 +30,10 @@ export function stripNumericPrefix(value) {
 }
 
 export function toDisplayName(value) {
-  const withoutExtension = value.replace(/\.[^.]+$/, "");
+  const extension = path.extname(value).toLowerCase();
+  const withoutExtension = SUPPORTED_IMAGE_EXTENSIONS.has(extension)
+    ? value.slice(0, -extension.length)
+    : value;
   const words = stripNumericPrefix(withoutExtension)
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
@@ -239,7 +242,7 @@ async function imageGroupsInside(directory, relativeDirectory = "") {
   return groups;
 }
 
-async function photoRecord(photosRoot, relativePath, detail) {
+async function photoRecord(photosRoot, relativePath, detail, category) {
   const filename = path.basename(relativePath);
   const title = toDisplayName(filename) || "Untitled Photograph";
   let dimensions = null;
@@ -254,16 +257,42 @@ async function photoRecord(photosRoot, relativePath, detail) {
     src: `photos/${encodeRelativePath(relativePath)}`,
     title,
     detail,
-    alt: `${title} — ${detail}, photographed by AJ Shaw`,
+    alt: `Photograph of “${title}” from ${detail}, by AJ Shaw.`,
+    category,
     ...(dimensions || {}),
   };
 }
 
-export async function scanPhotoLibrary(photosRoot) {
+function normalizedConfiguredPath(value) {
+  return String(value || "")
+    .replace(/\\/g, "/")
+    .replace(/^\.\//, "")
+    .replace(/^photos\//, "");
+}
+
+function chooseCoverPhotographs(category, available, galleries, configured = []) {
+  const byId = new Map(available.map((photo) => [photo.id, photo]));
+  const candidates = [
+    ...configured.map((value) => byId.get(normalizedConfiguredPath(value))).filter(Boolean),
+    ...available,
+    ...(galleries[category] || []).flatMap((group) => group.photos || []),
+  ];
+  const selected = [];
+  const used = new Set();
+  for (const photo of candidates) {
+    if (!photo?.src || used.has(photo.src)) continue;
+    selected.push(photo);
+    used.add(photo.src);
+    if (selected.length === 3) break;
+  }
+  return selected;
+}
+
+export async function scanPhotoLibrary(photosRoot, configuration = {}) {
   const featuredFiles = await imageFilesDirectlyInside(path.join(photosRoot, "featured"));
   const featured = await Promise.all(
     featuredFiles.map((filename) =>
-      photoRecord(photosRoot, path.join("featured", filename), "Featured selection"),
+      photoRecord(photosRoot, path.join("featured", filename), "Featured selection", "featured"),
     ),
   );
 
@@ -286,6 +315,7 @@ export async function scanPhotoLibrary(photosRoot) {
                 photosRoot,
                 path.join(category, relativeDirectory, filename),
                 detail,
+                category,
               ),
             ),
           ),
@@ -294,16 +324,41 @@ export async function scanPhotoLibrary(photosRoot) {
     );
   }
 
+  const covers = {};
+  for (const category of categories) {
+    const coverFiles = await imageFilesDirectlyInside(
+      path.join(photosRoot, "covers", category),
+    );
+    const available = await Promise.all(
+      coverFiles.map((filename) =>
+        photoRecord(
+          photosRoot,
+          path.join("covers", category, filename),
+          `${toDisplayName(category)} cover selection`,
+          category,
+        ),
+      ),
+    );
+    covers[category] = chooseCoverPhotographs(
+      category,
+      available,
+      galleries,
+      configuration.covers?.[category],
+    );
+  }
+
   return {
-    version: 1,
+    version: 2,
     generatedAt: new Date().toISOString(),
+    identityLine:
+      configuration.identityLine || "Photography by AJ Shaw · Massachusetts",
     featured,
+    covers,
     galleries,
   };
 }
 
-export async function writeManifest({ photosRoot, jsonOutput, scriptOutput }) {
-  const manifest = await scanPhotoLibrary(photosRoot);
+export async function writeManifestData({ manifest, jsonOutput, scriptOutput }) {
   const json = `${JSON.stringify(manifest, null, 2)}\n`;
   await writeFile(jsonOutput, json);
   if (scriptOutput) {
@@ -313,6 +368,11 @@ export async function writeManifest({ photosRoot, jsonOutput, scriptOutput }) {
     );
   }
   return manifest;
+}
+
+export async function writeManifest({ photosRoot, jsonOutput, scriptOutput, configuration }) {
+  const manifest = await scanPhotoLibrary(photosRoot, configuration);
+  return writeManifestData({ manifest, jsonOutput, scriptOutput });
 }
 
 function cliValue(name, fallback) {

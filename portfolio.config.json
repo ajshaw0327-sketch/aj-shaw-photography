@@ -1,0 +1,20 @@
+{
+  "identityLine": "Photography by AJ Shaw · Massachusetts",
+  "covers": {
+    "events": [
+      "covers/events/01-inside-the-dragon.jpg",
+      "covers/events/02-enthralled.jpg",
+      "covers/events/03-the-gathering.jpg"
+    ],
+    "travel": [
+      "covers/travel/01-providence-light.jpg",
+      "covers/travel/02-sunset.jpg",
+      "covers/travel/03-old-lighthouse.jpg"
+    ],
+    "sports": [
+      "covers/sports/01-tall-pass.jpg",
+      "covers/sports/02-big-throw.jpg",
+      "covers/sports/03-nice-block.jpg"
+    ]
+  }
+}

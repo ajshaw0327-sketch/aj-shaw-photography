@@ -37,10 +37,24 @@ test("folder names become predictable gallery sections without empty or hidden e
   );
   await copyFixture(png, path.join(root, "events/02-community_festival/03-strange # name.png"));
   await copyFixture(gif, path.join(root, "sports/01-warm-up.gif"));
+  await copyFixture(landscape, path.join(root, "covers/travel/01-curated-second.jpg"));
+  await copyFixture(landscape, path.join(root, "covers/travel/02-curated-first.jpg"));
   await writeFile(path.join(root, "sports/ignore-me.txt"), "unsupported");
 
-  const manifest = await scanPhotoLibrary(root);
+  const configuration = {
+    identityLine: "Photography by AJ Shaw · Massachusetts",
+    covers: {
+      travel: [
+        "covers/travel/02-curated-first.jpg",
+        "covers/travel/missing.jpg",
+        "covers/travel/01-curated-second.jpg",
+      ],
+    },
+  };
+  const manifest = await scanPhotoLibrary(root, configuration);
 
+  assert.equal(manifest.version, 2);
+  assert.equal(manifest.identityLine, configuration.identityLine);
   assert.equal(manifest.featured.length, 1);
   assert.equal(manifest.featured[0].title, "Opening # Shot");
   assert.match(manifest.featured[0].src, /opening%20%23%20shot\.JPG$/);
@@ -75,11 +89,22 @@ test("folder names become predictable gallery sections without empty or hidden e
   );
   assert.equal(manifest.galleries.sports[0].title, "Selected Frames");
   assert.equal(manifest.galleries.sports[0].photos[0].title, "Warm Up");
+  assert.deepEqual(
+    manifest.covers.travel.map((photo) => photo.id),
+    [
+      "covers/travel/02-curated-first.jpg",
+      "covers/travel/01-curated-second.jpg",
+      "travel/01-italy-2026/01-opening-shot.jpg",
+    ],
+  );
+  assert.match(manifest.galleries.travel[0].photos[0].alt, /Photograph of “Opening Shot” from Italy 2026/);
+  assert.equal(manifest.covers.events[0].id, "events/02-community_festival/03-strange # name.png");
 });
 
 test("display names hide numbered prefixes and normalize separators", () => {
   assert.equal(toDisplayName("01-basketball_vs-central"), "Basketball vs Central");
   assert.equal(toDisplayName("002-opening-shot.avif"), "Opening Shot");
+  assert.equal(toDisplayName("03-Kyle-M.-Belmont-Ordination"), "Kyle M. Belmont Ordination");
 });
 
 test("AVIF and WebP metadata readers reserve their image space", async () => {

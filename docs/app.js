@@ -32,7 +32,6 @@ let lastFocusedButton = null;
 let navigationTimer = 0;
 let routeSlowTimer = 0;
 let routeNavigationLocked = false;
-let failedRouteDestination = null;
 let keyboardNavigation = false;
 let launchCloseTimer = 0;
 let archiveManifest = null;
@@ -60,7 +59,6 @@ const routeCurtain = document.querySelector("#route-curtain");
 const routeCurtainCode = routeCurtain?.querySelector("[data-route-curtain-code]");
 const routeCurtainTitle = routeCurtain?.querySelector("[data-route-curtain-title]");
 const routeCurtainStatus = routeCurtain?.querySelector("[data-route-curtain-status]");
-const routeCurtainRetry = routeCurtain?.querySelector("[data-route-curtain-retry]");
 const grid = document.querySelector("#photo-grid");
 const status = document.querySelector("#gallery-status");
 const heroMosaic = document.querySelector("#hero-mosaic");
@@ -271,6 +269,15 @@ function normalizePhoto(photo, category, detail) {
     category,
     detail: photo.detail || detail,
     src: withAssetRoot(photo.src),
+    responsive: photo.responsive
+      ? {
+          ...photo.responsive,
+          webp: (photo.responsive.webp || []).map((source) => ({
+            ...source,
+            src: withAssetRoot(source.src),
+          })),
+        }
+      : undefined,
   };
 }
 
@@ -380,38 +387,6 @@ function setRouteCurtainLoading(isLoading) {
   }
 }
 
-function showRouteCurtainError(destination) {
-  window.clearTimeout(routeSlowTimer);
-  failedRouteDestination = destination;
-  setRouteCurtainLoading(false);
-  routeCurtain?.classList.remove("is-revealing");
-  routeCurtain?.classList.add("is-covering", "is-error");
-  routeCurtain?.setAttribute("aria-hidden", "false");
-  if (routeCurtainStatus) {
-    routeCurtainStatus.textContent = "The archive could not be prepared.";
-  }
-  routeCurtainRetry?.focus({ preventScroll: true });
-}
-
-function waitForRouteCurtainMotion(fallbackDuration) {
-  if (!routeCurtain || reducedMotion.matches) return Promise.resolve();
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      routeCurtain.removeEventListener("transitionend", onTransitionEnd);
-      window.clearTimeout(fallback);
-      resolve();
-    };
-    const onTransitionEnd = (event) => {
-      if (event.target === routeCurtain && event.propertyName === "transform") finish();
-    };
-    const fallback = window.setTimeout(finish, fallbackDuration);
-    routeCurtain.addEventListener("transitionend", onTransitionEnd);
-  });
-}
-
 function focusNewRouteHeading() {
   const heading = document.querySelector("main h1, main h2");
   if (!heading) return;
@@ -440,7 +415,6 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
       "is-covering",
       "is-revealing",
       "is-loading",
-      "is-error",
     );
     routeCurtain?.setAttribute("aria-hidden", "true");
     clearRouteTransition();
@@ -450,7 +424,7 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
   routeNavigationLocked = true;
   document.body.classList.add("route-transitioning");
   routeCurtain.setAttribute("aria-hidden", "false");
-  routeCurtain.classList.remove("is-revealing", "is-error");
+  routeCurtain.classList.remove("is-revealing");
   routeCurtain.classList.add("is-covering");
 
   const elapsed = Date.now() - routeTransitionStartedAt();
@@ -484,77 +458,21 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
     });
 }
 
-async function loadRouteDestination(destination, historyAlreadyStaged = false) {
-  markRouteTransition();
-
-  window.clearTimeout(routeSlowTimer);
-  routeSlowTimer = window.setTimeout(() => setRouteCurtainLoading(true), 400);
-
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 12000);
-  try {
-    const response = await fetch(destination.href, {
-      cache: "default",
-      headers: { Accept: "text/html" },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`Route request failed: ${response.status}`);
-    const html = await response.text();
-    if (!/<main[\s>]/i.test(html) || !/id=["']route-curtain["']/i.test(html)) {
-      throw new Error("Route response did not contain the portfolio structure.");
-    }
-    window.clearTimeout(routeSlowTimer);
-    failedRouteDestination = null;
-    if (historyAlreadyStaged) {
-      window.location.replace(destination.href);
-    } else {
-      window.location.assign(destination.href);
-    }
-  } catch {
-    if (!historyAlreadyStaged) {
-      try {
-        window.history.pushState({ archiveRoute: true }, "", destination.href);
-      } catch {
-        // The panel remains usable even if the History API is restricted.
-      }
-    }
-    showRouteCurtainError(destination);
-  } finally {
-    window.clearTimeout(timeout);
-  }
-}
-
-async function retryFailedRoute() {
-  if (!failedRouteDestination || !routeCurtain) return;
-  routeCurtainRetry?.blur();
-  routeCurtain.classList.remove("is-error");
-  routeCurtain.classList.add("is-covering");
-  if (routeCurtainStatus) routeCurtainStatus.textContent = "Preparing archive";
-  await loadRouteDestination(failedRouteDestination, true);
-}
-
-async function beginRouteNavigation(destination, pressedLink) {
+function beginRouteNavigation(destination, pressedLink) {
   if (routeNavigationLocked) return;
-  if (!routeCurtain) {
-    window.location.assign(destination.href);
-    return;
-  }
-
   routeNavigationLocked = true;
+  markRouteTransition();
+  if (!routeCurtain) return;
   navigationLinks.forEach((link) => link.classList.remove("is-pressed"));
   pressedLink?.classList.add("is-pressed");
   closeMobileMenu();
   syncRouteCurtainBoundary();
   setRouteCurtainDestination(destination);
-  failedRouteDestination = null;
   document.body.classList.add("route-transitioning");
   routeCurtain.setAttribute("aria-hidden", "false");
-  routeCurtain.classList.remove("is-revealing", "is-loading", "is-error");
+  routeCurtain.classList.remove("is-revealing", "is-loading");
   routeCurtain.getBoundingClientRect();
   routeCurtain.classList.add("is-covering");
-
-  await waitForRouteCurtainMotion(430);
-  await loadRouteDestination(destination);
 }
 
 function setupNavigation(essentialReady = Promise.resolve()) {
@@ -570,8 +488,6 @@ function setupNavigation(essentialReady = Promise.resolve()) {
   headerObserver?.observe(header);
   window.addEventListener("resize", syncRouteCurtainBoundary, { passive: true });
   window.addEventListener("orientationchange", syncRouteCurtainBoundary);
-  routeCurtainRetry?.addEventListener("click", retryFailedRoute);
-
   window.addEventListener("pageshow", (event) => {
     syncRouteCurtainBoundary();
     if (event.persisted) revealRouteCurtain(Promise.resolve());
@@ -581,7 +497,7 @@ function setupNavigation(essentialReady = Promise.resolve()) {
     window.clearTimeout(routeSlowTimer);
     if (!routeCurtain) return;
     syncRouteCurtainBoundary();
-    routeCurtain.classList.remove("is-revealing", "is-error");
+    routeCurtain.classList.remove("is-revealing");
     routeCurtain.classList.add("is-covering");
     routeCurtain.setAttribute("aria-hidden", "false");
     document.body.classList.add("route-transitioning");
@@ -618,7 +534,6 @@ function setupNavigation(essentialReady = Promise.resolve()) {
       return;
     }
 
-    event.preventDefault();
     if (routeNavigationLocked) return;
     beginRouteNavigation(destination, navigationLinks.includes(link) ? link : null);
   });
@@ -809,15 +724,6 @@ function homeSequencePhotos() {
   return sequence.slice(0, 6);
 }
 
-function randomPhotoSelection(photos, count = 3) {
-  const shuffled = [...photos];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-  return shuffled.slice(0, count);
-}
-
 function renderHero() {
   if (!heroMosaic) {
     renderCategoryPreviews();
@@ -904,25 +810,40 @@ function renderCategoryPreviews() {
 
   document.querySelectorAll("[data-category-preview]").forEach((portal) => {
     const category = portal.dataset.categoryPreview;
-    const groups = archiveManifest.galleries?.[category];
     const preview = portal.querySelector(".category-portal-preview");
-    if (!Array.isArray(groups) || !preview) return;
-    const previewPhotos = randomPhotoSelection(
-      groups.flatMap((group) => (Array.isArray(group.photos) ? group.photos : [])),
-    );
-    preview.replaceChildren();
+    if (!preview) return;
+    const previewPhotos = archiveManifest.covers?.[category] || [];
+    if (!previewPhotos.length || preview.querySelector("[data-cover-id]")) return;
     previewPhotos.forEach((photo, index) => {
+      const print = document.createElement("span");
+      print.className = "category-portal-print";
+      print.dataset.coverId = photo.id;
+      print.style.setProperty("--portal-index", index);
+      print.setAttribute("aria-hidden", "true");
+      const picture = document.createElement("picture");
+      const responsiveSources = photo.responsive?.webp || [];
+      if (responsiveSources.length) {
+        const source = document.createElement("source");
+        source.type = "image/webp";
+        source.srcset = responsiveSources
+          .map((candidate) => `${withAssetRoot(candidate.src)} ${candidate.width}w`)
+          .join(", ");
+        source.sizes = "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px";
+        picture.append(source);
+      }
       const image = document.createElement("img");
       image.alt = "";
       image.loading = index === 0 ? "eager" : "lazy";
       image.decoding = "async";
+      image.sizes = "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px";
       if (photo.width && photo.height) {
         image.width = photo.width;
         image.height = photo.height;
       }
       image.src = withAssetRoot(photo.src);
-      image.style.setProperty("--portal-index", index);
-      preview.append(image);
+      picture.append(image);
+      print.append(picture);
+      preview.append(print);
     });
   });
 }
@@ -1004,7 +925,7 @@ function setupPhotoCardInteractions(scope) {
   scope.addEventListener("pointerover", (event) => {
     if (!canHover.matches || reducedMotion.matches || event.pointerType === "touch") return;
     const button =
-      event.target instanceof Element ? event.target.closest(".photo-card button") : null;
+      event.target instanceof Element ? event.target.closest(".photo-card .photo-trigger") : null;
     if (!button || !scope.contains(button) || button === activeButton) return;
     resetTilt();
     activeButton = button;
@@ -1032,7 +953,7 @@ function setupPhotoCardInteractions(scope) {
     if (!activeButton) return;
     const next =
       event.relatedTarget instanceof Element
-        ? event.relatedTarget.closest(".photo-card button")
+        ? event.relatedTarget.closest(".photo-card .photo-trigger")
         : null;
     if (next === activeButton) return;
     resetTilt();
@@ -1052,11 +973,12 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     figure.style.setProperty("--card-delay", `${Math.min(localIndex, 8) * 45}ms`);
     figure.style.setProperty("--section-card-delay", `${Math.min(localIndex, 10) * 36}ms`);
 
-    const button = document.createElement("button");
-    button.type = "button";
+    const button = document.createElement("a");
+    button.className = "photo-trigger";
+    button.href = photo.src;
     button.setAttribute(
       "aria-label",
-      `Open ${photo.title}, ${photo.detail}, photographed on Fujifilm X-T50, in the photo viewer`,
+      `View ${photo.title}, ${photo.detail}`,
     );
     const indexLabel = document.createElement("span");
     indexLabel.className = "frame-index";
@@ -1065,6 +987,15 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     const windowElement = document.createElement("span");
     windowElement.className = "photo-window";
 
+    const picture = document.createElement("picture");
+    const webpSources = photo.responsive?.webp || [];
+    if (webpSources.length) {
+      const source = document.createElement("source");
+      source.type = "image/webp";
+      source.srcset = webpSources.map((item) => `${item.src} ${item.width}w`).join(", ");
+      source.sizes = "(max-width: 640px) 88vw, (max-width: 1100px) 44vw, 470px";
+      picture.append(source);
+    }
     const image = document.createElement("img");
     image.alt = photo.alt;
     image.loading = index < 2 ? "eager" : "lazy";
@@ -1073,9 +1004,12 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     if (photo.width && photo.height) {
       image.width = photo.width;
       image.height = photo.height;
+      image.srcset = `${photo.src} ${photo.width}w`;
+      image.sizes = "(max-width: 640px) 88vw, (max-width: 1100px) 44vw, 470px";
     }
     prepareProgressiveImage(image, windowElement);
     image.src = photo.src;
+    picture.append(image);
 
     const openMark = document.createElement("span");
     openMark.className = "open-mark";
@@ -1105,9 +1039,12 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     const surface = document.createElement("span");
     surface.className = "photo-surface";
 
-    button.addEventListener("click", () => openLightbox(selected, localIndex, button));
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      openLightbox(selected, localIndex, button);
+    });
 
-    windowElement.append(image, metadata, openMark);
+    windowElement.append(picture, metadata, openMark);
     surface.append(indexLabel, windowElement);
     button.append(surface);
     caption.append(captionTitle, captionDetail);
@@ -1334,6 +1271,65 @@ function scrollToStaticPageAnchor() {
   return true;
 }
 
+function hydrateStaticGallery() {
+  const subsections = [...grid.querySelectorAll(":scope > .gallery-subsection")];
+  if (!subsections.length || !galleryGroups.length) return false;
+
+  document.documentElement.classList.add("gallery-enhanced");
+  subsectionsById.clear();
+  const requestedHash = decodedLocationHash();
+  let requestedSubsection = null;
+
+  subsections.forEach((subsection, groupIndex) => {
+    const group = galleryGroups[groupIndex];
+    if (!group) return;
+    subsectionsById.set(subsection.id, subsection);
+    if (subsection.id === requestedHash) requestedSubsection = subsection;
+
+    const toggle = subsection.querySelector(".gallery-subsection-toggle");
+    if (toggle && toggle.dataset.enhanced !== "true") {
+      toggle.dataset.enhanced = "true";
+      toggle.addEventListener("click", () => {
+        const willExpand = toggle.getAttribute("aria-expanded") !== "true";
+        setSubsectionExpanded(subsection, willExpand, {
+          animate: true,
+          updateHash: true,
+        });
+      });
+    }
+
+    subsection.querySelectorAll(".photo-window").forEach((frame) => {
+      const image = frame.querySelector("img");
+      if (!image || image.dataset.progressiveEnhanced === "true") return;
+      image.dataset.progressiveEnhanced = "true";
+      prepareProgressiveImage(image, frame);
+    });
+
+    subsection.querySelectorAll(".photo-trigger").forEach((trigger, localIndex) => {
+      if (trigger.dataset.enhanced === "true") return;
+      trigger.dataset.enhanced = "true";
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        openLightbox(group.photos, localIndex, trigger);
+      });
+    });
+
+    setupSubsectionPreview(subsection);
+  });
+
+  if (requestedSubsection) {
+    setSubsectionExpanded(requestedSubsection, true, {
+      animate: false,
+      updateHash: false,
+    });
+    requestAnimationFrame(() => {
+      requestedSubsection.scrollIntoView({ block: "start", behavior: "auto" });
+    });
+  }
+
+  return true;
+}
+
 function cleanLegacyContactRedirect() {
   if (currentPage !== "about") return;
   const currentUrl = new URL(window.location.href);
@@ -1344,15 +1340,21 @@ function cleanLegacyContactRedirect() {
 
 function renderGallery() {
   if (!grid || !gallerySection) return;
-  grid.replaceChildren();
-  subsectionsById.clear();
+  const hydratedStaticGallery = currentPage !== "home" && hydrateStaticGallery();
 
-  if (currentPage === "home") {
+  if (hydratedStaticGallery) {
+    // The build-generated HTML remains the source of the initial render. JavaScript
+    // only adds the accordion, lightbox, and motion behaviors above.
+  } else if (currentPage === "home") {
+    grid.replaceChildren();
+    subsectionsById.clear();
     const contactSheet = document.createElement("div");
     contactSheet.className = "photo-grid";
     renderPhotoCards(contactSheet, photographs);
     grid.append(contactSheet);
   } else {
+    grid.replaceChildren();
+    subsectionsById.clear();
     let photoOffset = 0;
     const usedIds = new Set();
     const requestedHash = decodedLocationHash();
@@ -1458,8 +1460,8 @@ function renderGallery() {
       setupSubsectionPreview(subsection);
     });
 
-    subsectionsById.forEach((subsection) => {
-      setSubsectionExpanded(subsection, subsection === requestedSubsection, {
+    subsectionsById.forEach((subsection, subsectionId) => {
+      setSubsectionExpanded(subsection, requestedSubsection === subsection, {
         animate: false,
         updateHash: false,
       });
@@ -1715,9 +1717,9 @@ setupThemeToggle();
 setupCharacterAnimations();
 setupLightbox();
 setupRevealAnimations();
-const essentialRouteReady = loadPhotographs();
+loadPhotographs();
 setupLaunchExperience();
-setupNavigation(essentialRouteReady);
+setupNavigation();
 window.addEventListener("hashchange", () => {
   if (!openHashedSubsection({ scroll: true, animate: true })) {
     scrollToStaticPageAnchor();
