@@ -36,12 +36,21 @@
     <script>
       (() => {
         try {
-          if (window.sessionStorage.getItem("aj-shaw-route-transition-v1") === "1") {
+          const transitionKey = "aj-shaw-route-transition-v1";
+          const startedKey = "aj-shaw-route-transition-started-v1";
+          const navigationEntry = window.performance?.getEntriesByType?.("navigation")?.[0];
+          const isHistoryVisit = navigationEntry?.type === "back_forward";
+          if (isHistoryVisit && window.sessionStorage.getItem(transitionKey) !== "1") {
+            window.sessionStorage.setItem(transitionKey, "1");
+            window.sessionStorage.setItem(startedKey, String(Date.now()));
+            document.documentElement.dataset.routeHistory = "true";
+          }
+          if (window.sessionStorage.getItem(transitionKey) === "1") {
             document.documentElement.dataset.routeArrival = "true";
-            const started = Number(window.sessionStorage.getItem("aj-shaw-route-transition-started-v1"));
+            const started = Number(window.sessionStorage.getItem(startedKey));
             if (started) window.setTimeout(() => {
               if (document.documentElement.dataset.routeArrival === "true") document.documentElement.dataset.routeLoading = "";
-            }, Math.max(0, 400 - (Date.now() - started)));
+            }, Math.max(0, 650 - (Date.now() - started)));
           }
         } catch {}
       })();
@@ -61,7 +70,7 @@
     <title>Travel &amp; Street — AJ Shaw Photography</title>
     <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/playfair-display-variable.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260808a" />
+    <link rel="stylesheet" href="style.css?v=20260810c" />
   </head>
   <body data-page="travel" data-asset-root="./">
     <div class="route-curtain" id="route-curtain" aria-hidden="true">
@@ -162,6 +171,6 @@
       </div>
     </div>
     <script src="gallery-manifest.js?v=20260808a"></script>
-    <script src="app.js?v=20260809a"></script>
+    <script src="app.js?v=20260810c"></script>
   </body>
 </html>

@@ -17,6 +17,12 @@ const archiveCodes = {
 };
 const routeTransitionKey = "aj-shaw-route-transition-v1";
 const routeTransitionStartedKey = "aj-shaw-route-transition-started-v1";
+const routeTransitionSourceKey = "aj-shaw-route-transition-source-v1";
+const routeTransitionDestinationKey = "aj-shaw-route-transition-destination-v1";
+const routePreviousPageKey = "aj-shaw-route-previous-page-v1";
+const routeCoverDurationMs = 360;
+const routeTitleHoldMs = 250;
+const routeLoadingThresholdMs = routeTitleHoldMs + 400;
 const routeTransitionMeta = {
   home: { code: "HOME / 00", title: "Home" },
   events: { code: "EVT / 01", title: "Events" },
@@ -32,6 +38,9 @@ let lastFocusedButton = null;
 let navigationTimer = 0;
 let routeSlowTimer = 0;
 let routeNavigationLocked = false;
+let routeNavigationDeadline = 0;
+let archiveLabelMeasureFrame = 0;
+let archiveLabelTarget = null;
 let keyboardNavigation = false;
 let launchCloseTimer = 0;
 let archiveManifest = null;
@@ -77,6 +86,17 @@ const launchTitle = document.querySelector("#launch-title");
 const launchTypedName = launchSequence?.querySelector("[data-typewriter-name]");
 const launchPhotography = launchSequence?.querySelector("[data-launch-photography]");
 const launchAnnouncement = launchSequence?.querySelector("[data-intro-announcement]");
+const archiveLabelShadow = document.createElement("span");
+const archiveLabel = document.createElement("span");
+const archiveLabelShadowSurface = document.createElement("i");
+const archiveLabelSurface = document.createElement("i");
+
+archiveLabelShadow.className = "nav-active-shadow";
+archiveLabelShadow.setAttribute("aria-hidden", "true");
+archiveLabelShadow.append(archiveLabelShadowSurface);
+archiveLabel.className = "nav-active-label";
+archiveLabel.setAttribute("aria-hidden", "true");
+archiveLabel.append(archiveLabelSurface);
 
 document.documentElement.classList.add("js");
 
@@ -323,6 +343,123 @@ function setActiveNavigation() {
   });
 }
 
+function navigationLinkForRoute(route = currentPage) {
+  return navigationLinks.find((link) => link.dataset.route === route) || null;
+}
+
+function snappedNavigationPixel(value) {
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  return Math.round(value * pixelRatio) / pixelRatio;
+}
+
+function measureNavigationLink(link) {
+  if (!navigation || !link) return null;
+  const navigationRect = navigation.getBoundingClientRect();
+  const linkRect = link.getBoundingClientRect();
+  if (linkRect.width <= 0 || linkRect.height <= 0) return null;
+  return {
+    x: snappedNavigationPixel(linkRect.left - navigationRect.left - navigation.clientLeft),
+    y: snappedNavigationPixel(linkRect.top - navigationRect.top - navigation.clientTop),
+    width: snappedNavigationPixel(linkRect.width),
+    height: snappedNavigationPixel(linkRect.height),
+  };
+}
+
+function writeArchiveLabelGeometry(geometry) {
+  if (!navigation || !geometry) return false;
+  navigation.style.setProperty("--nav-label-x", `${geometry.x}px`);
+  navigation.style.setProperty("--nav-label-y", `${geometry.y}px`);
+  navigation.style.setProperty("--nav-label-width", `${geometry.width}px`);
+  navigation.style.setProperty("--nav-label-height", `${geometry.height}px`);
+  return true;
+}
+
+function clearArchiveLabelTextTarget() {
+  navigationLinks.forEach((link) => link.removeAttribute("data-nav-target"));
+}
+
+function placeArchiveLabel(link) {
+  if (!navigation || !link) return false;
+  const geometry = measureNavigationLink(link);
+  if (!geometry) return false;
+  navigation.removeAttribute("data-nav-label-moving");
+  archiveLabel.classList.remove("is-sliding");
+  clearArchiveLabelTextTarget();
+  archiveLabelTarget = link;
+  writeArchiveLabelGeometry(geometry);
+  navigation.classList.add("nav-label-ready");
+  return true;
+}
+
+function slideArchiveLabel(link) {
+  if (!navigation || !link) return false;
+  const geometry = measureNavigationLink(link);
+  if (!geometry) return placeArchiveLabel(link);
+  if (reducedMotion.matches) return placeArchiveLabel(link);
+
+  clearArchiveLabelTextTarget();
+  link.setAttribute("data-nav-target", "true");
+  archiveLabelTarget = link;
+  navigation.dataset.navLabelMoving = "true";
+  navigation.classList.add("nav-label-ready");
+  archiveLabel.classList.remove("is-sliding");
+  archiveLabelSurface.getBoundingClientRect();
+  archiveLabel.classList.add("is-sliding");
+  navigation.getBoundingClientRect();
+  writeArchiveLabelGeometry(geometry);
+  return true;
+}
+
+function scheduleArchiveLabelMeasurement() {
+  window.cancelAnimationFrame(archiveLabelMeasureFrame);
+  archiveLabelMeasureFrame = window.requestAnimationFrame(() => {
+    const link = archiveLabelTarget || navigationLinkForRoute();
+    const geometry = measureNavigationLink(link);
+    if (!geometry) return;
+    writeArchiveLabelGeometry(geometry);
+    navigation?.classList.add("nav-label-ready");
+  });
+}
+
+function previousRoutePage() {
+  try {
+    return window.sessionStorage.getItem(routePreviousPageKey);
+  } catch {
+    return null;
+  }
+}
+
+function setupArchiveLabel() {
+  if (!navigation) return;
+  navigation.prepend(archiveLabel, archiveLabelShadow);
+  const activeLink = navigationLinkForRoute();
+  const historySource = document.documentElement.dataset.routeHistory === "true"
+    ? navigationLinkForRoute(previousRoutePage())
+    : null;
+
+  if (historySource && historySource !== activeLink && placeArchiveLabel(historySource)) {
+    window.requestAnimationFrame(() => slideArchiveLabel(activeLink));
+  } else {
+    placeArchiveLabel(activeLink);
+  }
+
+  archiveLabelShadow.addEventListener("transitionend", (event) => {
+    if (event.propertyName !== "transform" || event.target !== archiveLabelShadow) return;
+    navigation.removeAttribute("data-nav-label-moving");
+    archiveLabel.classList.remove("is-sliding");
+    clearArchiveLabelTextTarget();
+    placeArchiveLabel(archiveLabelTarget || navigationLinkForRoute());
+  });
+
+  const labelResizeObserver = "ResizeObserver" in window
+    ? new ResizeObserver(scheduleArchiveLabelMeasurement)
+    : null;
+  labelResizeObserver?.observe(navigation);
+  navigationLinks.forEach((link) => labelResizeObserver?.observe(link));
+  document.fonts?.ready?.then(scheduleArchiveLabelMeasurement).catch(() => undefined);
+  document.fonts?.addEventListener?.("loadingdone", scheduleArchiveLabelMeasurement);
+}
+
 function closeMobileMenu() {
   if (!menuToggle || !navigation) return;
   menuToggle.setAttribute("aria-expanded", "false");
@@ -352,10 +489,16 @@ function syncRouteCurtainBoundary() {
   document.documentElement.style.setProperty("--route-panel-top", `${boundary}px`);
 }
 
-function markRouteTransition(startedAt = Date.now()) {
+function markRouteTransition(
+  startedAt = Date.now(),
+  sourceRoute = currentPage,
+  destinationRoute = currentPage,
+) {
   try {
     window.sessionStorage.setItem(routeTransitionKey, "1");
     window.sessionStorage.setItem(routeTransitionStartedKey, String(startedAt));
+    window.sessionStorage.setItem(routeTransitionSourceKey, sourceRoute);
+    window.sessionStorage.setItem(routeTransitionDestinationKey, destinationRoute);
   } catch {
     // The archive panel still works when storage is unavailable.
   }
@@ -365,6 +508,9 @@ function clearRouteTransition() {
   try {
     window.sessionStorage.removeItem(routeTransitionKey);
     window.sessionStorage.removeItem(routeTransitionStartedKey);
+    window.sessionStorage.removeItem(routeTransitionSourceKey);
+    window.sessionStorage.removeItem(routeTransitionDestinationKey);
+    document.documentElement.removeAttribute("data-route-history");
   } catch {
     // Nothing else is required when storage is unavailable.
   }
@@ -398,7 +544,6 @@ function focusNewRouteHeading() {
 function revealRouteCurtain(essentialReady = Promise.resolve()) {
   window.clearTimeout(navigationTimer);
   window.clearTimeout(routeSlowTimer);
-  navigationLinks.forEach((link) => link.classList.remove("is-pressed"));
   closeMobileMenu();
   document.body.classList.add("route-ready");
   syncRouteCurtainBoundary();
@@ -409,6 +554,7 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
   if (!routeCurtain || !shouldReveal) {
     document.body.classList.remove("route-transitioning", "route-settling");
     routeNavigationLocked = false;
+    routeNavigationDeadline = 0;
     document.documentElement.removeAttribute("data-route-arrival");
     document.documentElement.removeAttribute("data-route-loading");
     routeCurtain?.classList.remove(
@@ -428,15 +574,26 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
   routeCurtain.classList.add("is-covering");
 
   const elapsed = Date.now() - routeTransitionStartedAt();
-  if (document.documentElement.hasAttribute("data-route-loading") || elapsed >= 400) {
+  if (
+    document.documentElement.hasAttribute("data-route-loading") ||
+    elapsed >= routeLoadingThresholdMs
+  ) {
     setRouteCurtainLoading(true);
   } else {
-    routeSlowTimer = window.setTimeout(() => setRouteCurtainLoading(true), 400 - elapsed);
+    routeSlowTimer = window.setTimeout(
+      () => setRouteCurtainLoading(true),
+      routeLoadingThresholdMs - elapsed,
+    );
   }
 
-  Promise.resolve(essentialReady)
-    .catch(() => undefined)
-    .then(() => {
+  const routeTitleHold = reducedMotion.matches
+    ? Promise.resolve()
+    : new Promise((resolve) => window.setTimeout(resolve, routeTitleHoldMs));
+
+  Promise.all([
+    Promise.resolve(essentialReady).catch(() => undefined),
+    routeTitleHold,
+  ]).then(() => {
       window.clearTimeout(routeSlowTimer);
       setRouteCurtainLoading(false);
       document.body.classList.add("route-settling");
@@ -450,6 +607,7 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
           routeCurtain.setAttribute("aria-hidden", "true");
           document.body.classList.remove("route-transitioning");
           routeNavigationLocked = false;
+          routeNavigationDeadline = 0;
           clearRouteTransition();
           focusNewRouteHeading();
           window.setTimeout(() => document.body.classList.remove("route-settling"), 260);
@@ -458,14 +616,36 @@ function revealRouteCurtain(essentialReady = Promise.resolve()) {
     });
 }
 
-function beginRouteNavigation(destination, pressedLink) {
-  if (routeNavigationLocked) return;
+function scheduleRouteNavigationCommit(destination) {
+  window.clearTimeout(navigationTimer);
+  const remaining = Math.max(0, routeNavigationDeadline - Date.now());
+  navigationTimer = window.setTimeout(() => {
+    closeMobileMenu();
+    window.location.assign(destination.href);
+  }, remaining);
+}
+
+function retargetRouteNavigation(destination, targetLink) {
+  if (!routeNavigationLocked || routeNavigationDeadline <= Date.now() || !targetLink) return false;
+  const routeKey = routeKeyFromDestination(destination);
+  setRouteCurtainDestination(destination);
+  slideArchiveLabel(targetLink);
+  markRouteTransition(
+    routeNavigationDeadline - routeCoverDurationMs,
+    currentPage,
+    routeKey,
+  );
+  scheduleRouteNavigationCommit(destination);
+  return true;
+}
+
+function beginRouteNavigation(destination, targetLink) {
+  if (routeNavigationLocked || !routeCurtain || reducedMotion.matches) return false;
   routeNavigationLocked = true;
-  markRouteTransition();
-  if (!routeCurtain) return;
-  navigationLinks.forEach((link) => link.classList.remove("is-pressed"));
-  pressedLink?.classList.add("is-pressed");
-  closeMobileMenu();
+  routeNavigationDeadline = Date.now() + routeCoverDurationMs;
+  const routeKey = routeKeyFromDestination(destination);
+  markRouteTransition(Date.now(), currentPage, routeKey);
+  if (targetLink) slideArchiveLabel(targetLink);
   syncRouteCurtainBoundary();
   setRouteCurtainDestination(destination);
   document.body.classList.add("route-transitioning");
@@ -473,10 +653,13 @@ function beginRouteNavigation(destination, pressedLink) {
   routeCurtain.classList.remove("is-revealing", "is-loading");
   routeCurtain.getBoundingClientRect();
   routeCurtain.classList.add("is-covering");
+  scheduleRouteNavigationCommit(destination);
+  return true;
 }
 
 function setupNavigation(essentialReady = Promise.resolve()) {
   setActiveNavigation();
+  setupArchiveLabel();
   syncRouteCurtainBoundary();
   revealRouteCurtain(essentialReady);
 
@@ -487,14 +670,33 @@ function setupNavigation(essentialReady = Promise.resolve()) {
       : null;
   headerObserver?.observe(header);
   window.addEventListener("resize", syncRouteCurtainBoundary, { passive: true });
+  window.addEventListener("resize", scheduleArchiveLabelMeasurement, { passive: true });
   window.addEventListener("orientationchange", syncRouteCurtainBoundary);
+  window.addEventListener("orientationchange", scheduleArchiveLabelMeasurement);
   window.addEventListener("pageshow", (event) => {
     syncRouteCurtainBoundary();
-    if (event.persisted) revealRouteCurtain(Promise.resolve());
+    scheduleArchiveLabelMeasurement();
+    if (event.persisted) {
+      document.documentElement.dataset.routeArrival = "true";
+      document.documentElement.dataset.routeHistory = "true";
+      markRouteTransition(Date.now(), previousRoutePage() || currentPage, currentPage);
+      const historySource = navigationLinkForRoute(previousRoutePage());
+      const activeLink = navigationLinkForRoute();
+      if (historySource && historySource !== activeLink) {
+        placeArchiveLabel(historySource);
+        window.requestAnimationFrame(() => slideArchiveLabel(activeLink));
+      }
+      revealRouteCurtain(Promise.resolve());
+    }
   });
   window.addEventListener("pagehide", () => {
     window.clearTimeout(navigationTimer);
     window.clearTimeout(routeSlowTimer);
+    try {
+      window.sessionStorage.setItem(routePreviousPageKey, currentPage);
+    } catch {
+      // History animation falls back to the correct immediate active state.
+    }
     if (!routeCurtain) return;
     syncRouteCurtainBoundary();
     routeCurtain.classList.remove("is-revealing");
@@ -534,8 +736,20 @@ function setupNavigation(essentialReady = Promise.resolve()) {
       return;
     }
 
-    if (routeNavigationLocked) return;
-    beginRouteNavigation(destination, navigationLinks.includes(link) ? link : null);
+    if (routeNavigationLocked) {
+      event.preventDefault();
+      if (
+        navigationLinks.includes(link) &&
+        retargetRouteNavigation(destination, link)
+      ) {
+        return;
+      }
+      return;
+    }
+
+    if (beginRouteNavigation(destination, navigationLinks.includes(link) ? link : null)) {
+      event.preventDefault();
+    }
   });
 
   menuToggle?.addEventListener("click", () => {
@@ -543,6 +757,7 @@ function setupNavigation(essentialReady = Promise.resolve()) {
     menuToggle.setAttribute("aria-expanded", String(willOpen));
     navigation?.classList.toggle("is-open", willOpen);
     document.body.classList.toggle("menu-open", willOpen);
+    window.requestAnimationFrame(scheduleArchiveLabelMeasurement);
   });
 
   document.addEventListener("pointerdown", (event) => {
