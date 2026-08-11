@@ -6556,6 +6556,52 @@ html[data-theme="dark"] .profile-date-stamp {
   border-color: var(--gold);
 }
 
+html[data-theme="dark"] body[data-page="about"] .issue-line {
+  border-color: var(--night-border);
+  color: var(--night-cream);
+  font-size: clamp(0.66rem, 0.8vw, 0.74rem);
+  text-shadow: 0 1px 0 rgba(6, 18, 14, 0.45);
+}
+
+html[data-theme="dark"] body[data-page="about"] :where(
+  .chapter-label,
+  .profile-margin-note span,
+  .booking-card .kicker
+) {
+  color: #e0b96d;
+  font-size: clamp(0.62rem, 0.72vw, 0.7rem);
+}
+
+html[data-theme="dark"] body[data-page="about"] .profile-portrait figcaption {
+  color: #e3cfaa;
+  font-size: clamp(0.68rem, 0.74vw, 0.76rem);
+}
+
+html[data-theme="dark"] body[data-page="about"] .profile-date-stamp {
+  color: var(--night-cream);
+  opacity: 0.9;
+  font-size: clamp(0.62rem, 0.68vw, 0.68rem);
+}
+
+html[data-theme="dark"] body[data-page="about"] :where(
+  .profile-lede,
+  .booking-heading > p:last-child,
+  .booking-availability
+) {
+  color: #ded6c2;
+}
+
+html[data-theme="dark"] body[data-page="about"] .booking-types span {
+  color: var(--night-cream);
+  font-size: clamp(0.62rem, 0.68vw, 0.68rem);
+  background: rgba(15, 36, 29, 0.42);
+}
+
+html[data-theme="dark"] body[data-page="about"] .booking-card-stamp {
+  color: #e3cfaa;
+  font-size: clamp(0.58rem, 0.64vw, 0.64rem);
+}
+
 html[data-theme="dark"] .field-kit-chapter,
 html[data-theme="dark"] .booking-chapter {
   background:
