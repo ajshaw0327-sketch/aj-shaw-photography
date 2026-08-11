@@ -306,6 +306,10 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /html\[data-theme="dark"\] \.category-portal/);
   assert.match(css, /html\[data-theme="dark"\] \.photo-surface/);
   assert.match(css, /html\[data-theme="dark"\] \.booking-card/);
+  assert.match(css, /html\[data-theme="dark"\] body\[data-page="about"\] \.issue-line\s*\{[\s\S]*color:\s*var\(--night-cream\)/);
+  assert.match(css, /html\[data-theme="dark"\] body\[data-page="about"\] \.profile-date-stamp\s*\{[\s\S]*opacity:\s*0\.9/);
+  assert.match(css, /html\[data-theme="dark"\] body\[data-page="about"\] :where\([\s\S]*\.profile-lede,[\s\S]*\.booking-availability[\s\S]*color:\s*#ded6c2/);
+  assert.match(css, /html\[data-theme="dark"\] body\[data-page="about"\] \.booking-types span\s*\{[\s\S]*font-size:\s*clamp\(0\.62rem/);
   assert.match(css, /html\[data-theme="dark"\] \.lightbox-frame/);
   assert.match(css, /html\[data-theme="dark"\] \.site-footer/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.theme-toggle/);
