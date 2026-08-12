@@ -11,6 +11,7 @@ const pages = [
   ["travel.html", "travel"],
   ["events.html", "events"],
   ["sports.html", "sports"],
+  ["projects.html", "projects"],
   ["about.html", "about"],
 ];
 const routePanels = {
@@ -18,7 +19,8 @@ const routePanels = {
   travel: ["TRV / 02", "Travel"],
   events: ["EVT / 01", "Events"],
   sports: ["SPT / 03", "Sports"],
-  about: ["ABOUT / 04", "About"],
+  projects: ["PRJ / 04", "Other Projects"],
+  about: ["ABOUT / 05", "About"],
 };
 
 test("every rendered route includes the minimal automatic typewriter introduction", async () => {
@@ -76,10 +78,12 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /data-route="travel"/);
     assert.match(html, /data-route="events"/);
     assert.match(html, /data-route="sports"/);
+    assert.match(html, /data-route="projects"/);
     assert.match(html, /data-route="about"/);
+    assert.match(html, /Other Projects/);
     assert.match(html, /About \/ Contact/);
     assert.doesNotMatch(html, /data-route="contact"/);
-    assert.equal((html.match(/data-route=/g) || []).length, 5);
+    assert.equal((html.match(/data-route=/g) || []).length, 6);
   }
 });
 
@@ -139,7 +143,11 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.doesNotMatch(home, /id="hero-mosaic"/);
   assert.doesNotMatch(home, /class="hero home-cover"/);
   assert.doesNotMatch(home, /An archive that/);
+  assert.equal((home.match(/class="category-portal /g) || []).length, 4);
   assert.equal((home.match(/data-category-preview=/g) || []).length, 3);
+  assert.match(home, /class="category-portal category-portal-projects" href="projects\.html"/);
+  assert.match(home, /<h2>Other Projects<\/h2>/);
+  assert.match(home, /Open project gallery/);
   assert.match(home, /Choose a field file\./);
   assert.doesNotMatch(home, /Layered like postcards collected on the way/);
   assert.doesNotMatch(home, /Invitations, programs, gestures, and shared traditions/);
@@ -157,6 +165,10 @@ test("Events precedes Travel in navigation and on the home archive", async () =>
     assert.ok(
       html.indexOf('data-route="events"') < html.indexOf('data-route="travel"'),
       `${filename} must place Events before Travel in the navigation`,
+    );
+    assert.ok(
+      html.indexOf('data-route="projects"') < html.indexOf('data-route="about"'),
+      `${filename} must place Other Projects before About / Contact`,
     );
   }
 
@@ -195,6 +207,22 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
   }
 });
 
+test("Other Projects is a large-format, folder-driven project gallery", async () => {
+  const html = await readFile(path.join(outputRoot, "projects.html"), "utf8");
+  const css = await readFile(path.join(outputRoot, "style.css"), "utf8");
+
+  assert.match(html, /data-page="projects"/);
+  assert.match(html, /class="projects-gallery"/);
+  assert.match(html, /class="project-features"/);
+  assert.doesNotMatch(html, /BUILD:PROJECTS:ITEMS/);
+  assert.match(html, /The project wall is ready\./);
+  assert.doesNotMatch(html, /gallery-subsection|photo-grid|gallery-manifest\.js/);
+  assert.match(css, /\.project-feature\s*\{[\s\S]*grid-template-columns/);
+  assert.match(css, /\.project-media img,[\s\S]*\.project-media video/);
+  assert.match(css, /html\[data-theme="dark"\] \.project-media/);
+  await assert.doesNotReject(stat(path.join(outputRoot, "projects", "README.md")));
+});
+
 test("homepage covers are curated, responsive, and present without JavaScript", async () => {
   const html = await readFile(path.join(outputRoot, "index.html"), "utf8");
   const manifest = JSON.parse(await readFile(path.join(outputRoot, "gallery-manifest.json"), "utf8"));
@@ -203,7 +231,8 @@ test("homepage covers are curated, responsive, and present without JavaScript", 
   assert.match(html, /href="about\.html#contact">Book \/ Contact/);
   assert.equal((html.match(/data-cover-id=/g) || []).length, 9);
   assert.equal((html.match(/class="category-portal-print"/g) || []).length, 9);
-  assert.equal((html.match(/category-portal-preview"><span/g) || []).length, 3);
+  assert.equal((html.match(/category-portal-preview"><span/g) || []).length, 4);
+  assert.match(html, /class="project-portal-document"/);
   assert.match(html, /photos\/responsive\/covers\/events\//);
   assert.match(html, /photos\/responsive\/covers\/travel\//);
   assert.match(html, /photos\/responsive\/covers\/sports\//);
@@ -404,7 +433,8 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}min-height:\s*100dvh;[\s\S]{0,120}overflow-y:\s*auto/);
   assert.doesNotMatch(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}\n\s*height:\s*100dvh/);
   assert.match(css, /body\[data-page="home"\] \.category-portal-travel\s*\{[\s\S]*grid-column:\s*8 \/ 13/);
-  assert.match(css, /body\[data-page="home"\] \.category-portal-sports\s*\{[\s\S]*grid-column:\s*2 \/ 12/);
+  assert.match(css, /body\[data-page="home"\] \.category-portal-sports\s*\{[\s\S]*grid-column:\s*1 \/ 8/);
+  assert.match(css, /body\[data-page="home"\] \.category-portal-projects\s*\{[\s\S]*grid-column:\s*8 \/ 13/);
   assert.match(css, /\.photo-card\s*\{[\s\S]{0,180}opacity:\s*1/);
   assert.match(css, /html\.gallery-enhanced \.photo-card\s*\{[\s\S]{0,100}opacity:\s*0/);
   assert.match(css, /\.photo-window img\s*\{[\s\S]{0,180}opacity:\s*1/);

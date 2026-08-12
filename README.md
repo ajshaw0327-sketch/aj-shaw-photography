@@ -24,6 +24,22 @@ photos/
     └── 02-soccer-championship/
 ```
 
+Other creative work lives in the separate `projects` folder:
+
+```text
+projects/
+└── 01-project-name/
+    ├── project.json
+    ├── cover.jpg
+    └── film.mp4
+```
+
+Each published project folder becomes one large feature on **Other Projects**.
+It can showcase a locally hosted MP4/WebM video, a cover image, descriptive
+copy, and an optional external project link. See `projects/README.md` for the
+editable fields and a complete example. This page is a large-format feature
+gallery rather than a collection of photo albums.
+
 - Create a folder inside `travel`, `events`, or `sports` to make a gallery
   subsection.
 - Put homepage cover copies in `covers/travel`, `covers/events`, or

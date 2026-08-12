@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -14,6 +14,7 @@ const outputDirectory = path.resolve(
 );
 const docsDirectory = path.join(repositoryRoot, "docs");
 const photosDirectory = path.join(repositoryRoot, "photos");
+const projectsDirectory = path.join(repositoryRoot, "projects");
 const configurationPath = path.join(repositoryRoot, "portfolio.config.json");
 
 if (
@@ -33,6 +34,130 @@ function escapeHtml(value) {
 
 function encodeUrlPath(value) {
   return String(value).split("/").map((segment) => encodeURIComponent(segment)).join("/");
+}
+
+const projectImageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"]);
+const projectVideoExtensions = new Set([".mp4", ".webm"]);
+
+function naturalSort(left, right) {
+  return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" });
+}
+
+function readableProjectName(value) {
+  return String(value || "Project")
+    .replace(/^\d+[\s._-]*/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+async function projectFileExists(filePath) {
+  try {
+    return (await stat(filePath)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+async function scanProjects() {
+  let entries = [];
+  try {
+    entries = await readdir(projectsDirectory, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const folders = entries
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .sort((left, right) => naturalSort(left.name, right.name));
+  const projects = [];
+
+  for (const folder of folders) {
+    const folderPath = path.join(projectsDirectory, folder.name);
+    let files = [];
+    try {
+      files = (await readdir(folderPath, { withFileTypes: true }))
+        .filter((entry) => entry.isFile() && !entry.name.startsWith("."))
+        .map((entry) => entry.name)
+        .sort(naturalSort);
+    } catch {
+      continue;
+    }
+
+    let metadata = {};
+    try {
+      metadata = JSON.parse(await readFile(path.join(folderPath, "project.json"), "utf8"));
+    } catch {
+      metadata = {};
+    }
+    if (metadata.published === false) continue;
+
+    const explicitCover = typeof metadata.cover === "string" && files.includes(metadata.cover)
+      && projectImageExtensions.has(path.extname(metadata.cover).toLowerCase()) ? metadata.cover : "";
+    const explicitVideo = typeof metadata.video === "string" && files.includes(metadata.video)
+      && projectVideoExtensions.has(path.extname(metadata.video).toLowerCase()) ? metadata.video : "";
+    const cover = explicitCover && await projectFileExists(path.join(folderPath, explicitCover))
+      ? explicitCover
+      : files.find((file) => projectImageExtensions.has(path.extname(file).toLowerCase())) || "";
+    const video = explicitVideo && await projectFileExists(path.join(folderPath, explicitVideo))
+      ? explicitVideo
+      : files.find((file) => projectVideoExtensions.has(path.extname(file).toLowerCase())) || "";
+    if (!cover && !video && !metadata.link) continue;
+
+    projects.push({
+      id: folder.name,
+      title: metadata.title || readableProjectName(folder.name),
+      summary: metadata.summary || "A project from the AJ Shaw working archive.",
+      type: metadata.type || (video ? "Film" : "Project"),
+      year: String(metadata.year || "2026"),
+      location: metadata.location || "",
+      cover: cover ? encodeUrlPath(path.posix.join("projects", folder.name, cover)) : "",
+      video: video ? encodeUrlPath(path.posix.join("projects", folder.name, video)) : "",
+      link: typeof metadata.link === "string" && /^https?:\/\//i.test(metadata.link) ? metadata.link : "",
+      linkLabel: metadata.linkLabel || "Visit project",
+      featured: metadata.featured === true,
+    });
+  }
+  return projects.sort((left, right) => Number(right.featured) - Number(left.featured));
+}
+
+function renderProjectMedia(project, index) {
+  if (project.video) {
+    const poster = project.cover ? ` poster="${escapeHtml(project.cover)}"` : "";
+    return `<video controls preload="metadata" playsinline${poster} aria-label="Video for ${escapeHtml(project.title)}"><source src="${escapeHtml(project.video)}" type="video/${path.extname(project.video).toLowerCase() === ".webm" ? "webm" : "mp4"}" />Your browser does not support embedded video. <a href="${escapeHtml(project.video)}">Open the video file</a>.</video>`;
+  }
+  if (project.cover) {
+    return `<img src="${escapeHtml(project.cover)}" alt="Cover image for ${escapeHtml(project.title)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""} />`;
+  }
+  return `<span class="project-media-placeholder" aria-hidden="true"><i></i><b>Project file</b></span>`;
+}
+
+function renderProjectsMarkup(projects) {
+  if (!projects.length) {
+    return `<div class="projects-empty"><span>PROJECT FILES / READY</span><h2>The project wall is ready.</h2><p>Add a folder inside <code>projects/</code> to publish the first film, research project, design experiment, or community initiative.</p></div>`;
+  }
+
+  return projects.map((project, index) => {
+    const metadata = [project.type, project.year, project.location].filter(Boolean).join(" · ");
+    const externalLink = project.link
+      ? `<a class="project-link" href="${escapeHtml(project.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(project.linkLabel)} <span aria-hidden="true">↗</span></a>`
+      : "";
+    return `<article class="project-feature${project.featured ? " is-featured" : ""}" id="project-${escapeHtml(project.id)}" style="--project-index:${index}">
+      <div class="project-media">${renderProjectMedia(project, index)}<span class="project-reference" aria-hidden="true">PRJ-${String(index + 1).padStart(2, "0")}</span></div>
+      <div class="project-copy"><p class="project-meta">${escapeHtml(metadata)}</p><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.summary)}</p>${externalLink}</div>
+    </article>`;
+  }).join("");
+}
+
+function renderProjectPortalPreview(projects) {
+  const covers = projects.filter((project) => project.cover).slice(0, 3);
+  if (!covers.length) {
+    return `<span class="project-portal-document" aria-hidden="true"><i></i><b>PROJECT<br />FILES</b><small>FILM · DESIGN · RESEARCH</small></span>`;
+  }
+  return covers.map((project, index) =>
+    `<span class="category-portal-print" style="--portal-index: ${index}" aria-hidden="true"><img src="${escapeHtml(project.cover)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" /></span>`,
+  ).join("");
 }
 
 function gallerySubsectionId(group, usedIds) {
@@ -214,6 +339,7 @@ async function optimizeManifestPhotographs(manifest, concurrency = 4) {
 }
 
 async function injectBuiltMarkup(manifest) {
+  const projects = await scanProjects();
   const indexPath = path.join(outputDirectory, "index.html");
   let indexHtml = await readFile(indexPath, "utf8");
   indexHtml = replaceMarker(indexHtml, "HOME:IDENTITY", escapeHtml(manifest.identityLine));
@@ -224,6 +350,7 @@ async function injectBuiltMarkup(manifest) {
       renderCoverPhotographs(category, manifest.covers?.[category] || []),
     );
   }
+  indexHtml = replaceMarker(indexHtml, "HOME:PROJECTS:PREVIEW", renderProjectPortalPreview(projects));
   await writeFile(indexPath, indexHtml);
 
   for (const category of ["events", "travel", "sports"]) {
@@ -236,6 +363,11 @@ async function injectBuiltMarkup(manifest) {
     );
     await writeFile(pagePath, html);
   }
+
+  const projectsPath = path.join(outputDirectory, "projects.html");
+  let projectsHtml = await readFile(projectsPath, "utf8");
+  projectsHtml = replaceMarker(projectsHtml, "PROJECTS:ITEMS", renderProjectsMarkup(projects));
+  await writeFile(projectsPath, projectsHtml);
 }
 
 const configuration = JSON.parse(await readFile(configurationPath, "utf8"));
@@ -243,6 +375,7 @@ await rm(outputDirectory, { recursive: true, force: true });
 await mkdir(outputDirectory, { recursive: true });
 await cp(docsDirectory, outputDirectory, { recursive: true });
 await cp(photosDirectory, path.join(outputDirectory, "photos"), { recursive: true });
+await cp(projectsDirectory, path.join(outputDirectory, "projects"), { recursive: true });
 
 const manifest = await scanPhotoLibrary(photosDirectory, configuration);
 await optimizeManifestPhotographs(manifest);

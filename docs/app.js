@@ -14,6 +14,7 @@ const archiveCodes = {
   travel: "TRV",
   events: "EVT",
   sports: "SPT",
+  projects: "PRJ",
 };
 const routeTransitionKey = "aj-shaw-route-transition-v1";
 const routeTransitionStartedKey = "aj-shaw-route-transition-started-v1";
@@ -28,7 +29,8 @@ const routeTransitionMeta = {
   events: { code: "EVT / 01", title: "Events" },
   travel: { code: "TRV / 02", title: "Travel" },
   sports: { code: "SPT / 03", title: "Sports" },
-  about: { code: "ABOUT / 04", title: "About" },
+  projects: { code: "PRJ / 04", title: "Other Projects" },
+  about: { code: "ABOUT / 05", title: "About" },
 };
 let photographs = [];
 let galleryGroups = [];
