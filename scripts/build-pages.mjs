@@ -305,7 +305,7 @@ function allManifestPhotos(manifest) {
 async function optimizePhoto(photo) {
   if (!photo.width || !photo.height || path.extname(photo.id).toLowerCase() === ".gif") return;
   const input = path.join(photosDirectory, photo.id);
-  const widths = [480, 960].filter((width) => width < photo.width);
+  const widths = [480, 960, 1600].filter((width) => width < photo.width);
   if (!widths.length) widths.push(photo.width);
   photo.responsive = { webp: [] };
   for (const width of widths) {

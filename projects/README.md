@@ -1,4 +1,4 @@
-# Other Projects
+# Projects
 
 Create one folder per project. Each folder needs a `project.json` file and may
 contain a cover image and a locally hosted video.

@@ -29,7 +29,7 @@ const routeTransitionMeta = {
   events: { code: "EVT / 01", title: "Events" },
   travel: { code: "TRV / 02", title: "Travel" },
   sports: { code: "SPT / 03", title: "Sports" },
-  projects: { code: "PRJ / 04", title: "Other Projects" },
+  projects: { code: "PRJ / 04", title: "Projects" },
   about: { code: "ABOUT / 05", title: "About" },
 };
 let photographs = [];
@@ -58,6 +58,7 @@ const subsectionLayoutTimers = new WeakMap();
 const subsectionLayoutFrames = new WeakMap();
 const previewScrollPositions = new WeakMap();
 const subsectionsById = new Map();
+const lightboxImageCache = new Map();
 
 const navigation = document.querySelector("#primary-navigation");
 const navigationLinks = [...document.querySelectorAll("[data-route]")];
@@ -1813,7 +1814,8 @@ function openLightbox(photos, index, trigger) {
   openPhotographs = photos;
   openIndex = index;
   lastFocusedButton = trigger;
-  updateLightbox();
+  const previewImage = trigger?.querySelector("img");
+  updateLightbox({ previewSource: previewImage?.currentSrc || previewImage?.src || "" });
   if (photos[index]?.category === "featured") triggerCameraFlash();
   lightbox.hidden = false;
   if (!lightboxInertElements.length) {
@@ -1860,14 +1862,51 @@ function moveLightbox(direction) {
   openIndex = (openIndex + direction + openPhotographs.length) % openPhotographs.length;
   lightboxFrame?.classList.add("is-developing");
   window.clearTimeout(lightboxSwapTimer);
-  lightboxSwapTimer = window.setTimeout(() => {
-    updateLightbox();
+  lightboxSwapTimer = window.setTimeout(async () => {
+    await updateLightbox();
     lightboxFrame?.classList.remove("is-developing");
     lightboxSwapTimer = 0;
-  }, reducedMotion.matches ? 0 : 90);
+  }, reducedMotion.matches ? 0 : 45);
 }
 
-function updateLightbox() {
+function lightboxSourceFor(photo) {
+  const sources = [...(photo.responsive?.webp || [])].sort((left, right) => left.width - right.width);
+  if (!sources.length) return photo.src;
+  const requestedWidth = Math.min(1600, Math.max(960, Math.round(window.innerWidth * Math.min(window.devicePixelRatio || 1, 1.5))));
+  return (sources.find((source) => source.width >= requestedWidth) || sources.at(-1)).src;
+}
+
+function preloadLightboxSource(photo) {
+  if (!photo) return Promise.resolve("");
+  const source = lightboxSourceFor(photo);
+  if (lightboxImageCache.has(source)) return lightboxImageCache.get(source);
+  const promise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = async () => {
+      try { await image.decode?.(); } catch {}
+      resolve(source);
+    };
+    image.onerror = reject;
+    image.src = source;
+  }).catch(() => photo.src);
+  lightboxImageCache.set(source, promise);
+  return promise;
+}
+
+function preloadAdjacentLightboxPhotos() {
+  if (openPhotographs.length < 2) return;
+  const previous = openPhotographs[(openIndex - 1 + openPhotographs.length) % openPhotographs.length];
+  const next = openPhotographs[(openIndex + 1) % openPhotographs.length];
+  const preload = () => {
+    void preloadLightboxSource(previous);
+    void preloadLightboxSource(next);
+  };
+  if ("requestIdleCallback" in window) window.requestIdleCallback(preload, { timeout: 500 });
+  else window.setTimeout(preload, 80);
+}
+
+async function updateLightbox({ previewSource = "" } = {}) {
   const photo = openPhotographs[openIndex];
   if (!photo || !lightboxPhoto) return;
   const imageToken = ++lightboxImageToken;
@@ -1878,7 +1917,6 @@ function updateLightbox() {
       lightboxPhoto.naturalHeight > lightboxPhoto.naturalWidth,
     );
   };
-  lightboxPhoto.onload = updatePortraitState;
   lightboxPhoto.alt = photo.alt;
   lightboxTitle.textContent = photo.title;
   lightboxDetail.textContent = photo.detail;
@@ -1890,10 +1928,15 @@ function updateLightbox() {
       photo.height > photo.width,
     );
   }
-  lightboxPhoto.src = photo.src;
+  if (previewSource && lightboxPhoto.src !== previewSource) lightboxPhoto.src = previewSource;
+  const displaySource = await preloadLightboxSource(photo);
+  if (imageToken !== lightboxImageToken) return;
+  lightboxPhoto.onload = updatePortraitState;
+  lightboxPhoto.src = displaySource;
   if (lightboxPhoto.complete && lightboxPhoto.naturalWidth) {
     queueMicrotask(updatePortraitState);
   }
+  preloadAdjacentLightboxPhotos();
 }
 
 function setupLightbox() {

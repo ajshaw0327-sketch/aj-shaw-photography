@@ -2785,8 +2785,8 @@ body[data-page="sports"] .portfolio-label h1 {
 }
 
 .lightbox-frame.is-developing .lightbox-image {
-  opacity: 0.45;
-  filter: sepia(0.5);
+  opacity: 0.82;
+  filter: sepia(0.12);
 }
 
 .lightbox-topline {
@@ -2876,6 +2876,8 @@ body[data-page="sports"] .portfolio-label h1 {
   max-height: calc(58dvh - 24px);
   object-fit: contain;
   box-shadow: 0 10px 25px rgba(25, 38, 29, 0.2);
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .lightbox-object-labels {
@@ -3061,7 +3063,7 @@ body[data-page="sports"] .portfolio-label h1 {
   }
 }
 
-/* Other Projects — large-format feature wall */
+/* Projects — large-format feature wall */
 
 .page-projects {
   width: min(100%, 1680px);
@@ -6103,7 +6105,9 @@ body[data-page="home"] .category-portal-projects {
   grid-template-rows: auto minmax(0, 1fr) auto;
   margin-top: clamp(5px, 1vh, 10px);
   color: var(--paper-light);
-  background: #875b3f;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 22px, rgba(250, 246, 233, 0.07) 22px 23px),
+    #35614d;
 }
 
 body[data-page="home"] .category-portal-projects .category-portal-code {
@@ -6840,7 +6844,9 @@ html[data-theme="dark"] .category-portal-sports {
 
 html[data-theme="dark"] .category-portal-projects {
   color: var(--night-cream);
-  background: #704c38;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 22px, rgba(241, 232, 212, 0.06) 22px 23px),
+    #294c3d;
 }
 
 html[data-theme="dark"] .project-portal-document {

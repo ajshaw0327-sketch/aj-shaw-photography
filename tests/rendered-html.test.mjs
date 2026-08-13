@@ -19,7 +19,7 @@ const routePanels = {
   travel: ["TRV / 02", "Travel"],
   events: ["EVT / 01", "Events"],
   sports: ["SPT / 03", "Sports"],
-  projects: ["PRJ / 04", "Other Projects"],
+  projects: ["PRJ / 04", "Projects"],
   about: ["ABOUT / 05", "About"],
 };
 
@@ -80,7 +80,8 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /data-route="sports"/);
     assert.match(html, /data-route="projects"/);
     assert.match(html, /data-route="about"/);
-    assert.match(html, /Other Projects/);
+    assert.match(html, />Projects</);
+    assert.doesNotMatch(html, /Other Projects/);
     assert.match(html, /About \/ Contact/);
     assert.doesNotMatch(html, /data-route="contact"/);
     assert.equal((html.match(/data-route=/g) || []).length, 6);
@@ -146,7 +147,7 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.equal((home.match(/class="category-portal /g) || []).length, 4);
   assert.equal((home.match(/data-category-preview=/g) || []).length, 3);
   assert.match(home, /class="category-portal category-portal-projects" href="projects\.html"/);
-  assert.match(home, /<h2>Other Projects<\/h2>/);
+  assert.match(home, /<h2>Projects<\/h2>/);
   assert.match(home, /Open project gallery/);
   assert.match(home, /Choose a field file\./);
   assert.doesNotMatch(home, /Layered like postcards collected on the way/);
@@ -168,7 +169,7 @@ test("Events precedes Travel in navigation and on the home archive", async () =>
     );
     assert.ok(
       html.indexOf('data-route="projects"') < html.indexOf('data-route="about"'),
-      `${filename} must place Other Projects before About / Contact`,
+      `${filename} must place Projects before About / Contact`,
     );
   }
 
@@ -207,7 +208,7 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
   }
 });
 
-test("Other Projects is a large-format, folder-driven project gallery", async () => {
+test("Projects is a large-format, folder-driven project gallery", async () => {
   const html = await readFile(path.join(outputRoot, "projects.html"), "utf8");
   const css = await readFile(path.join(outputRoot, "style.css"), "utf8");
 
@@ -215,7 +216,8 @@ test("Other Projects is a large-format, folder-driven project gallery", async ()
   assert.match(html, /class="projects-gallery"/);
   assert.match(html, /class="project-features"/);
   assert.doesNotMatch(html, /BUILD:PROJECTS:ITEMS/);
-  assert.match(html, /The project wall is ready\./);
+  assert.match(html, /class="project-feature/);
+  assert.match(html, /<video controls preload="metadata"/);
   assert.doesNotMatch(html, /gallery-subsection|photo-grid|gallery-manifest\.js/);
   assert.match(css, /\.project-feature\s*\{[\s\S]*grid-template-columns/);
   assert.match(css, /\.project-media img,[\s\S]*\.project-media video/);
@@ -425,6 +427,10 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.doesNotMatch(script, /launchFaces|startLaunchTypography|data\.face|is-flashing/);
   assert.doesNotMatch(script, /Places\. People\. Motion\./);
   assert.match(script, /lightboxSwapTimer/);
+  assert.match(script, /function lightboxSourceFor/);
+  assert.match(script, /function preloadAdjacentLightboxPhotos/);
+  assert.match(script, /await preloadLightboxSource\(photo\)/);
+  assert.match(script, /previewImage\?\.currentSrc/);
   assert.match(script, /element\.inert = true/);
   assert.doesNotMatch(script, /positionNavigationMarker|nav-proximity/);
   assert.doesNotMatch(script, /function randomPhotoSelection|Math\.random\(\)/);

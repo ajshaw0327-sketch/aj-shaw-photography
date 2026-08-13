@@ -34,7 +34,7 @@ projects/
     └── film.mp4
 ```
 
-Each published project folder becomes one large feature on **Other Projects**.
+Each published project folder becomes one large feature on **Projects**.
 It can showcase a locally hosted MP4/WebM video, a cover image, descriptive
 copy, and an optional external project link. See `projects/README.md` for the
 editable fields and a complete example. This page is a large-format feature
