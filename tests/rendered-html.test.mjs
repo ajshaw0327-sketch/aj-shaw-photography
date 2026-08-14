@@ -248,8 +248,14 @@ test("major pages include canonical sharing metadata and photographer data", asy
     assert.match(html, /<link rel="canonical" href="https:\/\/ajshaw0327-sketch\.github\.io\/aj-shaw-photography\//);
     assert.match(html, /<meta property="og:url" content="https:\/\/ajshaw0327-sketch\.github\.io\/aj-shaw-photography\//);
     assert.match(html, /<meta property="og:type" content="(?:website|profile)"/);
-    assert.match(html, /<meta property="og:image" content="https:\/\//);
-    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    if (["index.html", "projects.html"].includes(filename)) {
+      assert.doesNotMatch(html, /<meta property="og:image"/);
+      assert.match(html, /<meta name="twitter:card" content="summary"/);
+      assert.doesNotMatch(html, /<meta name="twitter:image"/);
+    } else {
+      assert.match(html, /<meta property="og:image" content="https:\/\//);
+      assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    }
     assert.match(html, /<script type="application\/ld\+json">[\s\S]*"@type":"Person"[\s\S]*"name":"AJ Shaw"/);
   }
 });
