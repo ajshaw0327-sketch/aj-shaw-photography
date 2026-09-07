@@ -36,7 +36,7 @@
   font-style: normal;
   font-weight: 400 900;
   font-display: swap;
-  src: url("fonts/playfair-display-variable.ttf") format("truetype-variations");
+  src: url("fonts/playfair-display-variable.woff2") format("woff2");
 }
 
 :root {
@@ -4952,6 +4952,7 @@ html[data-theme="dark"] .projects-empty p {
 
 .profile-portrait img {
   width: 100%;
+  height: auto;
   aspect-ratio: 4 / 5;
   object-fit: cover;
 }

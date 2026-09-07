@@ -112,6 +112,14 @@ npm run test:gallery
 The built GitHub Pages site is written to `.site/`. The normal application can
 still be run with `npm run dev`.
 
+The Pages build creates smaller responsive photographs and per-page gallery data
+automatically. Uploaded originals are preserved. Asset revisions update when
+their contents change, so replacements do not rely on visitors clearing caches.
+For faster MP4 startup, install FFmpeg locally; the deployment workflow ensures
+it is available and moves video metadata ahead of the footage without
+re-encoding the video or audio. Without FFmpeg, local builds keep the original
+videos. Run `npm test` for the complete build and regression checks.
+
 ## Project structure
 
 - `photos/` — folder to manage portfolio photographs

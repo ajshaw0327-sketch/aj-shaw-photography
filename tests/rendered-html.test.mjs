@@ -49,7 +49,7 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /id="critical-route-colors"/);
     assert.match(html, /name="theme-color" content="#f2eddd"/);
     assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
-    assert.match(html, /rel="preload" href="fonts\/playfair-display-variable\.ttf" as="font" type="font\/ttf" crossorigin/);
+    assert.match(html, /rel="preload" href="fonts\/playfair-display-variable\.woff2" as="font" type="font\/woff2" crossorigin/);
     assert.match(html, /:root \{ --route-panel-top: 72px; color-scheme: light; background: #f2eddd; \}/);
     assert.match(html, /--route-panel-top: calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
     assert.match(html, /id="route-curtain"/);
@@ -190,7 +190,7 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.match(html, /id="lightbox"/);
     assert.match(html, /class="lightbox-backdrop"/);
     assert.match(html, /aria-describedby="lightbox-detail"/);
-    assert.match(html, /gallery-manifest\.js/);
+    assert.ok(html.includes(`gallery-manifest-${route}.js`));
     assert.match(html, /app\.js/);
     assert.doesNotMatch(html, /class="gallery-subsection is-expanded"/);
     assert.doesNotMatch(html, /class="gallery-subsection-toggle"[^>]+aria-expanded="true"/);

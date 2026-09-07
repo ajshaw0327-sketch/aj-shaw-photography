@@ -1,6 +1,9 @@
-import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import sharp from "sharp";
 import {
   scanPhotoLibrary,
@@ -16,6 +19,7 @@ const docsDirectory = path.join(repositoryRoot, "docs");
 const photosDirectory = path.join(repositoryRoot, "photos");
 const projectsDirectory = path.join(repositoryRoot, "projects");
 const configurationPath = path.join(repositoryRoot, "portfolio.config.json");
+const runFile = promisify(execFile);
 
 if (
   [repositoryRoot, docsDirectory, photosDirectory].includes(outputDirectory) ||
@@ -302,17 +306,17 @@ function allManifestPhotos(manifest) {
   return [...unique.values()];
 }
 
-async function optimizePhoto(photo) {
+async function optimizePhoto(photo, inputDirectory = photosDirectory, outputPrefix = "photos/responsive") {
   if (!photo.width || !photo.height || path.extname(photo.id).toLowerCase() === ".gif") return;
-  const input = path.join(photosDirectory, photo.id);
-  const widths = [480, 960, 1600].filter((width) => width < photo.width);
-  if (!widths.length) widths.push(photo.width);
+  const input = await readFile(path.join(inputDirectory, photo.id));
+  const revision = contentRevision(input);
+  const widths = [...new Set([320, 480, 960, Math.min(1600, photo.width)])]
+    .filter((width) => width <= photo.width).sort((left, right) => left - right);
   photo.responsive = { webp: [] };
   for (const width of widths) {
     const relativeOutput = path.posix.join(
-      "photos",
-      "responsive",
-      photo.id.replace(/\.[^.]+$/, `-${width}.webp`),
+      outputPrefix,
+      `${photo.id}-${revision}-${width}.webp`,
     );
     const absoluteOutput = path.join(outputDirectory, ...relativeOutput.split("/"));
     await mkdir(path.dirname(absoluteOutput), { recursive: true });
@@ -340,6 +344,7 @@ async function optimizeManifestPhotographs(manifest, concurrency = 4) {
 
 async function injectBuiltMarkup(manifest) {
   const projects = await scanProjects();
+  await optimizeProjectVideos(projects);
   const indexPath = path.join(outputDirectory, "index.html");
   let indexHtml = await readFile(indexPath, "utf8");
   indexHtml = replaceMarker(indexHtml, "HOME:IDENTITY", escapeHtml(manifest.identityLine));
@@ -368,6 +373,82 @@ async function injectBuiltMarkup(manifest) {
   let projectsHtml = await readFile(projectsPath, "utf8");
   projectsHtml = replaceMarker(projectsHtml, "PROJECTS:ITEMS", renderProjectsMarkup(projects));
   await writeFile(projectsPath, projectsHtml);
+
+  const aboutPath = path.join(outputDirectory, "about.html");
+  let aboutHtml = await readFile(aboutPath, "utf8");
+  const portraitMetadata = await sharp(path.join(docsDirectory, "aj-portrait.jpg")).metadata();
+  const portrait = {
+    id: "aj-portrait.jpg", src: "aj-portrait.jpg",
+    width: portraitMetadata.autoOrient.width, height: portraitMetadata.autoOrient.height,
+    alt: "Portrait of photographer AJ Shaw outdoors",
+  };
+  await optimizePhoto(portrait, docsDirectory, "images/responsive");
+  aboutHtml = replaceMarker(aboutHtml, "ABOUT:PORTRAIT", renderPicture(portrait, {
+    sizes: "(max-width: 640px) 88vw, (max-width: 1000px) 40vw, 480px",
+    loading: "eager", fetchPriority: "high",
+  }));
+  await writeFile(aboutPath, aboutHtml);
+}
+
+async function optimizeProjectVideos(projects) {
+  const videos = projects.filter((project) => path.extname(project.video).toLowerCase() === ".mp4");
+  if (!videos.length) return;
+  try {
+    await runFile("ffmpeg", ["-version"]);
+  } catch {
+    console.warn("FFmpeg unavailable: keeping original project videos. Install FFmpeg for fast-start MP4s.");
+    return;
+  }
+  for (const project of videos) {
+    const relativePath = decodeURIComponent(project.video);
+    const original = path.join(repositoryRoot, relativePath);
+    const output = path.join(outputDirectory, relativePath);
+    const temporary = `${output}.faststart.mp4`;
+    try {
+      // Move playback metadata to the front without re-encoding video or audio.
+      // Only the build copy changes; uploaded originals remain untouched.
+      await runFile("ffmpeg", ["-nostdin", "-y", "-v", "error", "-i", original,
+        "-map", "0", "-c", "copy", "-movflags", "+faststart", temporary], { timeout: 120000 });
+      await rename(temporary, output);
+    } catch {
+      console.warn(`Keeping original video after fast-start conversion failed: ${project.title}`);
+    } finally {
+      await rm(temporary, { force: true });
+    }
+  }
+}
+
+function contentRevision(content) {
+  return createHash("sha256").update(content).digest("hex").slice(0, 12);
+}
+
+async function optimizePageAssets(manifest) {
+  const sharedAssets = {};
+  for (const filename of ["app.js", "style.css"]) {
+    sharedAssets[filename] = `${filename}?v=${contentRevision(await readFile(path.join(outputDirectory, filename)))}`;
+  }
+  for (const page of ["home", "events", "travel", "sports", "projects", "about"]) {
+    const filename = page === "home" ? "index.html" : `${page}.html`;
+    const pagePath = path.join(outputDirectory, filename);
+    let html = await readFile(pagePath, "utf8");
+    if (html.includes('src="gallery-manifest.js')) {
+      // Static markup remains the fallback. Enhancement data only needs this page's photos.
+      const data = {
+        version: manifest.version,
+        identityLine: manifest.identityLine,
+        featured: page === "home" ? manifest.featured : [],
+        covers: page === "home" ? manifest.covers : {},
+        galleries: page === "home" ? {} : { [page]: manifest.galleries[page] },
+      };
+      const script = `window.__AJ_PHOTO_MANIFEST__ = ${JSON.stringify(data)};\n`;
+      const scriptName = `gallery-manifest-${page}.js`;
+      await writeFile(path.join(outputDirectory, scriptName), script);
+      html = html.replace(/src="gallery-manifest\.js(?:\?[^\"]*)?"/, `src="${scriptName}?v=${contentRevision(script)}"`);
+    }
+    html = html.replace(/(href|src)="(app\.js|style\.css)(?:\?[^\"]*)?"/g,
+      (_, attribute, asset) => `${attribute}="${sharedAssets[asset]}"`);
+    await writeFile(pagePath, html);
+  }
 }
 
 const configuration = JSON.parse(await readFile(configurationPath, "utf8"));
@@ -385,5 +466,6 @@ await writeManifestData({
   scriptOutput: path.join(outputDirectory, "gallery-manifest.js"),
 });
 await injectBuiltMarkup(manifest);
+await optimizePageAssets(manifest);
 
 console.log(`GitHub Pages site built at ${outputDirectory}`);
