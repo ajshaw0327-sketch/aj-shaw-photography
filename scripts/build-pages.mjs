@@ -6,7 +6,9 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import sharp from "sharp";
 import {
+  compareOrderedNames,
   scanPhotoLibrary,
+  stripNumericPrefix,
   writeManifestData,
 } from "./generate-gallery-manifest.mjs";
 
@@ -43,13 +45,8 @@ function encodeUrlPath(value) {
 const projectImageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"]);
 const projectVideoExtensions = new Set([".mp4", ".webm"]);
 
-function naturalSort(left, right) {
-  return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" });
-}
-
 function readableProjectName(value) {
-  return String(value || "Project")
-    .replace(/^\d+[\s._-]*/, "")
+  return stripNumericPrefix(String(value || "Project"))
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -74,7 +71,7 @@ async function scanProjects() {
 
   const folders = entries
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
-    .sort((left, right) => naturalSort(left.name, right.name));
+    .sort((left, right) => compareOrderedNames(left.name, right.name));
   const projects = [];
 
   for (const folder of folders) {
@@ -84,7 +81,7 @@ async function scanProjects() {
       files = (await readdir(folderPath, { withFileTypes: true }))
         .filter((entry) => entry.isFile() && !entry.name.startsWith("."))
         .map((entry) => entry.name)
-        .sort(naturalSort);
+        .sort(compareOrderedNames);
     } catch {
       continue;
     }
@@ -246,7 +243,6 @@ function renderPhotoCard(photo, localIndex, globalIndex, category) {
             })}
             <span class="photo-metadata" aria-hidden="true">
               <span class="photo-meta-location">${escapeHtml(location)}</span>
-              <span class="photo-meta-camera">Fujifilm X-T50</span>
               <span class="photo-meta-frame">${reference}</span>
             </span>
             <span class="open-mark" aria-hidden="true">View ↗</span>

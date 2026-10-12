@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -105,6 +105,33 @@ test("display names hide numbered prefixes and normalize separators", () => {
   assert.equal(toDisplayName("01-basketball_vs-central"), "Basketball vs Central");
   assert.equal(toDisplayName("002-opening-shot.avif"), "Opening Shot");
   assert.equal(toDisplayName("03-Kyle-M.-Belmont-Ordination"), "Kyle M. Belmont Ordination");
+  assert.equal(toDisplayName("01.15-senior-portraits"), "Senior Portraits");
+  assert.equal(toDisplayName("01.5-opening-shot.jpg"), "Opening Shot");
+});
+
+test("decimal prefixes order gallery folders, nested folders, and photos by value", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "aj-decimal-gallery-"));
+  const folders = ["02-last", "01.5-middle", "01.15-inserted", "01-first", "10-final"];
+  try {
+    for (const folder of folders) {
+      await copyFixture(landscape, path.join(root, "travel", folder, "01-photo.jpg"));
+    }
+    for (const folder of folders) {
+      await copyFixture(landscape, path.join(root, "events/01-parent", folder, "01-photo.jpg"));
+    }
+    for (const file of ["02-last.jpg", "01.5-middle.jpg", "01.15-inserted.jpg", "01-first.jpg"]) {
+      await copyFixture(landscape, path.join(root, "sports/01-match", file));
+    }
+    const manifest = await scanPhotoLibrary(root);
+    const titles = ["First", "Inserted", "Middle", "Last", "Final"];
+    assert.deepEqual(manifest.galleries.travel.map((group) => group.title), titles);
+    assert.deepEqual(manifest.galleries.events.map((group) => group.title), titles);
+    assert.deepEqual(manifest.galleries.sports[0].photos.map((photo) => photo.title), titles.slice(0, 4));
+    assert.equal(manifest.galleries.travel[1].id, "01.15-inserted");
+    assert.match(manifest.galleries.travel[1].photos[0].src, /travel\/01\.15-inserted\/01-photo\.jpg$/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("AVIF and WebP metadata readers reserve their image space", async () => {

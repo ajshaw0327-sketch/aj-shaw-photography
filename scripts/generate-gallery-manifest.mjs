@@ -17,6 +17,18 @@ const naturalSort = new Intl.Collator("en", {
   sensitivity: "base",
 });
 
+const numericPrefix = /^\d+(?:\.\d+)?(?=[\s._-])/;
+
+export function compareOrderedNames(left, right) {
+  const leftPrefix = String(left).match(numericPrefix);
+  const rightPrefix = String(right).match(numericPrefix);
+  if (leftPrefix && rightPrefix) {
+    const difference = Number(leftPrefix[0]) - Number(rightPrefix[0]);
+    if (difference) return difference;
+  }
+  return naturalSort.compare(left, right);
+}
+
 function isHidden(name) {
   return name.startsWith(".");
 }
@@ -26,7 +38,7 @@ function isSupportedImage(name) {
 }
 
 export function stripNumericPrefix(value) {
-  return value.replace(/^\d+[\s._-]+/, "");
+  return value.replace(/^\d+(?:\.\d+)?[\s._-]+/, "");
 }
 
 export function toDisplayName(value) {
@@ -211,7 +223,7 @@ async function imageFilesDirectlyInside(directory) {
   return entries
     .filter((entry) => entry.isFile() && !isHidden(entry.name) && isSupportedImage(entry.name))
     .map((entry) => entry.name)
-    .sort(naturalSort.compare);
+    .sort(compareOrderedNames);
 }
 
 async function imageGroupsInside(directory, relativeDirectory = "") {
@@ -226,11 +238,11 @@ async function imageGroupsInside(directory, relativeDirectory = "") {
   const files = entries
     .filter((entry) => entry.isFile() && !isHidden(entry.name) && isSupportedImage(entry.name))
     .map((entry) => entry.name)
-    .sort(naturalSort.compare);
+    .sort(compareOrderedNames);
 
   const childDirectories = entries
     .filter((entry) => entry.isDirectory() && !isHidden(entry.name))
-    .sort((a, b) => naturalSort.compare(a.name, b.name));
+    .sort((a, b) => compareOrderedNames(a.name, b.name));
 
   const groups = files.length ? [{ relativeDirectory, files }] : [];
   for (const child of childDirectories) {

@@ -33,5 +33,7 @@ Example `project.json`:
 - Supported cover images: JPG, JPEG, PNG, WebP, GIF, and AVIF.
 - Supported local videos: MP4 and WebM. MP4 is recommended for broad support.
 - Set `published` to `false` while preparing a project.
-- Numbered folder prefixes control order and are hidden on the website.
+- Whole-number or decimal folder prefixes control order and are hidden on the
+  website (for example, `01-project`, `01.5-project`, `02-project`). Featured
+  projects appear first, with prefix order within each group.
 - Each published folder becomes one large project feature, not an album.

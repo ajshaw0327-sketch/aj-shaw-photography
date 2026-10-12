@@ -121,8 +121,8 @@ const fallbackGalleries: Record<GalleryCategory, Photo[]> = {
 
 const viewCopy: Record<Exclude<View, "home">, { label: string; note: string }> = {
   travel: {
-    label: "Travel & Street",
-    note: "Field notes from coastlines, city streets, and the quiet spaces between destinations.",
+    label: "Portrait & Travel",
+    note: "Portraits and field notes from coastlines, city streets, and the quiet spaces between destinations.",
   },
   events: {
     label: "Events",
@@ -306,7 +306,7 @@ export default function Home() {
               aria-current={activeNav === item ? "page" : undefined}
               onClick={() => setGalleryView(item)}
             >
-              {item}
+              {item === "travel" ? "Portrait & Travel" : item}
             </button>
           ))}
           <button

@@ -70,10 +70,21 @@ photographs as a deterministic fallback. Reloading never changes the selection.
 
 ### Numbered sorting
 
-Folders and files use natural alphabetical sorting. A numbered prefix gives
-precise control:
+Folders and files use natural alphabetical sorting. Whole-number or decimal
+prefixes give precise control, including nested folders and project folders:
 
-The numbers are hidden on the website. Hyphens and underscores become spaces,
+```text
+01-providence/
+01.15-senior-portraits/
+01.5-new-york/
+02-puerto-rico/
+```
+
+This is the displayed order: `1 < 1.15 < 1.5 < 2`. Use a hyphen after the
+number. Decimal prefixes also work for individual photo filenames.
+
+The entire number, including its decimal portion, is hidden on the website.
+Hyphens and underscores become spaces,
 and names are displayed in normal title capitalization.
 
 Examples:

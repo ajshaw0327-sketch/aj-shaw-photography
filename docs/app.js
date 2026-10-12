@@ -27,7 +27,7 @@ const routeLoadingThresholdMs = routeTitleHoldMs + 400;
 const routeTransitionMeta = {
   home: { code: "HOME / 00", title: "Home" },
   events: { code: "EVT / 01", title: "Events" },
-  travel: { code: "TRV / 02", title: "Travel" },
+  travel: { code: "TRV / 02", title: "Portrait & Travel" },
   sports: { code: "SPT / 03", title: "Sports" },
   projects: { code: "PRJ / 04", title: "Projects" },
   about: { code: "ABOUT / 05", title: "About" },
@@ -1253,13 +1253,10 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     const metadataLocation = document.createElement("span");
     metadataLocation.className = "photo-meta-location";
     metadataLocation.textContent = photo.detail?.split("·")[0]?.trim() || "AJ archive";
-    const metadataCamera = document.createElement("span");
-    metadataCamera.className = "photo-meta-camera";
-    metadataCamera.textContent = "Fujifilm X-T50";
     const metadataFrame = document.createElement("span");
     metadataFrame.className = "photo-meta-frame";
     metadataFrame.textContent = `${archiveCodes[photo.category] || "AJ"}-${String(index + 1).padStart(2, "0")}`;
-    metadata.append(metadataLocation, metadataCamera, metadataFrame);
+    metadata.append(metadataLocation, metadataFrame);
 
     const caption = document.createElement("figcaption");
     const captionTitle = document.createElement("strong");

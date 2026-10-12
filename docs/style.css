@@ -1832,13 +1832,6 @@ html.gallery-enhanced .photo-window.is-loaded img {
   left: 9px;
 }
 
-.photo-meta-camera {
-  top: 42px;
-  left: 13px;
-  transition-delay: 45ms !important;
-  transform: translate3d(var(--label-x, 0px), 7px, 0) rotate(0.7deg) !important;
-}
-
 .photo-meta-frame {
   top: 9px;
   right: 9px;
@@ -1852,11 +1845,6 @@ html.gallery-enhanced .photo-window.is-loaded img {
 .photo-card .photo-trigger:focus-visible .photo-metadata > span {
   opacity: 1;
   transform: translate3d(var(--label-x, 0px), 0, 0) rotate(-1deg);
-}
-
-.photo-card .photo-trigger:hover .photo-meta-camera,
-.photo-card .photo-trigger:focus-visible .photo-meta-camera {
-  transform: translate3d(var(--label-x, 0px), 0, 0) rotate(0.7deg) !important;
 }
 
 .photo-card .photo-trigger:hover .photo-meta-frame,

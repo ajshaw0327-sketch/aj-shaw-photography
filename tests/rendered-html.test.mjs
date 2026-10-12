@@ -16,7 +16,7 @@ const pages = [
 ];
 const routePanels = {
   home: ["HOME / 00", "Home"],
-  travel: ["TRV / 02", "Travel"],
+  travel: ["TRV / 02", "Portrait &amp; Travel"],
   events: ["EVT / 01", "Events"],
   sports: ["SPT / 03", "Sports"],
   projects: ["PRJ / 04", "Projects"],

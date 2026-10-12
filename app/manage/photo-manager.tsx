@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import type { GalleryCategory, PortfolioPhoto } from "../photo-types";
 
 const categoryLabels: Record<GalleryCategory, string> = {
-  travel: "Travel & Street",
+  travel: "Portrait & Travel",
   events: "Events",
   sports: "Sports",
 };

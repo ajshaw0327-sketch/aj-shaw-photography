@@ -12,6 +12,8 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 test("published project folders become large image and video features", async () => {
   const projectRoot = path.join(repositoryRoot, "projects");
   const fixtureRoot = path.join(projectRoot, "99-test-project");
+  const decimalFixtureRoots = ["99.5-middle-project", "99.15-inserted-project"]
+    .map((folder) => path.join(projectRoot, folder));
   const outputRoot = await mkdtemp(path.join(repositoryRoot, ".test-project-gallery-"));
 
   try {
@@ -32,6 +34,12 @@ test("published project folders become large image and video features", async ()
       linkLabel: "View case study",
       published: true,
     }));
+    for (const folder of decimalFixtureRoots) {
+      await mkdir(folder, { recursive: true });
+      await writeFile(path.join(folder, "project.json"), JSON.stringify({
+        link: "https://example.com/decimal-project",
+      }));
+    }
 
     await execFileAsync(process.execPath, ["scripts/build-pages.mjs", "--output", outputRoot], {
       cwd: repositoryRoot,
@@ -45,11 +53,17 @@ test("published project folders become large image and video features", async ()
     assert.match(html, /A large-format video project test\./);
     assert.match(html, /href="https:\/\/example\.com\/project"/);
     assert.doesNotMatch(html, /The project wall is ready\./);
+    assert.ok(html.indexOf("Test Film Project") < html.indexOf("Inserted Project"));
+    assert.ok(html.indexOf("Inserted Project") < html.indexOf("Middle Project"));
+    assert.doesNotMatch(html, />99\.15|>99\.5/);
     // Invalid/unsupported videos must survive the optional optimizer byte-for-byte.
     assert.equal(await readFile(path.join(outputRoot, "projects/99-test-project/film.mp4"), "utf8"),
       "project-video-fixture");
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
+    for (const folder of decimalFixtureRoots) {
+      await rm(folder, { recursive: true, force: true });
+    }
     await rm(outputRoot, { recursive: true, force: true });
   }
 });
