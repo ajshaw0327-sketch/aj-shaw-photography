@@ -202,8 +202,18 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.match(html, /<picture><source type="image\/webp" srcset=/);
     assert.match(html, /<img[^>]+srcset=[^>]+sizes=[^>]+width="\d+" height="\d+"/);
     assert.match(html, /loading="(?:eager|lazy)" decoding="async"/);
-    assert.match(html, /alt="Photograph of/);
+    assert.match(html, /alt="Photograph \d+ from/);
     assert.match(html, /<figcaption><strong>[^<]+<\/strong><span>[^<]+<\/span><\/figcaption>/);
+    for (const [collection] of html.matchAll(/<article class="gallery-subsection[\s\S]*?<\/article>/g)) {
+      const numbers = [...collection.matchAll(/class="frame-index">(\d+)</g)]
+        .map((match) => Number(match[1]));
+      assert.deepEqual(numbers, numbers.map((_, index) => index + 1),
+        "photo numbers must restart at 1 in every collection");
+      const titles = [...collection.matchAll(/<figcaption><strong>([^<]+)</g)]
+        .map((match) => match[1]);
+      assert.deepEqual(titles, numbers.map((number) => `Frame ${String(number).padStart(2, "0")}`),
+        "photo captions must use local frame numbers instead of filenames");
+    }
     assert.doesNotMatch(html, /<div class="gallery-groups" id="photo-grid">\s*<\/div>/);
   }
 });

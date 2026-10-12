@@ -254,9 +254,8 @@ async function imageGroupsInside(directory, relativeDirectory = "") {
   return groups;
 }
 
-async function photoRecord(photosRoot, relativePath, detail, category) {
-  const filename = path.basename(relativePath);
-  const title = toDisplayName(filename) || "Untitled Photograph";
+async function photoRecord(photosRoot, relativePath, detail, category, index) {
+  const title = `Frame ${String(index + 1).padStart(2, "0")}`;
   let dimensions = null;
   try {
     dimensions = await readImageDimensions(path.join(photosRoot, relativePath));
@@ -269,7 +268,7 @@ async function photoRecord(photosRoot, relativePath, detail, category) {
     src: `photos/${encodeRelativePath(relativePath)}`,
     title,
     detail,
-    alt: `Photograph of “${title}” from ${detail}, by AJ Shaw.`,
+    alt: `Photograph ${index + 1} from ${detail}, by AJ Shaw.`,
     category,
     ...(dimensions || {}),
   };
@@ -303,8 +302,8 @@ function chooseCoverPhotographs(category, available, galleries, configured = [])
 export async function scanPhotoLibrary(photosRoot, configuration = {}) {
   const featuredFiles = await imageFilesDirectlyInside(path.join(photosRoot, "featured"));
   const featured = await Promise.all(
-    featuredFiles.map((filename) =>
-      photoRecord(photosRoot, path.join("featured", filename), "Featured selection", "featured"),
+    featuredFiles.map((filename, index) =>
+      photoRecord(photosRoot, path.join("featured", filename), "Featured selection", "featured", index),
     ),
   );
 
@@ -322,12 +321,13 @@ export async function scanPhotoLibrary(photosRoot, configuration = {}) {
           id: relativeDirectory.split(path.sep).join("/") || "selected-frames",
           title,
           photos: await Promise.all(
-            files.map((filename) =>
+            files.map((filename, index) =>
               photoRecord(
                 photosRoot,
                 path.join(category, relativeDirectory, filename),
                 detail,
                 category,
+                index,
               ),
             ),
           ),
@@ -342,12 +342,13 @@ export async function scanPhotoLibrary(photosRoot, configuration = {}) {
       path.join(photosRoot, "covers", category),
     );
     const available = await Promise.all(
-      coverFiles.map((filename) =>
+      coverFiles.map((filename, index) =>
         photoRecord(
           photosRoot,
           path.join("covers", category, filename),
           `${toDisplayName(category)} cover selection`,
           category,
+          index,
         ),
       ),
     );

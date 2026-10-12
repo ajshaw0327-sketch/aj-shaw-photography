@@ -287,11 +287,14 @@ function withAssetRoot(src) {
   return `${assetRoot}${src.replace(/^\.\//, "")}`;
 }
 
-function normalizePhoto(photo, category, detail) {
+function normalizePhoto(photo, category, detail, index = 0) {
+  const displayDetail = photo.detail || detail;
   return {
     ...photo,
     category,
-    detail: photo.detail || detail,
+    title: `Frame ${String(index + 1).padStart(2, "0")}`,
+    alt: `Photograph ${index + 1} from ${displayDetail}, by AJ Shaw.`,
+    detail: displayDetail,
     src: withAssetRoot(photo.src),
     responsive: photo.responsive
       ? {
@@ -311,8 +314,8 @@ function applyManifest(manifest) {
   const rawGroups = manifest?.galleries?.[currentPage];
 
   if (currentPage === "home") {
-    photographs = featured.map((photo) =>
-      normalizePhoto(photo, "featured", "Featured selection"),
+    photographs = featured.map((photo, index) =>
+      normalizePhoto(photo, "featured", "Featured selection", index),
     );
     galleryGroups = photographs.length
       ? [{ id: "featured", title: "Featured", photos: photographs }]
@@ -325,11 +328,12 @@ function applyManifest(manifest) {
         .filter((group) => Array.isArray(group.photos) && group.photos.length)
         .map((group) => ({
           ...group,
-          photos: group.photos.map((photo) =>
+          photos: group.photos.map((photo, index) =>
             normalizePhoto(
               photo,
               currentPage,
               `${group.title} · ${currentPage} journal`,
+              index,
             ),
           ),
         }))
@@ -945,6 +949,7 @@ function homeSequencePhotos() {
         candidate,
         category,
         `${group.title} · ${category} journal`,
+        group.photos.indexOf(candidate),
       );
       sequence.push(normalized);
       usedSources.add(normalized.src);
@@ -1213,7 +1218,7 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     );
     const indexLabel = document.createElement("span");
     indexLabel.className = "frame-index";
-    indexLabel.textContent = String(index + 1).padStart(2, "0");
+    indexLabel.textContent = String(localIndex + 1).padStart(2, "0");
 
     const windowElement = document.createElement("span");
     windowElement.className = "photo-window";
@@ -1255,7 +1260,7 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     metadataLocation.textContent = photo.detail?.split("·")[0]?.trim() || "AJ archive";
     const metadataFrame = document.createElement("span");
     metadataFrame.className = "photo-meta-frame";
-    metadataFrame.textContent = `${archiveCodes[photo.category] || "AJ"}-${String(index + 1).padStart(2, "0")}`;
+    metadataFrame.textContent = `${archiveCodes[photo.category] || "AJ"}-${String(localIndex + 1).padStart(2, "0")}`;
     metadata.append(metadataLocation, metadataFrame);
 
     const caption = document.createElement("figcaption");

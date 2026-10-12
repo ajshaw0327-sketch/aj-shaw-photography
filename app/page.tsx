@@ -371,16 +371,16 @@ export default function Home() {
                     onClick={(event) =>
                       openLightbox(heroPhotos, index, event.currentTarget)
                     }
-                    aria-label={`Open ${photo.title} in the photo viewer`}
+                    aria-label={`Open frame ${index + 1} in the photo viewer`}
                   >
                     <img
                       src={photo.src}
-                      alt={photo.alt}
+                      alt={`Photograph ${index + 1} from ${photo.detail}, by AJ Shaw.`}
                       width={photo.width}
                       height={photo.height}
                     />
                     <span>
-                      0{index + 1} / {photo.title}
+                      Frame {String(index + 1).padStart(2, "0")}
                     </span>
                   </button>
                 ))}
@@ -555,7 +555,7 @@ export default function Home() {
             <div className="lightbox-image">
               <img
                 src={lightbox.photos[lightbox.index].src}
-                alt={lightbox.photos[lightbox.index].alt}
+                alt={`Photograph ${lightbox.index + 1} from ${lightbox.photos[lightbox.index].detail}, by AJ Shaw.`}
                 width={lightbox.photos[lightbox.index].width}
                 height={lightbox.photos[lightbox.index].height}
               />
@@ -570,7 +570,7 @@ export default function Home() {
               </button>
               <div>
                 <h2 id="lightbox-title">
-                  {lightbox.photos[lightbox.index].title}
+                  Frame {String(lightbox.index + 1).padStart(2, "0")}
                 </h2>
                 <p>{lightbox.photos[lightbox.index].detail}</p>
               </div>
@@ -614,7 +614,7 @@ function PhotoGrid({
           <button
             type="button"
             onClick={(event) => onOpen(photos, index, event.currentTarget)}
-            aria-label={`Open ${photo.title} in the photo viewer`}
+            aria-label={`Open frame ${index + 1} in the photo viewer`}
           >
             <span className="frame-index">
               {String(index + 1).padStart(2, "0")}
@@ -622,7 +622,7 @@ function PhotoGrid({
             <span className="photo-window">
               <img
                 src={photo.src}
-                alt={photo.alt}
+                alt={`Photograph ${index + 1} from ${photo.detail}, by AJ Shaw.`}
                 width={photo.width}
                 height={photo.height}
                 loading="lazy"
@@ -633,7 +633,7 @@ function PhotoGrid({
             </span>
           </button>
           <figcaption>
-            <strong>{photo.title}</strong>
+            <strong>Frame {String(index + 1).padStart(2, "0")}</strong>
             <span>{photo.detail}</span>
           </figcaption>
         </figure>

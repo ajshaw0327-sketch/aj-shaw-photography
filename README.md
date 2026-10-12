@@ -87,6 +87,9 @@ The entire number, including its decimal portion, is hidden on the website.
 Hyphens and underscores become spaces,
 and names are displayed in normal title capitalization.
 
+Gallery headings come from folder names. Individual photo filenames control
+sorting only; photo captions and the viewer show frame numbers instead.
+
 Examples:
 
 - Add: open the destination folder on GitHub, choose **Add file → Upload

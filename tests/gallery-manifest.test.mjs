@@ -56,7 +56,7 @@ test("folder names become predictable gallery sections without empty or hidden e
   assert.equal(manifest.version, 2);
   assert.equal(manifest.identityLine, configuration.identityLine);
   assert.equal(manifest.featured.length, 1);
-  assert.equal(manifest.featured[0].title, "Opening # Shot");
+  assert.equal(manifest.featured[0].title, "Frame 01");
   assert.match(manifest.featured[0].src, /opening%20%23%20shot\.JPG$/);
 
   assert.deepEqual(
@@ -73,7 +73,7 @@ test("folder names become predictable gallery sections without empty or hidden e
   );
   assert.deepEqual(
     manifest.galleries.travel[0].photos.map((photo) => photo.title),
-    ["Opening Shot", "Tall Portrait"],
+    ["Frame 01", "Frame 02"],
   );
   assert.ok(
     manifest.galleries.travel[0].photos[0].width >
@@ -88,7 +88,7 @@ test("folder names become predictable gallery sections without empty or hidden e
     ["Community Festival"],
   );
   assert.equal(manifest.galleries.sports[0].title, "Selected Frames");
-  assert.equal(manifest.galleries.sports[0].photos[0].title, "Warm Up");
+  assert.equal(manifest.galleries.sports[0].photos[0].title, "Frame 01");
   assert.deepEqual(
     manifest.covers.travel.map((photo) => photo.id),
     [
@@ -97,7 +97,7 @@ test("folder names become predictable gallery sections without empty or hidden e
       "travel/01-italy-2026/01-opening-shot.jpg",
     ],
   );
-  assert.match(manifest.galleries.travel[0].photos[0].alt, /Photograph of “Opening Shot” from Italy 2026/);
+  assert.match(manifest.galleries.travel[0].photos[0].alt, /Photograph 1 from Italy 2026/);
   assert.equal(manifest.covers.events[0].id, "events/02-community_festival/03-strange # name.png");
 });
 
@@ -126,7 +126,10 @@ test("decimal prefixes order gallery folders, nested folders, and photos by valu
     const titles = ["First", "Inserted", "Middle", "Last", "Final"];
     assert.deepEqual(manifest.galleries.travel.map((group) => group.title), titles);
     assert.deepEqual(manifest.galleries.events.map((group) => group.title), titles);
-    assert.deepEqual(manifest.galleries.sports[0].photos.map((photo) => photo.title), titles.slice(0, 4));
+    assert.deepEqual(manifest.galleries.sports[0].photos.map((photo) => path.basename(photo.id)),
+      ["01-first.jpg", "01.15-inserted.jpg", "01.5-middle.jpg", "02-last.jpg"]);
+    assert.deepEqual(manifest.galleries.sports[0].photos.map((photo) => photo.title),
+      ["Frame 01", "Frame 02", "Frame 03", "Frame 04"]);
     assert.equal(manifest.galleries.travel[1].id, "01.15-inserted");
     assert.match(manifest.galleries.travel[1].photos[0].src, /travel\/01\.15-inserted\/01-photo\.jpg$/);
   } finally {

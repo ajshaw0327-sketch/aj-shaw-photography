@@ -229,12 +229,12 @@ function renderPhotoCard(photo, localIndex, globalIndex, category) {
   const loading = globalIndex < 2 ? "eager" : "lazy";
   const fetchPriority = globalIndex === 0 ? "high" : "auto";
   const location = photo.detail?.split("·")[0]?.trim() || "AJ archive";
-  const reference = `${category.toUpperCase().slice(0, 3)}-${String(globalIndex + 1).padStart(2, "0")}`;
+  const reference = `${category.toUpperCase().slice(0, 3)}-${String(localIndex + 1).padStart(2, "0")}`;
   return `
     <figure class="${photoClassNames(photo, globalIndex)}" data-photo-id="${escapeHtml(photo.id)}" style="--photo-ratio: ${ratio}; --card-rotate: ${rotation}deg; --card-delay: ${Math.min(localIndex, 8) * 45}ms; --section-card-delay: ${Math.min(localIndex, 10) * 36}ms">
       <a class="photo-trigger" href="${escapeHtml(photo.src)}" data-photo-index="${localIndex}" aria-label="View ${escapeHtml(photo.title)}, ${escapeHtml(photo.detail)}">
         <span class="photo-surface">
-          <span class="frame-index">${String(globalIndex + 1).padStart(2, "0")}</span>
+          <span class="frame-index">${String(localIndex + 1).padStart(2, "0")}</span>
           <span class="photo-window">
             ${renderPicture(photo, {
               sizes: "(max-width: 640px) 88vw, (max-width: 1100px) 44vw, 470px",
