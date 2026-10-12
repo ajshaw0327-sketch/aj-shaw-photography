@@ -19,7 +19,7 @@ const routePanels = {
   travel: ["TRV / 02", "Travel"],
   events: ["EVT / 01", "Events"],
   sports: ["SPT / 03", "Sports"],
-  projects: ["PRJ / 04", "Other Projects"],
+  projects: ["PRJ / 04", "Projects"],
   about: ["ABOUT / 05", "About"],
 };
 
@@ -49,7 +49,7 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /id="critical-route-colors"/);
     assert.match(html, /name="theme-color" content="#f2eddd"/);
     assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="favicon\.png"/);
-    assert.match(html, /rel="preload" href="fonts\/playfair-display-variable\.ttf" as="font" type="font\/ttf" crossorigin/);
+    assert.match(html, /rel="preload" href="fonts\/playfair-display-variable\.woff2" as="font" type="font\/woff2" crossorigin/);
     assert.match(html, /:root \{ --route-panel-top: 72px; color-scheme: light; background: #f2eddd; \}/);
     assert.match(html, /--route-panel-top: calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/);
     assert.match(html, /id="route-curtain"/);
@@ -80,7 +80,8 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /data-route="sports"/);
     assert.match(html, /data-route="projects"/);
     assert.match(html, /data-route="about"/);
-    assert.match(html, /Other Projects/);
+    assert.match(html, />Projects</);
+    assert.doesNotMatch(html, /Other Projects/);
     assert.match(html, /About \/ Contact/);
     assert.doesNotMatch(html, /data-route="contact"/);
     assert.equal((html.match(/data-route=/g) || []).length, 6);
@@ -146,7 +147,7 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.equal((home.match(/class="category-portal /g) || []).length, 4);
   assert.equal((home.match(/data-category-preview=/g) || []).length, 3);
   assert.match(home, /class="category-portal category-portal-projects" href="projects\.html"/);
-  assert.match(home, /<h2>Other Projects<\/h2>/);
+  assert.match(home, /<h2>Projects<\/h2>/);
   assert.match(home, /Open project gallery/);
   assert.match(home, /Choose a field file\./);
   assert.doesNotMatch(home, /Layered like postcards collected on the way/);
@@ -168,7 +169,7 @@ test("Events precedes Travel in navigation and on the home archive", async () =>
     );
     assert.ok(
       html.indexOf('data-route="projects"') < html.indexOf('data-route="about"'),
-      `${filename} must place Other Projects before About / Contact`,
+      `${filename} must place Projects before About / Contact`,
     );
   }
 
@@ -189,7 +190,7 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.match(html, /id="lightbox"/);
     assert.match(html, /class="lightbox-backdrop"/);
     assert.match(html, /aria-describedby="lightbox-detail"/);
-    assert.match(html, /gallery-manifest\.js/);
+    assert.ok(html.includes(`gallery-manifest-${route}.js`));
     assert.match(html, /app\.js/);
     assert.doesNotMatch(html, /class="gallery-subsection is-expanded"/);
     assert.doesNotMatch(html, /class="gallery-subsection-toggle"[^>]+aria-expanded="true"/);
@@ -207,7 +208,7 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
   }
 });
 
-test("Other Projects is a large-format, folder-driven project gallery", async () => {
+test("Projects is a large-format, folder-driven project gallery", async () => {
   const html = await readFile(path.join(outputRoot, "projects.html"), "utf8");
   const css = await readFile(path.join(outputRoot, "style.css"), "utf8");
 
@@ -215,7 +216,8 @@ test("Other Projects is a large-format, folder-driven project gallery", async ()
   assert.match(html, /class="projects-gallery"/);
   assert.match(html, /class="project-features"/);
   assert.doesNotMatch(html, /BUILD:PROJECTS:ITEMS/);
-  assert.match(html, /The project wall is ready\./);
+  assert.match(html, /class="project-feature/);
+  assert.match(html, /<video controls preload="metadata"/);
   assert.doesNotMatch(html, /gallery-subsection|photo-grid|gallery-manifest\.js/);
   assert.match(css, /\.project-feature\s*\{[\s\S]*grid-template-columns/);
   assert.match(css, /\.project-media img,[\s\S]*\.project-media video/);
@@ -246,8 +248,14 @@ test("major pages include canonical sharing metadata and photographer data", asy
     assert.match(html, /<link rel="canonical" href="https:\/\/ajshaw0327-sketch\.github\.io\/aj-shaw-photography\//);
     assert.match(html, /<meta property="og:url" content="https:\/\/ajshaw0327-sketch\.github\.io\/aj-shaw-photography\//);
     assert.match(html, /<meta property="og:type" content="(?:website|profile)"/);
-    assert.match(html, /<meta property="og:image" content="https:\/\//);
-    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    if (["index.html", "projects.html"].includes(filename)) {
+      assert.doesNotMatch(html, /<meta property="og:image"/);
+      assert.match(html, /<meta name="twitter:card" content="summary"/);
+      assert.doesNotMatch(html, /<meta name="twitter:image"/);
+    } else {
+      assert.match(html, /<meta property="og:image" content="https:\/\//);
+      assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    }
     assert.match(html, /<script type="application\/ld\+json">[\s\S]*"@type":"Person"[\s\S]*"name":"AJ Shaw"/);
   }
 });
@@ -425,6 +433,10 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.doesNotMatch(script, /launchFaces|startLaunchTypography|data\.face|is-flashing/);
   assert.doesNotMatch(script, /Places\. People\. Motion\./);
   assert.match(script, /lightboxSwapTimer/);
+  assert.match(script, /function lightboxSourceFor/);
+  assert.match(script, /function preloadAdjacentLightboxPhotos/);
+  assert.match(script, /await preloadLightboxSource\(photo\)/);
+  assert.match(script, /previewImage\?\.currentSrc/);
   assert.match(script, /element\.inert = true/);
   assert.doesNotMatch(script, /positionNavigationMarker|nav-proximity/);
   assert.doesNotMatch(script, /function randomPhotoSelection|Math\.random\(\)/);

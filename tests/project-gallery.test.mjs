@@ -45,6 +45,9 @@ test("published project folders become large image and video features", async ()
     assert.match(html, /A large-format video project test\./);
     assert.match(html, /href="https:\/\/example\.com\/project"/);
     assert.doesNotMatch(html, /The project wall is ready\./);
+    // Invalid/unsupported videos must survive the optional optimizer byte-for-byte.
+    assert.equal(await readFile(path.join(outputRoot, "projects/99-test-project/film.mp4"), "utf8"),
+      "project-video-fixture");
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
     await rm(outputRoot, { recursive: true, force: true });

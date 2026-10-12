@@ -29,7 +29,7 @@ const routeTransitionMeta = {
   events: { code: "EVT / 01", title: "Events" },
   travel: { code: "TRV / 02", title: "Travel" },
   sports: { code: "SPT / 03", title: "Sports" },
-  projects: { code: "PRJ / 04", title: "Other Projects" },
+  projects: { code: "PRJ / 04", title: "Projects" },
   about: { code: "ABOUT / 05", title: "About" },
 };
 let photographs = [];
@@ -51,6 +51,7 @@ let lightboxAssemblyTimer = 0;
 let lightboxSwapTimer = 0;
 let lightboxCloseTimer = 0;
 let lightboxImageToken = 0;
+let lightboxPreloadTask = 0;
 let cameraFlashTimer = 0;
 let themeTransitionTimer = 0;
 let lightboxInertElements = [];
@@ -58,6 +59,7 @@ const subsectionLayoutTimers = new WeakMap();
 const subsectionLayoutFrames = new WeakMap();
 const previewScrollPositions = new WeakMap();
 const subsectionsById = new Map();
+const lightboxImageCache = new Map();
 
 const navigation = document.querySelector("#primary-navigation");
 const navigationLinks = [...document.querySelectorAll("[data-route]")];
@@ -843,18 +845,30 @@ function setupCharacterAnimations() {
     });
   });
 
-  const preload = () => {
-    if (reducedMotion.matches) return;
-    Object.values(characterAnimations).forEach(({ gif }) => {
+  const warmedCharacters = new Set();
+  const preload = (character) => {
+    const animation = characterAnimations[character.dataset.character];
+    if (!animation || warmedCharacters.has(animation.gif) || reducedMotion.matches || navigator.connection?.saveData) return;
+    warmedCharacters.add(animation.gif);
+    const warm = () => {
+      if (reducedMotion.matches) return;
       const image = new Image();
       image.decoding = "async";
-      image.src = `${assetRoot}${gif}`;
-    });
+      image.src = `${assetRoot}${animation.gif}`;
+    };
+    if ("requestIdleCallback" in window) window.requestIdleCallback(warm, { timeout: 1800 });
+    else window.setTimeout(warm, 700);
   };
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(preload, { timeout: 1800 });
-  } else {
-    window.setTimeout(preload, 700);
+  // Only warm illustrations near the viewport, not every GIF in the archive.
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(({ target, isIntersecting }) => {
+        if (!isIntersecting) return;
+        preload(target);
+        observer.unobserve(target);
+      });
+    }, { rootMargin: "150px" });
+    characters.forEach((character) => observer.observe(character));
   }
 
   reducedMotion.addEventListener?.("change", () => {
@@ -874,7 +888,7 @@ async function loadPhotographs() {
   }
 
   try {
-    const response = await fetch(manifestUrl, { cache: "no-store" });
+    const response = await fetch(manifestUrl);
     if (!response.ok) throw new Error(`Manifest request failed: ${response.status}`);
     applyManifest(await response.json());
     renderHero();
@@ -1809,11 +1823,17 @@ function triggerCameraFlash() {
 function openLightbox(photos, index, trigger) {
   if (!lightbox || !closeButton) return;
   window.clearTimeout(lightboxCloseTimer);
+  window.clearTimeout(lightboxSwapTimer);
+  cancelAdjacentLightboxPreload();
+  lightboxFrame?.classList.remove("is-developing");
   lightboxCloseTimer = 0;
   openPhotographs = photos;
   openIndex = index;
   lastFocusedButton = trigger;
-  updateLightbox();
+  const previewImage = trigger?.querySelector("img");
+  const previewSource = previewImage?.naturalWidth ? previewImage?.currentSrc || previewImage?.src : "";
+  if (!previewSource) lightboxPhoto?.removeAttribute("src");
+  updateLightbox({ previewSource, opening: true, imageToken: ++lightboxImageToken });
   if (photos[index]?.category === "featured") triggerCameraFlash();
   lightbox.hidden = false;
   if (!lightboxInertElements.length) {
@@ -1831,6 +1851,8 @@ function openLightbox(photos, index, trigger) {
 
 function closeLightbox() {
   if (!lightbox || lightbox.hidden) return;
+  lightboxImageToken += 1;
+  cancelAdjacentLightboxPreload();
   window.clearTimeout(lightboxSwapTimer);
   cancelAnimationFrame(lightboxAssemblyTimer);
   lightboxSwapTimer = 0;
@@ -1856,21 +1878,89 @@ function closeLightbox() {
 }
 
 function moveLightbox(direction) {
-  if (!openPhotographs.length) return;
+  if (!openPhotographs.length || lightbox.hidden || lightboxCloseTimer) return;
   openIndex = (openIndex + direction + openPhotographs.length) % openPhotographs.length;
+  // Invalidate immediately, including the short visual-settle window before loading.
+  const imageToken = ++lightboxImageToken;
+  cancelAdjacentLightboxPreload();
   lightboxFrame?.classList.add("is-developing");
   window.clearTimeout(lightboxSwapTimer);
-  lightboxSwapTimer = window.setTimeout(() => {
-    updateLightbox();
-    lightboxFrame?.classList.remove("is-developing");
-    lightboxSwapTimer = 0;
-  }, reducedMotion.matches ? 0 : 90);
+  lightboxSwapTimer = window.setTimeout(async () => {
+    await updateLightbox({ imageToken });
+    if (imageToken === lightboxImageToken) {
+      lightboxFrame?.classList.remove("is-developing");
+      lightboxSwapTimer = 0;
+    }
+  }, reducedMotion.matches ? 0 : 45);
 }
 
-function updateLightbox() {
+function lightboxSourceFor(photo) {
+  const sources = [...(photo.responsive?.webp || [])].sort((left, right) => left.width - right.width);
+  if (!sources.length) return photo.src;
+  const requestedWidth = Math.min(1600, Math.max(960, Math.round(window.innerWidth * Math.min(window.devicePixelRatio || 1, 1.5))));
+  return (sources.find((source) => source.width >= requestedWidth) || sources.at(-1)).src;
+}
+
+function preloadLightboxSource(photo) {
+  if (!photo) return Promise.resolve("");
+  const source = lightboxSourceFor(photo);
+  if (lightboxImageCache.has(source)) {
+    const entry = lightboxImageCache.get(source);
+    lightboxImageCache.delete(source);
+    lightboxImageCache.set(source, entry);
+    return entry.promise;
+  }
+  const entry = { image: null, promise: null };
+  const decodeSource = (url) => new Promise((resolve, reject) => {
+    const image = new Image();
+    entry.image = image;
+    image.decoding = "async";
+    image.onload = async () => {
+      try { await image.decode?.(); } catch {}
+      resolve(url);
+    };
+    image.onerror = reject;
+    image.src = url;
+  });
+  entry.promise = decodeSource(source).catch(async () => {
+    // Decode the original fallback too; never replace a usable preview with a broken image.
+    if (lightboxImageCache.get(source) === entry) lightboxImageCache.delete(source);
+    if (source !== photo.src) return decodeSource(photo.src).catch(() => "");
+    return "";
+  });
+  lightboxImageCache.set(source, entry);
+  // Retain a small decoded working set, not an entire full-resolution collection.
+  while (lightboxImageCache.size > 6) lightboxImageCache.delete(lightboxImageCache.keys().next().value);
+  return entry.promise;
+}
+
+function cancelAdjacentLightboxPreload() {
+  if ("cancelIdleCallback" in window) window.cancelIdleCallback(lightboxPreloadTask);
+  else window.clearTimeout(lightboxPreloadTask);
+  lightboxPreloadTask = 0;
+}
+
+function preloadAdjacentLightboxPhotos() {
+  cancelAdjacentLightboxPreload();
+  if (openPhotographs.length < 2 || navigator.connection?.saveData) return;
+  const imageToken = lightboxImageToken;
+  const previous = openPhotographs[(openIndex - 1 + openPhotographs.length) % openPhotographs.length];
+  const next = openPhotographs[(openIndex + 1) % openPhotographs.length];
+  const preload = () => {
+    lightboxPreloadTask = 0;
+    if (lightbox.hidden || imageToken !== lightboxImageToken) return;
+    void preloadLightboxSource(previous);
+    void preloadLightboxSource(next);
+  };
+  if ("requestIdleCallback" in window) lightboxPreloadTask = window.requestIdleCallback(preload, { timeout: 500 });
+  else lightboxPreloadTask = window.setTimeout(preload, 80);
+}
+
+async function updateLightbox({ previewSource = "", opening = false, imageToken } = {}) {
   const photo = openPhotographs[openIndex];
   if (!photo || !lightboxPhoto) return;
-  const imageToken = ++lightboxImageToken;
+  const index = openIndex;
+  const count = openPhotographs.length;
   const updatePortraitState = () => {
     if (imageToken !== lightboxImageToken) return;
     lightboxFrame?.classList.toggle(
@@ -1878,22 +1968,31 @@ function updateLightbox() {
       lightboxPhoto.naturalHeight > lightboxPhoto.naturalWidth,
     );
   };
-  lightboxPhoto.onload = updatePortraitState;
-  lightboxPhoto.alt = photo.alt;
-  lightboxTitle.textContent = photo.title;
-  lightboxDetail.textContent = photo.detail;
-  lightboxCount.textContent = `Frame ${openIndex + 1} / ${openPhotographs.length}`;
-  assembleLightboxObjectLabels(photo);
-  if (photo.width && photo.height) {
-    lightboxFrame?.classList.toggle(
-      "lightbox-frame-portrait",
-      photo.height > photo.width,
-    );
+  const showPhoto = (source) => {
+    lightboxPhoto.alt = photo.alt;
+    lightboxTitle.textContent = photo.title;
+    lightboxDetail.textContent = photo.detail;
+    lightboxCount.textContent = `Frame ${index + 1} / ${count}`;
+    assembleLightboxObjectLabels(photo);
+    if (photo.width && photo.height) {
+      lightboxFrame?.classList.toggle("lightbox-frame-portrait", photo.height > photo.width);
+    }
+    lightboxPhoto.onload = updatePortraitState;
+    if (source) lightboxPhoto.src = source;
+  };
+  if (opening) showPhoto(previewSource);
+  const displaySource = await preloadLightboxSource(photo);
+  if (imageToken !== lightboxImageToken) return;
+  if (!displaySource) {
+    lightboxDetail.textContent = "This photograph could not load. Try Previous or Next.";
+    return;
   }
-  lightboxPhoto.src = photo.src;
+  // Commit the image, caption, frame number and orientation together after decoding.
+  showPhoto(displaySource);
   if (lightboxPhoto.complete && lightboxPhoto.naturalWidth) {
     queueMicrotask(updatePortraitState);
   }
+  preloadAdjacentLightboxPhotos();
 }
 
 function setupLightbox() {
