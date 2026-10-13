@@ -129,7 +129,7 @@ nav {
   border-color: var(--forest);
   background: var(--forest);
   color: var(--cream);
-  box-shadow: 2px 3px 0 var(--gold);
+  box-shadow: none;
   transform: translateY(2px);
 }
 
