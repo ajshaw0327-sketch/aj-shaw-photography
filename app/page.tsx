@@ -306,7 +306,7 @@ export default function Home() {
               aria-current={activeNav === item ? "page" : undefined}
               onClick={() => setGalleryView(item)}
             >
-              {item === "travel" ? "Portrait & Travel" : item}
+              {item === "travel" ? <span className="nav-stacked-label">Portrait & <br />Travel</span> : item}
             </button>
           ))}
           <button

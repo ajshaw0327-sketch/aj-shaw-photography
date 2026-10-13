@@ -699,6 +699,23 @@ em {
   min-width: 116px;
 }
 
+.site-header nav .nav-stacked-label {
+  display: block;
+  text-align: center;
+  line-height: 1.12;
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .site-header nav .nav-stacked-label {
+    text-align: left;
+  }
+
+  .site-header nav .nav-stacked-label br {
+    display: none;
+  }
+}
+
 .site-header nav a::before {
   position: absolute;
   inset: 0;

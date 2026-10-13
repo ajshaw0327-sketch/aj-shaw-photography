@@ -112,6 +112,13 @@ nav {
   transition: color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
+.nav-stacked-label {
+  display: block;
+  text-align: center;
+  line-height: 1.12;
+  white-space: nowrap;
+}
+
 .nav-label:hover {
   background: var(--cream-deep);
   color: var(--forest);
