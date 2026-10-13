@@ -349,10 +349,21 @@ function setActiveNavigation() {
       link.removeAttribute("aria-current");
     }
   });
+  updateMobileMenuLabel();
 }
 
 function navigationLinkForRoute(route = currentPage) {
   return navigationLinks.find((link) => link.dataset.route === route) || null;
+}
+
+function updateMobileMenuLabel() {
+  if (!menuToggle) return;
+  const link = navigationLinkForRoute();
+  const label = link?.getAttribute("aria-label") || link?.textContent.replace(/\s+/g, " ").trim() || "Home";
+  const currentPageLabel = menuToggle.querySelector("[data-menu-current-page]");
+  if (currentPageLabel) currentPageLabel.textContent = label;
+  const action = menuToggle.getAttribute("aria-expanded") === "true" ? "Close" : "Open";
+  menuToggle.setAttribute("aria-label", `${action} navigation menu, current section: ${label}`);
 }
 
 function snappedNavigationPixel(value) {
@@ -471,6 +482,7 @@ function setupArchiveLabel() {
 function closeMobileMenu() {
   if (!menuToggle || !navigation) return;
   menuToggle.setAttribute("aria-expanded", "false");
+  updateMobileMenuLabel();
   navigation.classList.remove("is-open");
   document.body.classList.remove("menu-open");
 }
@@ -763,6 +775,7 @@ function setupNavigation(essentialReady = Promise.resolve()) {
   menuToggle?.addEventListener("click", () => {
     const willOpen = menuToggle.getAttribute("aria-expanded") !== "true";
     menuToggle.setAttribute("aria-expanded", String(willOpen));
+    updateMobileMenuLabel();
     navigation?.classList.toggle("is-open", willOpen);
     document.body.classList.toggle("menu-open", willOpen);
     window.requestAnimationFrame(scheduleArchiveLabelMeasurement);

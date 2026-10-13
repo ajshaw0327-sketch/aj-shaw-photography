@@ -923,8 +923,11 @@ body.route-settling .site-header nav a[aria-current="page"],
 
 .menu-toggle {
   display: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 55%;
   min-height: 42px;
-  padding: 0 13px;
+  padding: 6px 11px;
   border: 1px solid var(--forest);
   border-radius: 3px;
   background: transparent;
@@ -934,13 +937,20 @@ body.route-settling .site-header nav a[aria-current="page"],
   text-transform: uppercase;
 }
 
-.menu-toggle span {
+.menu-toggle .menu-current-page {
+  min-width: 0;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.menu-toggle .menu-toggle-symbol {
   display: inline-block;
+  flex: 0 0 auto;
   margin-left: 5px;
   transition: transform 180ms var(--ease);
 }
 
-.menu-toggle[aria-expanded="true"] span {
+.menu-toggle[aria-expanded="true"] .menu-toggle-symbol {
   transform: rotate(45deg);
 }
 
