@@ -6989,6 +6989,11 @@ html[data-theme="dark"] .photo-card figcaption strong {
   color: var(--night-cream);
 }
 
+html[data-theme="dark"] .photo-card figcaption > span,
+html[data-theme="dark"] .photo-card .photo-trigger:is(:hover, :focus-visible) + figcaption > span {
+  color: var(--night-cream);
+}
+
 html[data-theme="dark"] .photo-card:nth-child(5n + 2) figcaption strong {
   color: var(--night-deep);
   background: var(--gold);
