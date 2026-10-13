@@ -214,7 +214,7 @@ function renderCoverPhotographs(category, photographs) {
   return photographs.map((photo, index) => {
     const loading = index === 0 ? "eager" : "lazy";
     const fetchPriority = category === "events" && index === 0 ? "high" : "auto";
-    return `<span class="category-portal-print" data-cover-id="${escapeHtml(photo.id)}" style="--portal-index: ${index}" aria-hidden="true">${renderPicture(photo, {
+    return `<span class="category-portal-print" data-cover-id="${escapeHtml(photo.id)}" data-cover-slot="${index}" style="--portal-index: ${index}" aria-hidden="true">${renderPicture(photo, {
       alt: "",
       sizes: "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px",
       loading,

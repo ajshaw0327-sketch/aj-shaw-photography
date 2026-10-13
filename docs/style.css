@@ -4667,6 +4667,7 @@ html[data-theme="dark"] .projects-empty p {
 .category-portal-preview {
   position: relative;
   align-self: center;
+  isolation: isolate;
   min-height: 210px;
   margin: 20px 0;
 }
@@ -4694,7 +4695,6 @@ html[data-theme="dark"] .projects-empty p {
 
 .category-portal-events .category-portal-preview img {
   width: min(58%, 205px);
-  border-bottom-width: 24px;
   transform: translate(calc(-50% + (var(--portal-index) - 1) * 22px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 2deg));
 }
 
@@ -4729,7 +4729,7 @@ html[data-theme="dark"] .projects-empty p {
 .category-portal-sports .category-portal-preview img {
   width: min(52%, 230px);
   max-height: 150px;
-  border-width: 5px;
+  border-width: 7px;
 }
 
 .category-portal-copy {
@@ -6225,9 +6225,12 @@ body[data-page="home"] .category-portal-print {
   top: 50%;
   left: 50%;
   display: block;
+  z-index: calc(var(--portal-index) + 1);
   width: min(72%, 260px);
-  transform: translate(-50%, -50%) rotate(calc((var(--portal-index) - 1) * 3deg));
-  transition: transform 270ms var(--ease);
+  --cover-rest: translate(-50%, -50%) rotate(calc((var(--portal-index) - 1) * 3deg));
+  --cover-fan: var(--cover-rest);
+  transform: var(--cover-rest);
+  transition: transform 420ms cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
 body[data-page="home"] .category-portal-print picture {
@@ -6244,40 +6247,47 @@ body[data-page="home"] .category-portal-print img {
   transform: none !important;
 }
 
-body[data-page="home"] .category-portal-travel .category-portal-print:nth-child(1) {
-  transform: translate(-60%, -48%) rotate(-5deg);
+body[data-page="home"] .category-portal-travel .category-portal-print[data-cover-slot="0"] {
+  --cover-rest: translate(-60%, -48%) rotate(-5deg);
 }
 
-body[data-page="home"] .category-portal-travel .category-portal-print:nth-child(2) {
-  transform: translate(-42%, -52%) rotate(4deg);
+body[data-page="home"] .category-portal-travel .category-portal-print[data-cover-slot="1"] {
+  --cover-rest: translate(-42%, -52%) rotate(4deg);
 }
 
 body[data-page="home"] .category-portal-events .category-portal-print {
   width: min(66%, 235px);
-  transform: translate(calc(-50% + (var(--portal-index) - 1) * 24px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 2deg));
-}
-
-body[data-page="home"] .category-portal-events .category-portal-print img {
-  border-bottom-width: 24px;
+  --cover-rest: translate(calc(-50% + (var(--portal-index) - 1) * 24px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 2deg));
 }
 
 body[data-page="home"] .category-portal-sports .category-portal-print {
   width: min(58%, 255px);
 }
 
-body[data-page="home"] .category-portal:hover .category-portal-print:nth-child(1),
-body[data-page="home"] .category-portal:focus-visible .category-portal-print:nth-child(1) {
-  transform: translate(-72%, -51%) rotate(-7deg);
+body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="0"] {
+  --cover-fan: translate(-72%, -51%) rotate(-7deg);
 }
 
-body[data-page="home"] .category-portal:hover .category-portal-print:nth-child(2),
-body[data-page="home"] .category-portal:focus-visible .category-portal-print:nth-child(2) {
-  transform: translate(-30%, -53%) rotate(6deg);
+body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="1"] {
+  --cover-fan: translate(-30%, -53%) rotate(6deg);
 }
 
-body[data-page="home"] .category-portal:hover .category-portal-print:nth-child(3),
-body[data-page="home"] .category-portal:focus-visible .category-portal-print:nth-child(3) {
-  transform: translate(-49%, -45%) rotate(1deg);
+body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="2"] {
+  --cover-fan: translate(-49%, -45%) rotate(1deg);
+}
+
+body[data-page="home"] .category-portal.category-portal-events .category-portal-print {
+  --cover-clearance: translate(44%, -53%) rotate(6deg);
+  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 42px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 5deg));
+}
+
+body[data-page="home"] .category-portal.category-portal-sports .category-portal-print {
+  --cover-clearance: translate(-138%, -64%) rotate(-6deg);
+  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -28px), calc(-50% + (var(--portal-index) - 1) * -14px)) rotate(calc((var(--portal-index) - 1) * -5deg));
+}
+
+body[data-page="home"] .category-portal:not(.has-cover-shuffle):is(:hover, :focus-visible) .category-portal-print {
+  transform: var(--cover-fan);
 }
 
 body[data-page="home"] .category-portal-copy,

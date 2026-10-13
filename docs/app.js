@@ -1067,6 +1067,7 @@ function renderCategoryPreviews() {
       const print = document.createElement("span");
       print.className = "category-portal-print";
       print.dataset.coverId = photo.id;
+      print.dataset.coverSlot = String(index);
       print.style.setProperty("--portal-index", index);
       print.setAttribute("aria-hidden", "true");
       const picture = document.createElement("picture");
@@ -1093,6 +1094,165 @@ function renderCategoryPreviews() {
       picture.append(image);
       print.append(picture);
       preview.append(print);
+    });
+  });
+  setupHomeCoverShuffle();
+}
+
+function setupHomeCoverShuffle() {
+  document.querySelectorAll("[data-category-preview]").forEach((portal) => {
+    if (portal.dataset.coverShuffleReady) return;
+    const prints = [...portal.querySelectorAll(".category-portal-print")];
+    if (prints.length < 2) return;
+    portal.dataset.coverShuffleReady = "true";
+    portal.classList.add("has-cover-shuffle");
+    const duration = { events: 1640, travel: 1120, sports: 1560 }[portal.dataset.categoryPreview] || 1120;
+    let pointerInside = false;
+    let keyboardFocused = false;
+    let preparing = false;
+    let sequence = null;
+    let staticFan = false;
+
+    const writeSlot = (print, index) => {
+      print.dataset.coverSlot = String(index);
+      print.style.setProperty("--portal-index", index);
+    };
+    const rotateStack = () => {
+      prints.unshift(prints.pop());
+      prints.forEach(writeSlot);
+    };
+    prints.forEach(writeSlot);
+
+    const cleanUp = (motion, commit) => {
+      if (sequence !== motion) return;
+      if (commit) rotateStack();
+      motion.animations.forEach((animation) => animation.cancel());
+      motion.styles.forEach(({ print, transition }) => { print.style.transition = transition; });
+      sequence = null;
+      if (pointerInside || keyboardFocused) void fanOut();
+    };
+
+    const gatherIn = async (motion) => {
+      if (sequence !== motion || motion.returning) return;
+      motion.returning = true;
+      try {
+        // Resume the second half of the same timeline from its held fan position.
+        motion.animations.forEach((animation) => {
+          animation.effect.updateTiming({ iterations: 1 });
+          animation.currentTime = duration / 2;
+          animation.play();
+        });
+        await Promise.all(motion.animations.map((animation) => animation.finished));
+        cleanUp(motion, true);
+      } catch {
+        cleanUp(motion, true);
+      }
+    };
+
+    const fanOut = async () => {
+      if (sequence || preparing) return;
+      if (reducedMotion.matches || !prints[0].animate) {
+        prints.forEach((print) => { print.style.transform = getComputedStyle(print).getPropertyValue("--cover-fan"); });
+        staticFan = true;
+        return;
+      }
+      preparing = true;
+      try {
+        const ready = await Promise.all(prints.map(async (print) => {
+          const image = print.querySelector("img");
+          if (!image) return false;
+          image.loading = "eager";
+          try { await image.decode(); } catch { return false; }
+          return image.naturalWidth > 0;
+        }));
+        if (!ready.every(Boolean) || (!pointerInside && !keyboardFocused)) return;
+        const styles = prints.map((print) => ({ print, transition: print.style.transition }));
+        const starts = prints.map((print) => getComputedStyle(print).transform);
+        prints.forEach((print) => { print.style.transition = "none"; });
+        const poses = prints.map((print, index) => {
+          const spread = getComputedStyle(print).getPropertyValue("--cover-fan");
+          const clearance = getComputedStyle(print).getPropertyValue("--cover-clearance").trim();
+          const nextSlot = (index + 1) % prints.length;
+          // Sample the next compact slot before paint; retain the current stack until it settles.
+          writeSlot(print, nextSlot);
+          const compact = getComputedStyle(print).getPropertyValue("--cover-rest");
+          writeSlot(print, index);
+          return { spread, compact, nextSlot, clearance };
+        });
+        const motion = { animations: [], styles, held: false, returning: false };
+        sequence = motion;
+        motion.animations = prints.map((print, index) => {
+          const pose = poses[index];
+          const frames = [
+            { transform: starts[index], zIndex: index + 1, offset: 0, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
+            { transform: pose.spread, zIndex: index + 1, offset: 0.5, easing: "cubic-bezier(0.32, 0, 0.4, 1)" },
+          ];
+          if (pose.clearance && index === prints.length - 1) {
+            // Lift the front print outward before tucking it behind the stack.
+            frames.push(
+              { transform: pose.clearance, zIndex: index + 1, offset: 0.72 },
+              { transform: pose.clearance, zIndex: 1, offset: 0.721, easing: "cubic-bezier(0.4, 0, 0.2, 1)" },
+            );
+          } else if (pose.clearance) {
+            frames.push({ transform: pose.spread, zIndex: index + 1, offset: 0.68, easing: "cubic-bezier(0.2, 0.65, 0.25, 1)" });
+          }
+          frames.push({ transform: pose.compact, zIndex: pose.nextSlot + 1, offset: 1 });
+          return print.animate(frames, {
+            duration,
+            // A half iteration holds exactly at the spread keyframe, without a second animation.
+            iterations: 0.5,
+            fill: "both",
+          });
+        });
+        try {
+          await Promise.all(motion.animations.map((animation) => animation.finished));
+          if (sequence !== motion) return;
+          motion.animations.forEach((animation) => {
+            animation.pause();
+            animation.currentTime = duration / 2;
+          });
+          motion.held = true;
+          if (!pointerInside && !keyboardFocused) void gatherIn(motion);
+        } catch {
+          cleanUp(motion, motion.returning);
+        }
+      } catch {
+        if (sequence) cleanUp(sequence, false);
+      } finally {
+        preparing = false;
+      }
+    };
+
+    const leave = () => {
+      if (pointerInside || keyboardFocused) return;
+      if (staticFan) {
+        rotateStack();
+        prints.forEach((print) => { print.style.transform = ""; });
+        staticFan = false;
+      } else if (sequence?.held) {
+        void gatherIn(sequence);
+      }
+    };
+    portal.addEventListener("pointerenter", (event) => {
+      if (!canHover.matches || event.pointerType === "touch") return;
+      pointerInside = true;
+      void fanOut();
+    });
+    portal.addEventListener("pointerleave", () => {
+      if (!pointerInside) return;
+      pointerInside = false;
+      leave();
+    });
+    portal.addEventListener("focus", () => {
+      keyboardFocused = portal.matches(":focus-visible");
+      if (keyboardFocused) void fanOut();
+    });
+    portal.addEventListener("blur", () => {
+      keyboardFocused = false;
+      leave();
+    });
+    reducedMotion.addEventListener?.("change", () => {
+      if (reducedMotion.matches && sequence) cleanUp(sequence, sequence.returning);
     });
   });
 }
