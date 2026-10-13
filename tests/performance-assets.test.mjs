@@ -3,9 +3,30 @@ import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
+import { Script } from "node:vm";
+import { gzipSync } from "node:zlib";
 
 const root = path.resolve(import.meta.dirname, "..", ".site");
 const revision = (content) => createHash("sha256").update(content).digest("hex").slice(0, 12);
+
+test("shared production assets compile and cost less to download", async () => {
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let sourceCompressed = 0;
+  let outputCompressed = 0;
+  for (const filename of ["app.js", "style.css"]) {
+    const source = await readFile(path.resolve(root, "../docs", filename));
+    const output = await readFile(path.join(root, filename));
+    assert.ok(output.length < source.length * 0.9, `${filename} should be minified`);
+    sourceBytes += source.length;
+    outputBytes += output.length;
+    sourceCompressed += gzipSync(source).length;
+    outputCompressed += gzipSync(output).length;
+    if (filename === "app.js") assert.doesNotThrow(() => new Script(output.toString()));
+  }
+  assert.ok(outputBytes < sourceBytes * 0.8);
+  assert.ok(outputCompressed < sourceCompressed * 0.9);
+});
 
 test("pages load only their own gallery data and revisioned shared assets", async () => {
   const full = JSON.parse(await readFile(path.join(root, "gallery-manifest.json"), "utf8"));

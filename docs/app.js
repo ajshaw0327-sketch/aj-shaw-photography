@@ -55,11 +55,15 @@ let lightboxPreloadTask = 0;
 let cameraFlashTimer = 0;
 let themeTransitionTimer = 0;
 let lightboxInertElements = [];
+let lightboxScrollState = null;
 const subsectionLayoutTimers = new WeakMap();
 const subsectionLayoutFrames = new WeakMap();
 const previewScrollPositions = new WeakMap();
 const subsectionsById = new Map();
 const lightboxImageCache = new Map();
+const subsectionPhotos = new WeakMap();
+const previewElements = new WeakMap();
+let loadingFrameObserver = null;
 
 const navigation = document.querySelector("#primary-navigation");
 const navigationLinks = [...document.querySelectorAll("[data-route]")];
@@ -918,16 +922,37 @@ async function loadPhotographs() {
 }
 
 function prepareProgressiveImage(image, frame) {
+  const stopLoadingEffect = () => {
+    frame.classList.remove("is-loading-visible");
+    loadingFrameObserver?.unobserve(frame);
+  };
   const markLoaded = () => {
+    stopLoadingEffect();
     frame.classList.remove("is-loading", "is-error");
     frame.classList.add("is-loaded");
   };
   const markError = () => {
+    stopLoadingEffect();
     frame.classList.remove("is-loading", "is-loaded");
     frame.classList.add("is-error");
   };
 
+  // Cached photographs need neither loading listeners nor an animated placeholder.
+  if (image.complete && image.naturalWidth) {
+    markLoaded();
+    return;
+  }
   frame.classList.add("is-loading");
+  if (!reducedMotion.matches && "IntersectionObserver" in window) {
+    loadingFrameObserver ||= new IntersectionObserver((entries) => {
+      entries.forEach(({ target, isIntersecting }) => {
+        target.classList.toggle("is-loading-visible", isIntersecting && target.classList.contains("is-loading"));
+      });
+    }, { rootMargin: "150px" });
+    loadingFrameObserver.observe(frame);
+  } else if (!reducedMotion.matches) {
+    frame.classList.add("is-loading-visible");
+  }
   image.addEventListener("load", markLoaded, { once: true });
   image.addEventListener("error", markError, { once: true });
   if (image.complete) {
@@ -1069,6 +1094,7 @@ function renderCategoryPreviews() {
       print.dataset.coverId = photo.id;
       print.dataset.coverSlot = String(index);
       print.style.setProperty("--portal-index", index);
+      if (photo.width && photo.height) print.style.setProperty("--cover-aspect", photo.width / photo.height);
       print.setAttribute("aria-hidden", "true");
       const picture = document.createElement("picture");
       const responsiveSources = photo.responsive?.webp || [];
@@ -1107,6 +1133,8 @@ function setupHomeCoverShuffle() {
     portal.dataset.coverShuffleReady = "true";
     portal.classList.add("has-cover-shuffle");
     const duration = { events: 1640, travel: 1600, sports: 1560 }[portal.dataset.categoryPreview] || 1600;
+    const departureEasing = portal.dataset.categoryPreview === "events"
+      ? "cubic-bezier(0.22, 0.18, 0.24, 1)" : "cubic-bezier(0.32, 0, 0.4, 1)";
     let pointerInside = false;
     let keyboardFocused = false;
     let preparing = false;
@@ -1140,10 +1168,31 @@ function setupHomeCoverShuffle() {
       if (sequence !== motion || motion.returning) return;
       motion.returning = true;
       try {
-        // Resume the second half of the same timeline from its held fan position.
-        motion.animations.forEach((animation) => {
-          animation.effect.updateTiming({ iterations: 1 });
-          animation.currentTime = duration / 2;
+        // An early exit continues from the current pose instead of waiting for the fan.
+        const currentPoses = !motion.held
+          ? prints.map((print) => getComputedStyle(print).transform) : null;
+        motion.animations.forEach((animation, track) => {
+          if (currentPoses) {
+            const index = Math.floor(track / 2);
+            const pose = motion.poses[index];
+            const departing = pose.clearance && index === prints.length - 1;
+            const frames = track % 2 === 0 ? [
+              { transform: currentPoses[index], offset: 0, easing: departing ? departureEasing : "cubic-bezier(0.4, 0, 0.2, 1)" },
+              ...(departing ? [{ transform: pose.clearance, offset: 0.44, easing: "cubic-bezier(0.4, 0, 0.2, 1)" }] : []),
+              { transform: pose.compact, offset: 1 },
+            ] : [
+              { zIndex: index + 1, offset: 0, easing: "steps(1, end)" },
+              { zIndex: pose.nextSlot + 1, offset: 0.44 },
+              { zIndex: pose.nextSlot + 1, offset: 1 },
+            ];
+            animation.effect.setKeyframes(frames);
+            animation.effect.updateTiming({ duration: duration / 2, iterations: 1 });
+            animation.currentTime = 0;
+          } else {
+            // Resume the same timeline when the fan has reached its resting position.
+            animation.effect.updateTiming({ iterations: 1 });
+            animation.currentTime = duration / 2;
+          }
           animation.play();
         });
         await Promise.all(motion.animations.map((animation) => animation.finished));
@@ -1183,14 +1232,14 @@ function setupHomeCoverShuffle() {
           writeSlot(print, index);
           return { spread, compact, nextSlot, clearance };
         });
-        const motion = { animations: [], styles, held: false, returning: false };
+        const motion = { animations: [], styles, poses, held: false, returning: false };
         sequence = motion;
         motion.animations = prints.flatMap((print, index) => {
           const pose = poses[index];
           const departing = pose.clearance && index === prints.length - 1;
           const frames = [
             { transform: starts[index], offset: 0, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
-            { transform: pose.spread, offset: 0.5, easing: departing ? "cubic-bezier(0.32, 0, 0.4, 1)" : "cubic-bezier(0.4, 0, 0.2, 1)" },
+            { transform: pose.spread, offset: 0.5, easing: departing ? departureEasing : "cubic-bezier(0.4, 0, 0.2, 1)" },
           ];
           if (departing) {
             // Lift the front print outward before tucking it behind the stack.
@@ -1214,7 +1263,7 @@ function setupHomeCoverShuffle() {
         });
         try {
           await Promise.all(motion.animations.map((animation) => animation.finished));
-          if (sequence !== motion) return;
+          if (sequence !== motion || motion.returning) return;
           motion.animations.forEach((animation) => {
             animation.pause();
             animation.currentTime = duration / 2;
@@ -1237,7 +1286,7 @@ function setupHomeCoverShuffle() {
         rotateStack();
         prints.forEach((print) => { print.style.transform = ""; });
         staticFan = false;
-      } else if (sequence?.held) {
+      } else if (sequence) {
         void gatherIn(sequence);
       }
     };
@@ -1571,11 +1620,18 @@ function setSubsectionExpanded(
 }
 
 function syncSubsectionPreviewControls(subsection) {
-  const strip = subsection?.querySelector(".photo-grid");
-  const tools = subsection?.querySelector(".gallery-preview-tools");
-  const hint = subsection?.querySelector(".gallery-scroll-hint");
-  const previous = subsection?.querySelector("[data-preview-direction='previous']");
-  const next = subsection?.querySelector("[data-preview-direction='next']");
+  let elements = previewElements.get(subsection);
+  if (!elements) {
+    elements = {
+      strip: subsection?.querySelector(".photo-grid"),
+      tools: subsection?.querySelector(".gallery-preview-tools"),
+      hint: subsection?.querySelector(".gallery-scroll-hint"),
+      previous: subsection?.querySelector("[data-preview-direction='previous']"),
+      next: subsection?.querySelector("[data-preview-direction='next']"),
+    };
+    if (subsection) previewElements.set(subsection, elements);
+  }
+  const { strip, tools, hint, previous, next } = elements;
   if (!strip || !tools || !hint || !previous || !next) return;
 
   const expanded = subsection.classList.contains("is-expanded");
@@ -1599,6 +1655,13 @@ function setupSubsectionPreview(subsection) {
   if (!strip || !previous || !next) return;
 
   let scrollFrame = 0;
+  const scheduleSync = () => {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      syncSubsectionPreviewControls(subsection);
+    });
+  };
   const scrollTo = (left) => {
     strip.scrollTo({
       left,
@@ -1618,10 +1681,7 @@ function setupSubsectionPreview(subsection) {
 
   previous.addEventListener("click", () => scrollBy(-1));
   next.addEventListener("click", () => scrollBy(1));
-  strip.addEventListener("scroll", () => {
-    window.cancelAnimationFrame(scrollFrame);
-    scrollFrame = requestAnimationFrame(() => syncSubsectionPreviewControls(subsection));
-  }, { passive: true });
+  strip.addEventListener("scroll", scheduleSync, { passive: true });
   strip.addEventListener("keydown", (event) => {
     if (subsection.classList.contains("is-expanded")) return;
     if (event.key === "ArrowLeft") {
@@ -1649,14 +1709,18 @@ function setupSubsectionPreview(subsection) {
   }, { passive: false });
 
   if ("ResizeObserver" in window) {
-    const observer = new ResizeObserver(() => syncSubsectionPreviewControls(subsection));
+    let width = -1;
+    const observer = new ResizeObserver(([entry]) => {
+      // Drawer height animates every frame; horizontal controls only depend on width.
+      if (entry.contentRect.width === width) return;
+      width = entry.contentRect.width;
+      scheduleSync();
+    });
     observer.observe(strip);
   } else {
-    window.addEventListener("resize", () => syncSubsectionPreviewControls(subsection), {
-      passive: true,
-    });
+    window.addEventListener("resize", scheduleSync, { passive: true });
   }
-  requestAnimationFrame(() => syncSubsectionPreviewControls(subsection));
+  scheduleSync();
 }
 
 function openHashedSubsection({ scroll = false, animate = true } = {}) {
@@ -1697,6 +1761,7 @@ function hydrateStaticGallery() {
   subsections.forEach((subsection, groupIndex) => {
     const group = galleryGroups[groupIndex];
     if (!group) return;
+    subsectionPhotos.set(subsection, group.photos);
     subsectionsById.set(subsection.id, subsection);
     if (subsection.id === requestedHash) requestedSubsection = subsection;
 
@@ -1719,17 +1784,23 @@ function hydrateStaticGallery() {
       prepareProgressiveImage(image, frame);
     });
 
-    subsection.querySelectorAll(".photo-trigger").forEach((trigger, localIndex) => {
-      if (trigger.dataset.enhanced === "true") return;
-      trigger.dataset.enhanced = "true";
-      trigger.addEventListener("click", (event) => {
-        event.preventDefault();
-        openLightbox(group.photos, localIndex, trigger);
-      });
-    });
-
     setupSubsectionPreview(subsection);
   });
+
+  // One gallery listener replaces a separate closure on every photograph.
+  if (grid.dataset.lightboxDelegated !== "true") {
+    grid.dataset.lightboxDelegated = "true";
+    grid.addEventListener("click", (event) => {
+      const trigger = event.target instanceof Element
+        ? event.target.closest(".photo-trigger[data-photo-index]") : null;
+      if (!trigger || !grid.contains(trigger)) return;
+      const selected = subsectionPhotos.get(trigger.closest(".gallery-subsection"));
+      const index = Number(trigger.dataset.photoIndex);
+      if (!selected?.[index]) return;
+      event.preventDefault();
+      openLightbox(selected, index, trigger);
+    });
+  }
 
   if (requestedSubsection) {
     setSubsectionExpanded(requestedSubsection, true, {
@@ -2003,6 +2074,33 @@ function triggerCameraFlash() {
   );
 }
 
+function lockLightboxScroll() {
+  if (lightboxScrollState) return;
+  lightboxScrollState = {
+    x: window.scrollX,
+    y: window.scrollY,
+    scrollBehavior: document.documentElement.style.scrollBehavior,
+  };
+  const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+  document.body.style.setProperty("--lightbox-scroll-y", `${-lightboxScrollState.y}px`);
+  document.body.style.setProperty("--lightbox-scrollbar", `${scrollbarWidth}px`);
+  document.documentElement.classList.add("lightbox-open");
+  document.body.classList.add("lightbox-open");
+}
+
+function unlockLightboxScroll() {
+  if (!lightboxScrollState) return;
+  const { x, y, scrollBehavior } = lightboxScrollState;
+  document.documentElement.style.scrollBehavior = "auto";
+  document.body.classList.remove("lightbox-open");
+  document.documentElement.classList.remove("lightbox-open");
+  document.body.style.removeProperty("--lightbox-scroll-y");
+  document.body.style.removeProperty("--lightbox-scrollbar");
+  window.scrollTo({ left: x, top: y, behavior: "auto" });
+  document.documentElement.style.scrollBehavior = scrollBehavior;
+  lightboxScrollState = null;
+}
+
 function openLightbox(photos, index, trigger) {
   if (!lightbox || !closeButton) return;
   window.clearTimeout(lightboxCloseTimer);
@@ -2028,8 +2126,8 @@ function openLightbox(photos, index, trigger) {
     });
   }
   requestAnimationFrame(() => lightbox.classList.add("is-open"));
-  document.body.classList.add("lightbox-open");
-  closeButton.focus();
+  lockLightboxScroll();
+  closeButton.focus({ preventScroll: true });
 }
 
 function closeLightbox() {
@@ -2042,19 +2140,19 @@ function closeLightbox() {
   lightboxAssemblyTimer = 0;
   lightboxFrame?.classList.remove("is-developing", "is-assembled");
   lightbox.classList.remove("is-open");
-  document.body.classList.remove("lightbox-open");
   const restoreFocus = lastFocusedButton;
   window.clearTimeout(lightboxCloseTimer);
   lightboxCloseTimer = window.setTimeout(() => {
     lightbox.hidden = true;
+    unlockLightboxScroll();
     lightboxInertElements.forEach((element) => {
       element.inert = false;
     });
     lightboxInertElements = [];
     if (restoreFocus?.closest("[inert]")) {
-      restoreFocus.closest(".gallery-subsection")?.querySelector(".gallery-subsection-toggle")?.focus();
+      restoreFocus.closest(".gallery-subsection")?.querySelector(".gallery-subsection-toggle")?.focus({ preventScroll: true });
     } else {
-      restoreFocus?.focus();
+      restoreFocus?.focus({ preventScroll: true });
     }
     lightboxCloseTimer = 0;
   }, reducedMotion.matches ? 0 : 170);

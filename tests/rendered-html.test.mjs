@@ -220,7 +220,7 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
 
 test("Projects is a large-format, folder-driven project gallery", async () => {
   const html = await readFile(path.join(outputRoot, "projects.html"), "utf8");
-  const css = await readFile(path.join(outputRoot, "style.css"), "utf8");
+  const css = await readFile(path.join(repositoryRoot, "docs/style.css"), "utf8");
 
   assert.match(html, /data-page="projects"/);
   assert.match(html, /class="projects-gallery"/);
@@ -304,8 +304,9 @@ test("all built page links and image candidates resolve inside the Pages artifac
 });
 
 test("interaction styles use content-sized archive drawers and reduced-motion fallbacks", async () => {
-  const css = await readFile(path.join(outputRoot, "style.css"), "utf8");
-  const script = await readFile(path.join(outputRoot, "app.js"), "utf8");
+  // Check authoring rules here; production assets are minified and tested separately.
+  const css = await readFile(path.join(repositoryRoot, "docs/style.css"), "utf8");
+  const script = await readFile(path.join(repositoryRoot, "docs/app.js"), "utf8");
   const playfair = await readFile(path.join(outputRoot, "fonts", "playfair-display-variable.ttf"));
   const playfairLicense = await readFile(path.join(outputRoot, "fonts", "OFL-Playfair-Display.txt"), "utf8");
 

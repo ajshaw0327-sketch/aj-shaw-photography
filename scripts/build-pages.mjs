@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import sharp from "sharp";
+import { transform } from "esbuild";
 import {
   compareOrderedNames,
   scanPhotoLibrary,
@@ -106,6 +107,14 @@ async function scanProjects() {
       : files.find((file) => projectVideoExtensions.has(path.extname(file).toLowerCase())) || "";
     if (!cover && !video && !metadata.link) continue;
 
+    let coverAspect = 1.5;
+    if (cover) {
+      try {
+        const dimensions = (await sharp(path.join(folderPath, cover)).metadata()).autoOrient;
+        if (dimensions?.width && dimensions?.height) coverAspect = dimensions.width / dimensions.height;
+      } catch { /* Unreadable covers retain the existing image fallback. */ }
+    }
+
     projects.push({
       id: folder.name,
       title: metadata.title || readableProjectName(folder.name),
@@ -114,6 +123,7 @@ async function scanProjects() {
       year: String(metadata.year || "2026"),
       location: metadata.location || "",
       cover: cover ? encodeUrlPath(path.posix.join("projects", folder.name, cover)) : "",
+      coverAspect,
       video: video ? encodeUrlPath(path.posix.join("projects", folder.name, video)) : "",
       link: typeof metadata.link === "string" && /^https?:\/\//i.test(metadata.link) ? metadata.link : "",
       linkLabel: metadata.linkLabel || "Visit project",
@@ -157,7 +167,7 @@ function renderProjectPortalPreview(projects) {
     return `<span class="project-portal-document" aria-hidden="true"><i></i><b>PROJECT<br />FILES</b><small>FILM · DESIGN · RESEARCH</small></span>`;
   }
   return covers.map((project, index) =>
-    `<span class="category-portal-print" style="--portal-index: ${index}" aria-hidden="true"><img src="${escapeHtml(project.cover)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" /></span>`,
+    `<span class="category-portal-print" style="--portal-index: ${index}; --cover-aspect: ${project.coverAspect}" aria-hidden="true"><img src="${escapeHtml(project.cover)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" /></span>`,
   ).join("");
 }
 
@@ -214,7 +224,8 @@ function renderCoverPhotographs(category, photographs) {
   return photographs.map((photo, index) => {
     const loading = index === 0 ? "eager" : "lazy";
     const fetchPriority = category === "events" && index === 0 ? "high" : "auto";
-    return `<span class="category-portal-print" data-cover-id="${escapeHtml(photo.id)}" data-cover-slot="${index}" style="--portal-index: ${index}" aria-hidden="true">${renderPicture(photo, {
+    const aspect = photo.width && photo.height ? photo.width / photo.height : 1.5;
+    return `<span class="category-portal-print" data-cover-id="${escapeHtml(photo.id)}" data-cover-slot="${index}" style="--portal-index: ${index}; --cover-aspect: ${aspect}" aria-hidden="true">${renderPicture(photo, {
       alt: "",
       sizes: "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px",
       loading,
@@ -421,7 +432,15 @@ function contentRevision(content) {
 async function optimizePageAssets(manifest) {
   const sharedAssets = {};
   for (const filename of ["app.js", "style.css"]) {
-    sharedAssets[filename] = `${filename}?v=${contentRevision(await readFile(path.join(outputDirectory, filename)))}`;
+    const assetPath = path.join(outputDirectory, filename);
+    const { code } = await transform(await readFile(assetPath, "utf8"), {
+      loader: filename.endsWith(".js") ? "js" : "css",
+      minify: true,
+      target: filename.endsWith(".js") ? "es2020" : "safari15.4",
+      legalComments: "eof",
+    });
+    await writeFile(assetPath, code);
+    sharedAssets[filename] = `${filename}?v=${contentRevision(code)}`;
   }
   for (const page of ["home", "events", "travel", "sports", "projects", "about"]) {
     const filename = page === "home" ? "index.html" : `${page}.html`;

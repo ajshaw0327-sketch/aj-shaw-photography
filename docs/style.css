@@ -230,6 +230,10 @@ html[data-route-loading] .route-curtain {
   animation-delay: 200ms;
 }
 
+.route-curtain:not(.is-covering):not(.is-revealing) .route-curtain-mark i {
+  animation: none;
+}
+
 .route-curtain-progress {
   display: none;
   width: min(360px, 100%);
@@ -1129,6 +1133,11 @@ body.route-settling .site-header nav a[aria-current="page"],
   transition:
     opacity 180ms ease,
     visibility 0s linear 180ms;
+  animation: none;
+}
+
+.hero-frame.is-loading-visible::before,
+.photo-window.is-loading-visible::before {
   animation: film-development 1.35s ease-in-out infinite;
 }
 
@@ -1162,6 +1171,11 @@ body.route-settling .site-header nav a[aria-current="page"],
 .photo-window.is-loaded::after {
   visibility: hidden;
   opacity: 0;
+}
+
+.hero-frame.is-loaded::before,
+.photo-window.is-loaded::before {
+  animation: none;
 }
 
 .hero-frame.is-error::before,
@@ -2959,7 +2973,17 @@ body[data-page="sports"] .portfolio-label h1 {
   font-size: 0.66rem;
 }
 
-.lightbox-open {
+html.lightbox-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.lightbox-open {
+  position: fixed;
+  top: var(--lightbox-scroll-y, 0px);
+  left: 0;
+  width: 100%;
+  padding-right: var(--lightbox-scrollbar, 0px);
   overflow: hidden;
 }
 
@@ -6149,7 +6173,7 @@ body[data-page="home"] .category-portal-projects .category-portal-copy {
 }
 
 body[data-page="home"] .category-portal-projects .category-portal-print {
-  width: min(70%, 240px);
+  width: min(70%, 240px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
 }
 
 .project-portal-document {
@@ -6226,7 +6250,8 @@ body[data-page="home"] .category-portal-print {
   left: 50%;
   display: block;
   z-index: calc(var(--portal-index) + 1);
-  width: min(72%, 260px);
+  --cover-max-height: min(23vh, 190px);
+  width: min(72%, 260px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
   --cover-rest: translate(-50%, -50%) rotate(calc((var(--portal-index) - 1) * 3deg));
   --cover-fan: var(--cover-rest);
   transform: var(--cover-rest);
@@ -6240,9 +6265,10 @@ body[data-page="home"] .category-portal-print picture {
 body[data-page="home"] .category-portal-print img {
   position: static;
   width: 100%;
-  max-height: min(23vh, 190px);
+  height: auto;
+  max-height: none;
   border: 7px solid var(--paper-light);
-  object-fit: cover;
+  object-fit: contain;
   box-shadow: 5px 7px 0 rgba(118, 91, 59, 0.34);
   transform: none !important;
 }
@@ -6256,12 +6282,12 @@ body[data-page="home"] .category-portal-travel .category-portal-print[data-cover
 }
 
 body[data-page="home"] .category-portal-events .category-portal-print {
-  width: min(66%, 235px);
+  width: min(66%, 235px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
   --cover-rest: translate(calc(-50% + (var(--portal-index) - 1) * 24px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 2deg));
 }
 
 body[data-page="home"] .category-portal-sports .category-portal-print {
-  width: min(58%, 255px);
+  width: min(88%, 280px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
 }
 
 body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="0"] {
@@ -6396,14 +6422,18 @@ body[data-page="home"] .category-portal-copy p {
   body[data-page="home"] .category-portal-events .category-portal-print,
   body[data-page="home"] .category-portal-sports .category-portal-print,
   body[data-page="home"] .category-portal-projects .category-portal-print {
-    width: min(78%, 126px);
+    --cover-max-height: 96px;
+    width: min(78%, 126px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
+  }
+
+  body[data-page="home"] .category-portal-sports .category-portal-print {
+    width: min(88%, 146px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
   }
 
   body[data-page="home"] .category-portal-print img,
   body[data-page="home"] .category-portal-events .category-portal-print img,
   body[data-page="home"] .category-portal-sports .category-portal-print img,
   body[data-page="home"] .category-portal-projects .category-portal-print img {
-    max-height: 96px;
     border-width: 4px;
   }
 
@@ -6460,10 +6490,8 @@ body[data-page="home"] .category-portal-copy p {
     display: none;
   }
 
-  body[data-page="home"] .category-portal-print img,
-  body[data-page="home"] .category-portal-events .category-portal-print img,
-  body[data-page="home"] .category-portal-sports .category-portal-print img {
-    max-height: 100px;
+  body[data-page="home"] .category-portal-print {
+    --cover-max-height: 100px;
   }
 }
 
