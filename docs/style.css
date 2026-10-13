@@ -6276,6 +6276,14 @@ body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="
   --cover-fan: translate(-49%, -45%) rotate(1deg);
 }
 
+body[data-page="home"] .category-portal.category-portal-travel .category-portal-print {
+  --cover-clearance: translate(-94%, -57%) rotate(-6deg);
+}
+
+body[data-page="home"] .category-portal.category-portal-travel .category-portal-print[data-cover-slot="2"] {
+  --cover-fan: translate(-64%, -46%) rotate(-3deg);
+}
+
 body[data-page="home"] .category-portal.category-portal-events .category-portal-print {
   --cover-clearance: translate(44%, -53%) rotate(6deg);
   --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 42px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 5deg));

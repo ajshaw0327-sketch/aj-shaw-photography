@@ -1106,7 +1106,7 @@ function setupHomeCoverShuffle() {
     if (prints.length < 2) return;
     portal.dataset.coverShuffleReady = "true";
     portal.classList.add("has-cover-shuffle");
-    const duration = { events: 1640, travel: 1120, sports: 1560 }[portal.dataset.categoryPreview] || 1120;
+    const duration = { events: 1640, travel: 1600, sports: 1560 }[portal.dataset.categoryPreview] || 1600;
     let pointerInside = false;
     let keyboardFocused = false;
     let preparing = false;
