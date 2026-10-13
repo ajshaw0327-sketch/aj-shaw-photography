@@ -1126,7 +1126,11 @@ function setupHomeCoverShuffle() {
     const cleanUp = (motion, commit) => {
       if (sequence !== motion) return;
       if (commit) rotateStack();
+      // Apply the final CSS slots while transitions are still disabled, before
+      // removing the animation's fill. This keeps the handoff at the same pose.
+      prints.forEach((print) => { void getComputedStyle(print).transform; });
       motion.animations.forEach((animation) => animation.cancel());
+      prints.forEach((print) => { void getComputedStyle(print).transform; });
       motion.styles.forEach(({ print, transition }) => { print.style.transition = transition; });
       sequence = null;
       if (pointerInside || keyboardFocused) void fanOut();
@@ -1181,28 +1185,32 @@ function setupHomeCoverShuffle() {
         });
         const motion = { animations: [], styles, held: false, returning: false };
         sequence = motion;
-        motion.animations = prints.map((print, index) => {
+        motion.animations = prints.flatMap((print, index) => {
           const pose = poses[index];
+          const departing = pose.clearance && index === prints.length - 1;
           const frames = [
-            { transform: starts[index], zIndex: index + 1, offset: 0, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
-            { transform: pose.spread, zIndex: index + 1, offset: 0.5, easing: "cubic-bezier(0.32, 0, 0.4, 1)" },
+            { transform: starts[index], offset: 0, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
+            { transform: pose.spread, offset: 0.5, easing: departing ? "cubic-bezier(0.32, 0, 0.4, 1)" : "cubic-bezier(0.4, 0, 0.2, 1)" },
           ];
-          if (pose.clearance && index === prints.length - 1) {
+          if (departing) {
             // Lift the front print outward before tucking it behind the stack.
-            frames.push(
-              { transform: pose.clearance, zIndex: index + 1, offset: 0.72 },
-              { transform: pose.clearance, zIndex: 1, offset: 0.721, easing: "cubic-bezier(0.4, 0, 0.2, 1)" },
-            );
-          } else if (pose.clearance) {
-            frames.push({ transform: pose.spread, zIndex: index + 1, offset: 0.68, easing: "cubic-bezier(0.2, 0.65, 0.25, 1)" });
+            frames.push({ transform: pose.clearance, offset: 0.72, easing: "cubic-bezier(0.4, 0, 0.2, 1)" });
           }
-          frames.push({ transform: pose.compact, zIndex: pose.nextSlot + 1, offset: 1 });
-          return print.animate(frames, {
+          frames.push({ transform: pose.compact, offset: 1 });
+          const timing = {
             duration,
             // A half iteration holds exactly at the spread keyframe, without a second animation.
             iterations: 0.5,
             fill: "both",
-          });
+          };
+          // Change every layer at one instant. Interpolating integer z-index
+          // values independently creates ties and flashes the wrong print on top.
+          const layers = [
+            { zIndex: index + 1, offset: 0, easing: "steps(1, end)" },
+            { zIndex: pose.nextSlot + 1, offset: 0.72 },
+            { zIndex: pose.nextSlot + 1, offset: 1 },
+          ];
+          return [print.animate(frames, timing), print.animate(layers, timing)];
         });
         try {
           await Promise.all(motion.animations.map((animation) => animation.finished));
