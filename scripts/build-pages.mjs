@@ -227,7 +227,7 @@ function renderCoverPhotographs(category, photographs) {
     const aspect = photo.width && photo.height ? photo.width / photo.height : 1.5;
     return `<span class="category-portal-print" data-cover-id="${escapeHtml(photo.id)}" data-cover-slot="${index}" style="--portal-index: ${index}; --cover-aspect: ${aspect}" aria-hidden="true">${renderPicture(photo, {
       alt: "",
-      sizes: "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px",
+      sizes: "(max-width: 860px) 176px, (max-width: 1300px) 30vw, 320px",
       loading,
       fetchPriority,
     })}</span>`;
@@ -277,13 +277,15 @@ function renderGalleryMarkup(category, groups) {
     const archiveCode = { events: "EVT", travel: "TRV", sports: "SPT" }[category] || "AJ";
     return `
       <article class="gallery-subsection${expanded ? " is-expanded" : ""}" id="${subsectionId}" data-default-expanded="${expanded}" style="--subsection-delay: ${Math.min(groupIndex, 6) * 60}ms">
-        <h2 class="gallery-subsection-heading">
-          <button class="gallery-subsection-toggle" id="${subsectionId}-toggle" type="button" aria-expanded="${expanded}" aria-controls="${subsectionId}-panel">
-            <span class="gallery-subsection-title"><span class="gallery-subsection-stamp" aria-hidden="true">${archiveCode}-${String(groupIndex + 1).padStart(2, "0")}</span><span class="gallery-subsection-name">${escapeHtml(group.title)}</span></span>
-            <span class="gallery-subsection-meta"><span class="gallery-subsection-count">${String(group.photos.length).padStart(2, "0")} frames</span><span class="gallery-subsection-action-label">${expanded ? "Close collection" : "Expand collection"}</span><span class="gallery-subsection-indicator" aria-hidden="true"></span></span>
-          </button>
-        </h2>
-        <div class="gallery-subsection-panel" id="${subsectionId}-panel" role="region" aria-labelledby="${subsectionId}-toggle">
+        <div class="gallery-subsection-header">
+          <h2 class="gallery-subsection-heading" id="${subsectionId}-title"><span class="gallery-subsection-title"><span class="gallery-subsection-stamp" aria-hidden="true">${archiveCode}-${String(groupIndex + 1).padStart(2, "0")}</span><span class="gallery-subsection-name">${escapeHtml(group.title)}</span></span></h2>
+          <div class="gallery-view-tools"><span class="gallery-subsection-count">${String(group.photos.length).padStart(2, "0")} frames</span><div class="gallery-view-selector" data-view="strip" role="group" aria-label="Album view for ${escapeHtml(group.title)}">
+            <button class="gallery-film-canister" type="button" aria-label="Hide archive" aria-expanded="true" aria-controls="${subsectionId}-panel" title="Hide archive"><svg class="gallery-film-outline" viewBox="0 0 44 62" aria-hidden="true" focusable="false"><path class="gallery-film-rim" d="M17 5V0h10v5"/><rect class="gallery-film-body" x="6" y="8" width="32" height="46" rx="1"/><rect class="gallery-film-rim" x="2" y="5" width="40" height="6" rx="3"/><rect class="gallery-film-rim" x="2" y="51" width="40" height="6" rx="3"/></svg><i class="gallery-film-spindle" aria-hidden="true"></i></button><div class="gallery-film-window"><div class="gallery-film-strip">
+            <button class="gallery-reopen" type="button" aria-label="Open archive" aria-controls="${subsectionId}-panel" aria-hidden="true" inert><span class="gallery-view-label"><span>Open</span><span>archive</span></span></button>
+            ${["closed", "strip", "sheet"].map((view) => `<button type="button" data-gallery-view="${view}" aria-pressed="${view === "strip"}" aria-controls="${subsectionId}-panel" aria-label="${{closed: "Hide archive", strip: "Browse archive", sheet: "Expand archive"}[view]}" title="${{closed: "Hide this album’s photos", strip: "Browse photos with arrows or swiping", sheet: "Show all photos at once"}[view]}"><span class="gallery-view-icon is-${view}" aria-hidden="true">${view === "closed" ? "" : "<i></i>".repeat({strip: 3, sheet: 4}[view])}</span><span class="gallery-view-label"><span>${{closed: "Hide", strip: "Browse", sheet: "Expand"}[view]}</span><span>archive</span></span></button>`).join("")}
+          </div></div></div></div>
+        </div>
+        <div class="gallery-subsection-panel" id="${subsectionId}-panel" role="region" aria-labelledby="${subsectionId}-title">
           <div class="gallery-subsection-panel-inner">
             <div class="gallery-preview-tools" hidden><span class="gallery-scroll-hint" hidden aria-hidden="true">Swipe the contact strip</span><span class="gallery-scroll-controls"><button type="button" data-preview-direction="previous" aria-label="View previous photographs in ${escapeHtml(group.title)}"><span aria-hidden="true">←</span></button><button type="button" data-preview-direction="next" aria-label="View next photographs in ${escapeHtml(group.title)}"><span aria-hidden="true">→</span></button></span></div>
             <div class="photo-grid" id="${subsectionId}-strip" tabindex="0" role="group" aria-label="${escapeHtml(group.title)} preview, ${group.photos.length} photographs. Use the left and right arrow keys to browse.">${cards}
