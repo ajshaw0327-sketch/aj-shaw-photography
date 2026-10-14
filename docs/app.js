@@ -63,6 +63,7 @@ const subsectionsById = new Map();
 const lightboxImageCache = new Map();
 const subsectionPhotos = new WeakMap();
 const previewElements = new WeakMap();
+const previewKeyActions = new WeakMap();
 let loadingFrameObserver = null;
 
 const navigation = document.querySelector("#primary-navigation");
@@ -1104,14 +1105,14 @@ function renderCategoryPreviews() {
         source.srcset = responsiveSources
           .map((candidate) => `${withAssetRoot(candidate.src)} ${candidate.width}w`)
           .join(", ");
-        source.sizes = "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px";
+        source.sizes = "(max-width: 860px) 176px, (max-width: 1300px) 30vw, 320px";
         picture.append(source);
       }
       const image = document.createElement("img");
       image.alt = "";
       image.loading = index === 0 ? "eager" : "lazy";
       image.decoding = "async";
-      image.sizes = "(max-width: 860px) 112px, (max-width: 1300px) 18vw, 260px";
+      image.sizes = "(max-width: 860px) 176px, (max-width: 1300px) 30vw, 320px";
       if (photo.width && photo.height) {
         image.width = photo.width;
         image.height = photo.height;
@@ -1140,6 +1141,51 @@ function setupHomeCoverShuffle() {
     let preparing = false;
     let sequence = null;
     let staticFan = false;
+    let motionChoices = [];
+    let previousMotion = "";
+    let exitDirection = null;
+
+    const pointerExitDirection = (event) => {
+      if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return null;
+      const rect = portal.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const x = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+      const y = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+      return Math.abs(x) > Math.abs(y)
+        ? { x: Math.sign(x), y: 0 } : { x: 0, y: Math.sign(y) };
+    };
+
+    const directionalClearance = (direction, currentPose) => {
+      const rect = prints.at(-1).getBoundingClientRect();
+      const variation = {
+        fan: { distance: 0.66, curve: 0.02, turn: 3 },
+        lift: { distance: 0.56, curve: -0.1, turn: -5 },
+        sweep: { distance: 0.72, curve: 0.1, turn: 6 },
+      }[previousMotion];
+      const distance = (direction.x ? rect.width : rect.height) * variation.distance;
+      const cross = distance * variation.curve;
+      const x = direction.x * distance - direction.y * cross;
+      const y = direction.y * distance + direction.x * cross;
+      const turn = (direction.x || -direction.y) * variation.turn;
+      // Translate in page axes from the exact current pose, including early exits.
+      return `translate(${x}px, ${y}px) ${currentPose} rotate(${turn}deg)`;
+    };
+
+    const chooseMotion = () => {
+      if (!motionChoices.length) {
+        motionChoices = ["fan", "lift", "sweep"];
+        for (let index = motionChoices.length - 1; index > 0; index -= 1) {
+          const other = Math.floor(Math.random() * (index + 1));
+          [motionChoices[index], motionChoices[other]] = [motionChoices[other], motionChoices[index]];
+        }
+        // Every variation gets a turn, without repeating across shuffle rounds.
+        if (motionChoices.at(-1) === previousMotion) {
+          [motionChoices[0], motionChoices[2]] = [motionChoices[2], motionChoices[0]];
+        }
+      }
+      previousMotion = motionChoices.pop();
+      portal.dataset.coverMotion = previousMotion;
+    };
 
     const writeSlot = (print, index) => {
       print.dataset.coverSlot = String(index);
@@ -1164,13 +1210,14 @@ function setupHomeCoverShuffle() {
       if (pointerInside || keyboardFocused) void fanOut();
     };
 
-    const gatherIn = async (motion) => {
+    const gatherIn = async (motion, direction = null) => {
       if (sequence !== motion || motion.returning) return;
       motion.returning = true;
       try {
         // An early exit continues from the current pose instead of waiting for the fan.
-        const currentPoses = !motion.held
+        const currentPoses = direction || !motion.held
           ? prints.map((print) => getComputedStyle(print).transform) : null;
+        const departure = direction ? directionalClearance(direction, currentPoses.at(-1)) : null;
         motion.animations.forEach((animation, track) => {
           if (currentPoses) {
             const index = Math.floor(track / 2);
@@ -1178,7 +1225,7 @@ function setupHomeCoverShuffle() {
             const departing = pose.clearance && index === prints.length - 1;
             const frames = track % 2 === 0 ? [
               { transform: currentPoses[index], offset: 0, easing: departing ? departureEasing : "cubic-bezier(0.4, 0, 0.2, 1)" },
-              ...(departing ? [{ transform: pose.clearance, offset: 0.44, easing: "cubic-bezier(0.4, 0, 0.2, 1)" }] : []),
+              ...(departing ? [{ transform: departure || pose.clearance, offset: 0.44, easing: "cubic-bezier(0.4, 0, 0.2, 1)" }] : []),
               { transform: pose.compact, offset: 1 },
             ] : [
               { zIndex: index + 1, offset: 0, easing: "steps(1, end)" },
@@ -1219,6 +1266,7 @@ function setupHomeCoverShuffle() {
           return image.naturalWidth > 0;
         }));
         if (!ready.every(Boolean) || (!pointerInside && !keyboardFocused)) return;
+        chooseMotion();
         const styles = prints.map((print) => ({ print, transition: print.style.transition }));
         const starts = prints.map((print) => getComputedStyle(print).transform);
         prints.forEach((print) => { print.style.transition = "none"; });
@@ -1269,7 +1317,7 @@ function setupHomeCoverShuffle() {
             animation.currentTime = duration / 2;
           });
           motion.held = true;
-          if (!pointerInside && !keyboardFocused) void gatherIn(motion);
+          if (!pointerInside && !keyboardFocused) void gatherIn(motion, exitDirection);
         } catch {
           cleanUp(motion, motion.returning);
         }
@@ -1287,22 +1335,27 @@ function setupHomeCoverShuffle() {
         prints.forEach((print) => { print.style.transform = ""; });
         staticFan = false;
       } else if (sequence) {
-        void gatherIn(sequence);
+        void gatherIn(sequence, exitDirection);
       }
     };
     portal.addEventListener("pointerenter", (event) => {
       if (!canHover.matches || event.pointerType === "touch") return;
       pointerInside = true;
+      exitDirection = null;
       void fanOut();
     });
-    portal.addEventListener("pointerleave", () => {
+    portal.addEventListener("pointerleave", (event) => {
       if (!pointerInside) return;
       pointerInside = false;
+      exitDirection = pointerExitDirection(event);
       leave();
     });
     portal.addEventListener("focus", () => {
       keyboardFocused = portal.matches(":focus-visible");
-      if (keyboardFocused) void fanOut();
+      if (keyboardFocused) {
+        exitDirection = null;
+        void fanOut();
+      }
     });
     portal.addEventListener("blur", () => {
       keyboardFocused = false;
@@ -1543,14 +1596,20 @@ function decodedLocationHash() {
 function setSubsectionExpanded(
   subsection,
   expanded,
-  { animate = true, updateHash = false } = {},
+  { animate = true, updateHash = false, minimized = false } = {},
 ) {
-  const toggle = subsection?.querySelector(".gallery-subsection-toggle");
+  const controls = subsection?.querySelector(".gallery-view-selector");
   const panel = subsection?.querySelector(".gallery-subsection-panel");
   const panelInner = panel?.querySelector(".gallery-subsection-panel-inner");
   const strip = panel?.querySelector(".photo-grid");
-  const actionLabel = toggle?.querySelector(".gallery-subsection-action-label");
-  if (!toggle || !panel || !panelInner || !strip) return;
+  if (!controls || !panel || !panelInner || !strip) return;
+
+  const wasExpanded = subsection.classList.contains("is-expanded");
+  const wasMinimized = subsection.classList.contains("is-minimized");
+  if (wasExpanded === expanded && wasMinimized === minimized) {
+    syncSubsectionPreviewControls(subsection);
+    return;
+  }
 
   window.clearTimeout(subsectionLayoutTimers.get(panel));
   window.cancelAnimationFrame(subsectionLayoutFrames.get(panel));
@@ -1559,21 +1618,40 @@ function setSubsectionExpanded(
   panel.classList.remove("is-opening");
   panel.classList.remove("is-layout-transitioning");
 
-  const wasExpanded = subsection.classList.contains("is-expanded");
-  if (wasExpanded === expanded && toggle.getAttribute("aria-expanded") === String(expanded)) {
-    syncSubsectionPreviewControls(subsection);
-    return;
-  }
-
   const startHeight = panel.getBoundingClientRect().height;
-  if (expanded) previewScrollPositions.set(strip, strip.scrollLeft);
+  if (!wasExpanded && !wasMinimized && (expanded || minimized)) previewScrollPositions.set(strip, strip.scrollLeft);
 
-  toggle.setAttribute("aria-expanded", String(expanded));
-  if (actionLabel) actionLabel.textContent = expanded ? "Close collection" : "Expand collection";
-  panel.setAttribute("aria-hidden", "false");
-  panel.inert = false;
+  const view = minimized ? "closed" : expanded ? "sheet" : "strip";
+  const controlsFocused = controls.contains?.(document.activeElement);
+  const canister = controls.querySelector(".gallery-film-canister");
+  const canisterFocused = document.activeElement === canister;
+  if (canister) {
+    const label = minimized ? "Browse archive" : "Hide archive";
+    canister.setAttribute("aria-expanded", String(!minimized));
+    canister.setAttribute("aria-label", label);
+    canister.title = label;
+  }
+  panel.setAttribute("aria-hidden", String(minimized));
+  panel.inert = minimized;
   panel.hidden = false;
   subsection.classList.toggle("is-expanded", expanded);
+  subsection.classList.toggle("is-minimized", minimized);
+  controls.dataset.view = view;
+  controls.querySelectorAll("[data-gallery-view]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.galleryView === view));
+    button.setAttribute("aria-hidden", String(minimized));
+    button.inert = minimized;
+  });
+  const reopen = controls.querySelector(".gallery-reopen");
+  if (reopen) {
+    reopen.inert = !minimized;
+    reopen.setAttribute("aria-hidden", String(!minimized));
+  }
+  if (minimized && !canisterFocused && (controlsFocused || panel.contains(document.activeElement))) {
+    reopen?.focus({ preventScroll: true });
+  } else if (wasMinimized && controlsFocused && !canisterFocused) {
+    controls.querySelector(`[data-gallery-view="${view}"]`)?.focus({ preventScroll: true });
+  }
   syncSubsectionPreviewControls(subsection);
 
   if (expanded) {
@@ -1581,17 +1659,17 @@ function setSubsectionExpanded(
     panel.querySelectorAll(".photo-card").forEach((card) => {
       card.classList.add("is-revealed");
     });
-  } else {
+  } else if (!minimized) {
     requestAnimationFrame(() => {
       strip.scrollLeft = previewScrollPositions.get(strip) || 0;
       syncSubsectionPreviewControls(subsection);
     });
   }
 
-  if (animate && !reducedMotion.matches && startHeight > 0) {
+  if (animate && !reducedMotion.matches && (startHeight > 0 || wasMinimized)) {
     panel.style.height = `${startHeight}px`;
     panel.classList.add("is-layout-transitioning");
-    const targetHeight = panelInner.getBoundingClientRect().height;
+    const targetHeight = minimized ? 0 : panelInner.getBoundingClientRect().height;
     const layoutFrame = requestAnimationFrame(() => {
       panel.style.height = `${targetHeight}px`;
       subsectionLayoutFrames.delete(panel);
@@ -1600,6 +1678,7 @@ function setSubsectionExpanded(
     const layoutTimer = window.setTimeout(() => {
       panel.style.removeProperty("height");
       panel.classList.remove("is-layout-transitioning", "is-opening");
+      panel.hidden = minimized;
       subsectionLayoutTimers.delete(panel);
       syncSubsectionPreviewControls(subsection);
     }, 440);
@@ -1607,6 +1686,7 @@ function setSubsectionExpanded(
   } else {
     panel.style.removeProperty("height");
     panel.classList.remove("is-layout-transitioning", "is-opening");
+    panel.hidden = minimized;
   }
 
   if (!updateHash) return;
@@ -1635,7 +1715,7 @@ function syncSubsectionPreviewControls(subsection) {
   if (!strip || !tools || !hint || !previous || !next) return;
 
   const expanded = subsection.classList.contains("is-expanded");
-  const hasOverflow = !expanded && strip.scrollWidth > strip.clientWidth + 4;
+  const hasOverflow = !expanded && !subsection.classList.contains("is-minimized") && strip.scrollWidth > strip.clientWidth + 4;
   const atStart = strip.scrollLeft <= 3;
   const atEnd = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 3;
 
@@ -1648,7 +1728,109 @@ function syncSubsectionPreviewControls(subsection) {
   subsection.classList.toggle("is-preview-end", atEnd);
 }
 
+function setupSubsectionViewControls(subsection) {
+  let controls = subsection.querySelector(".gallery-view-selector");
+  if (!controls) {
+    const heading = subsection.querySelector(".gallery-subsection-heading");
+    const oldToggle = heading.querySelector(".gallery-subsection-toggle");
+    const title = oldToggle.querySelector(".gallery-subsection-title");
+    const count = oldToggle.querySelector(".gallery-subsection-count");
+    heading.replaceChildren(title);
+    heading.id = `${subsection.id}-title`;
+    const header = document.createElement("div");
+    header.className = "gallery-subsection-header";
+    heading.before(header);
+    header.append(heading);
+    const tools = document.createElement("div");
+    tools.className = "gallery-view-tools";
+    tools.append(count);
+    controls = document.createElement("div");
+    controls.className = "gallery-view-selector";
+    controls.dataset.view = "strip";
+    controls.setAttribute("role", "group");
+    controls.setAttribute("aria-label", `Album view for ${subsection.querySelector(".gallery-subsection-name").textContent}`);
+    const canister = document.createElement("button");
+    canister.className = "gallery-film-canister";
+    canister.type = "button";
+    canister.setAttribute("aria-label", "Hide archive");
+    canister.setAttribute("aria-expanded", "true");
+    canister.setAttribute("aria-controls", `${subsection.id}-panel`);
+    canister.title = "Hide archive";
+    const spindle = document.createElement("i");
+    spindle.className = "gallery-film-spindle";
+    spindle.setAttribute("aria-hidden", "true");
+    canister.innerHTML = '<svg class="gallery-film-outline" viewBox="0 0 44 62" aria-hidden="true" focusable="false"><path class="gallery-film-rim" d="M17 5V0h10v5"/><rect class="gallery-film-body" x="6" y="8" width="32" height="46" rx="1"/><rect class="gallery-film-rim" x="2" y="5" width="40" height="6" rx="3"/><rect class="gallery-film-rim" x="2" y="51" width="40" height="6" rx="3"/></svg>';
+    canister.append(spindle);
+    const filmWindow = document.createElement("div");
+    filmWindow.className = "gallery-film-window";
+    const filmStrip = document.createElement("div");
+    filmStrip.className = "gallery-film-strip";
+    ["closed", "strip", "sheet"].forEach((view) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.galleryView = view;
+      button.setAttribute("aria-pressed", String(view === "strip"));
+      button.setAttribute("aria-controls", `${subsection.id}-panel`);
+      button.setAttribute("aria-label", {closed: "Hide archive", strip: "Browse archive", sheet: "Expand archive"}[view]);
+      button.title = {closed: "Hide this album’s photos", strip: "Browse photos with arrows or swiping", sheet: "Show all photos at once"}[view];
+      const icon = document.createElement("span");
+      icon.className = `gallery-view-icon is-${view}`;
+      icon.setAttribute("aria-hidden", "true");
+      if (view !== "closed") {
+        for (let index = 0; index < {strip: 3, sheet: 4}[view]; index += 1) icon.append(document.createElement("i"));
+      }
+      const label = document.createElement("span");
+      label.className = "gallery-view-label";
+      const action = document.createElement("span");
+      action.textContent = {closed: "Hide", strip: "Browse", sheet: "Expand"}[view];
+      const archiveLabel = document.createElement("span");
+      archiveLabel.textContent = "archive";
+      label.append(action, archiveLabel);
+      button.append(icon, label);
+      filmStrip.append(button);
+    });
+    const reopen = document.createElement("button");
+    reopen.type = "button";
+    reopen.className = "gallery-reopen";
+    reopen.setAttribute("aria-label", "Open archive");
+    reopen.setAttribute("aria-controls", `${subsection.id}-panel`);
+    reopen.setAttribute("aria-hidden", "true");
+    reopen.inert = true;
+    const reopenLabel = document.createElement("span");
+    reopenLabel.className = "gallery-view-label";
+    const openAction = document.createElement("span");
+    openAction.textContent = "Open";
+    const openArchiveLabel = document.createElement("span");
+    openArchiveLabel.textContent = "archive";
+    reopenLabel.append(openAction, openArchiveLabel);
+    reopen.append(reopenLabel);
+    filmStrip.prepend(reopen);
+    filmWindow.append(filmStrip);
+    controls.append(canister, filmWindow);
+    tools.append(controls);
+    header.append(tools);
+    subsection.querySelector(".gallery-subsection-panel").setAttribute("aria-labelledby", heading.id);
+  }
+  if (controls.dataset.enhanced) return;
+  controls.dataset.enhanced = "true";
+  controls.querySelector(".gallery-film-canister")?.addEventListener("click", () => {
+    setSubsectionExpanded(subsection, false, {
+      minimized: !subsection.classList.contains("is-minimized"), updateHash: true,
+    });
+  });
+  controls.querySelector(".gallery-reopen")?.addEventListener("click", () => {
+    setSubsectionExpanded(subsection, false, { updateHash: true });
+  });
+  controls.querySelectorAll("[data-gallery-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const view = button.dataset.galleryView;
+      setSubsectionExpanded(subsection, view === "sheet", {minimized: view === "closed", updateHash: true});
+    });
+  });
+}
+
 function setupSubsectionPreview(subsection) {
+  setupSubsectionViewControls(subsection);
   const strip = subsection.querySelector(".photo-grid");
   const previous = subsection.querySelector("[data-preview-direction='previous']");
   const next = subsection.querySelector("[data-preview-direction='next']");
@@ -1682,8 +1864,8 @@ function setupSubsectionPreview(subsection) {
   previous.addEventListener("click", () => scrollBy(-1));
   next.addEventListener("click", () => scrollBy(1));
   strip.addEventListener("scroll", scheduleSync, { passive: true });
-  strip.addEventListener("keydown", (event) => {
-    if (subsection.classList.contains("is-expanded")) return;
+  previewKeyActions.set(subsection, (event) => {
+    if (subsection.classList.contains("is-expanded") || subsection.classList.contains("is-minimized")) return;
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       scrollBy(-1);
@@ -1698,6 +1880,18 @@ function setupSubsectionPreview(subsection) {
       scrollTo(strip.scrollWidth);
     }
   });
+  if (grid && grid.dataset.previewKeyboardReady !== "true") {
+    grid.dataset.previewKeyboardReady = "true";
+    document.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || (lightbox && !lightbox.hidden)) return;
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("input, textarea, select, [contenteditable]")) return;
+      const focused = target?.closest(".gallery-subsection");
+      const hovered = event.key.startsWith("Arrow") ? grid.querySelector(".gallery-subsection:hover") : null;
+      previewKeyActions.get(focused || hovered)?.(event);
+    });
+  }
   strip.addEventListener("wheel", (event) => {
     if (
       subsection.classList.contains("is-expanded") ||
@@ -2150,7 +2344,7 @@ function closeLightbox() {
     });
     lightboxInertElements = [];
     if (restoreFocus?.closest("[inert]")) {
-      restoreFocus.closest(".gallery-subsection")?.querySelector(".gallery-subsection-toggle")?.focus({ preventScroll: true });
+      restoreFocus.closest(".gallery-subsection")?.querySelector('.gallery-view-selector button:not([inert])[aria-pressed="true"], .gallery-reopen:not([inert])')?.focus({ preventScroll: true });
     } else {
       restoreFocus?.focus({ preventScroll: true });
     }

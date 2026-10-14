@@ -193,10 +193,10 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.ok(html.includes(`gallery-manifest-${route}.js`));
     assert.match(html, /app\.js/);
     assert.doesNotMatch(html, /class="gallery-subsection is-expanded"/);
-    assert.doesNotMatch(html, /class="gallery-subsection-toggle"[^>]+aria-expanded="true"/);
-    assert.match(html, /class="gallery-subsection-toggle"[^>]+aria-expanded="false"/);
+    assert.match(html, /class="gallery-view-selector" data-view="strip"/);
+    assert.match(html, /data-gallery-view="sheet" aria-pressed="false"/);
     assert.match(html, /data-default-expanded="false"/);
-    assert.match(html, />Expand collection</);
+    assert.match(html, />Expand<\/span><span>archive<\/span>/);
     assert.match(html, /class="photo-trigger" href="photos\//);
     assert.match(html, /<figure class="photo-card/);
     assert.match(html, /<picture><source type="image\/webp" srcset=/);
@@ -303,6 +303,24 @@ test("all built page links and image candidates resolve inside the Pages artifac
   }
 });
 
+test("each gallery collection has one film selector with three clear views", async () => {
+  for (const page of ["events", "travel", "sports"]) {
+    const html = await readFile(path.join(outputRoot, `${page}.html`), "utf8");
+    const groups = (html.match(/class="gallery-view-selector"/g) || []).length;
+    const buttons = [...html.matchAll(/data-gallery-view="(closed|strip|sheet)" aria-pressed="(true|false)" aria-controls="([^"]+)"/g)];
+    assert.ok(groups > 0);
+    assert.equal(buttons.length, groups * 3);
+    assert.equal((html.match(/<button class="gallery-film-canister" type="button" aria-label="Hide archive" aria-expanded="true" aria-controls="[^"]+"/g) || []).length, groups,
+      "each cartridge must be an accessible toggle connected to its album");
+    assert.equal(buttons.filter(([, , selected]) => selected === "true").length, groups);
+    for (const [, view, selected, target] of buttons) {
+      assert.equal(selected === "true", view === "strip");
+      assert.ok(html.includes(`id="${target}"`));
+    }
+    assert.doesNotMatch(html, /class="gallery-subsection-(toggle|minimize)"/);
+  }
+});
+
 test("interaction styles use content-sized archive drawers and reduced-motion fallbacks", async () => {
   // Check authoring rules here; production assets are minified and tested separately.
   const css = await readFile(path.join(repositoryRoot, "docs/style.css"), "utf8");
@@ -374,8 +392,8 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.doesNotMatch(css, /\.nav-marker/);
   assert.match(script, /setSubsectionExpanded/);
   assert.match(script, /aria-expanded/);
-  assert.match(script, /Expand collection/);
-  assert.match(script, /Close collection/);
+  assert.match(script, /setupSubsectionViewControls/);
+  assert.match(script, /controls\.dataset\.view = view/);
   assert.match(script, /previewScrollPositions/);
   assert.match(script, /getBoundingClientRect\(\)\.height/);
   assert.match(script, /ResizeObserver/);
@@ -450,7 +468,9 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /previewImage\?\.currentSrc/);
   assert.match(script, /element\.inert = true/);
   assert.doesNotMatch(script, /positionNavigationMarker|nav-proximity/);
-  assert.doesNotMatch(script, /function randomPhotoSelection|Math\.random\(\)/);
+  // Animation paths may vary; photograph selection remains curated.
+  const photographSelection = script.replace(/function setupHomeCoverShuffle\(\) \{[\s\S]*?(?=\nfunction setupLivingHero\()/, "");
+  assert.doesNotMatch(photographSelection, /function randomPhotoSelection|Math\.random\(\)/);
   assert.match(script, /function hydrateStaticGallery/);
   assert.match(script, /document\.documentElement\.classList\.add\("gallery-enhanced"\)/);
   assert.match(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}min-height:\s*100dvh;[\s\S]{0,120}overflow-y:\s*auto/);
