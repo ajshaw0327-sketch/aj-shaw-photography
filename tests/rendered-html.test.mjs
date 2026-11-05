@@ -117,12 +117,12 @@ test("about and contact form one route while the legacy contact URL redirects", 
   const home = await readFile(path.join(outputRoot, "index.html"), "utf8");
 
   assert.match(about, /id="contact"/);
-  assert.match(about, /Bookings &amp; collaborations/);
+  assert.match(about, /For bookings, include the date, location/);
   assert.match(about, /@aj\.phots_/);
   assert.match(about, /class="profile-portrait"/);
   assert.match(
     about,
-    /I’m AJ Shaw, a Massachusetts-based photographer drawn to honest color, quick gestures, and the moments that make a place or gathering feel real\./,
+    /I’m AJ Shaw, a Massachusetts-based photographer\. I photograph events, portraits, travel, and sports with a Fujifilm X-T50\./,
   );
   assert.doesNotMatch(about, /the clues that make a place or gathering feel real/);
   assert.match(about, /class="booking-envelope"/);
@@ -148,8 +148,8 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.equal((home.match(/data-category-preview=/g) || []).length, 3);
   assert.match(home, /class="category-portal category-portal-projects" href="projects\.html"/);
   assert.match(home, /<h2>Projects<\/h2>/);
-  assert.match(home, /Open project gallery/);
-  assert.match(home, /Choose a field file\./);
+  assert.match(home, /View project/);
+  assert.match(home, />Photography<\/h1>/);
   assert.doesNotMatch(home, /Layered like postcards collected on the way/);
   assert.doesNotMatch(home, /Invitations, programs, gestures, and shared traditions/);
   assert.doesNotMatch(home, /Contact frames from the seconds before and after the play/);
@@ -178,8 +178,8 @@ test("Events precedes Travel in navigation and on the home archive", async () =>
     home.indexOf('data-category-preview="events"') < home.indexOf('data-category-preview="travel"'),
     "the Events archive card must precede the Travel archive card",
   );
-  assert.match(home, /EVT \/ 01/);
-  assert.match(home, /TRV \/ 02/);
+  assert.doesNotMatch(home, /class="category-portal-code"/);
+
 });
 
 test("portfolio routes retain generated galleries and the themed lightbox", async () => {
@@ -196,7 +196,7 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.match(html, /class="gallery-view-selector" data-view="strip"/);
     assert.match(html, /data-gallery-view="sheet" aria-pressed="false"/);
     assert.match(html, /data-default-expanded="false"/);
-    assert.match(html, />Expand<\/span><span>archive<\/span>/);
+    assert.match(html, />All photos<\/span>/);
     assert.match(html, /class="photo-trigger" href="photos\//);
     assert.match(html, /<figure class="photo-card/);
     assert.match(html, /<picture><source type="image\/webp" srcset=/);
@@ -205,6 +205,10 @@ test("portfolio routes retain generated galleries and the themed lightbox", asyn
     assert.match(html, /alt="Photograph \d+ from/);
     assert.match(html, /<figcaption><strong>[^<]+<\/strong><span>[^<]+<\/span><\/figcaption>/);
     for (const [collection] of html.matchAll(/<article class="gallery-subsection[\s\S]*?<\/article>/g)) {
+      for (const [card] of collection.matchAll(/<figure class="photo-card[\s\S]*?<\/figure>/g)) {
+        assert.ok(card.indexOf('class="photo-window"') < card.indexOf('class="frame-index"'),
+          "the print number belongs below the photograph");
+      }
       const numbers = [...collection.matchAll(/class="frame-index">(\d+)</g)]
         .map((match) => Number(match[1]));
       assert.deepEqual(numbers, numbers.map((_, index) => index + 1),
@@ -239,7 +243,7 @@ test("homepage covers are curated, responsive, and present without JavaScript", 
   const html = await readFile(path.join(outputRoot, "index.html"), "utf8");
   const manifest = JSON.parse(await readFile(path.join(outputRoot, "gallery-manifest.json"), "utf8"));
 
-  assert.match(html, /Photography by AJ Shaw · Massachusetts/);
+  assert.match(html, /class="home-identity"><span>Massachusetts<\/span>/);
   assert.match(html, /href="about\.html#contact">Book \/ Contact/);
   assert.equal((html.match(/data-cover-id=/g) || []).length, 9);
   assert.equal((html.match(/class="category-portal-print"/g) || []).length, 9);
@@ -303,14 +307,14 @@ test("all built page links and image candidates resolve inside the Pages artifac
   }
 });
 
-test("each gallery collection has one film selector with three clear views", async () => {
+test("each gallery collection has one film selector with two display choices and a hide toggle", async () => {
   for (const page of ["events", "travel", "sports"]) {
     const html = await readFile(path.join(outputRoot, `${page}.html`), "utf8");
     const groups = (html.match(/class="gallery-view-selector"/g) || []).length;
-    const buttons = [...html.matchAll(/data-gallery-view="(closed|strip|sheet)" aria-pressed="(true|false)" aria-controls="([^"]+)"/g)];
+    const buttons = [...html.matchAll(/data-gallery-view="(strip|sheet)" aria-pressed="(true|false)" aria-controls="([^"]+)"/g)];
     assert.ok(groups > 0);
-    assert.equal(buttons.length, groups * 3);
-    assert.equal((html.match(/<button class="gallery-film-canister" type="button" aria-label="Hide archive" aria-expanded="true" aria-controls="[^"]+"/g) || []).length, groups,
+    assert.equal(buttons.length, groups * 2);
+    assert.equal((html.match(/<button class="gallery-film-canister" type="button" aria-label="Hide photos" aria-expanded="true" aria-controls="[^"]+"/g) || []).length, groups,
       "each cartridge must be an accessible toggle connected to its album");
     assert.equal(buttons.filter(([, , selected]) => selected === "true").length, groups);
     for (const [, view, selected, target] of buttons) {

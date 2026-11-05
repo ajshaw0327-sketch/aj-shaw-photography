@@ -1535,17 +1535,6 @@ function renderPhotoCards(container, selected, startIndex = 0) {
     openMark.setAttribute("aria-hidden", "true");
     openMark.textContent = "View ↗";
 
-    const metadata = document.createElement("span");
-    metadata.className = "photo-metadata";
-    metadata.setAttribute("aria-hidden", "true");
-    const metadataLocation = document.createElement("span");
-    metadataLocation.className = "photo-meta-location";
-    metadataLocation.textContent = photo.detail?.split("·")[0]?.trim() || "AJ archive";
-    const metadataFrame = document.createElement("span");
-    metadataFrame.className = "photo-meta-frame";
-    metadataFrame.textContent = `${archiveCodes[photo.category] || "AJ"}-${String(localIndex + 1).padStart(2, "0")}`;
-    metadata.append(metadataLocation, metadataFrame);
-
     const caption = document.createElement("figcaption");
     const captionTitle = document.createElement("strong");
     captionTitle.textContent = photo.title;
@@ -1560,8 +1549,8 @@ function renderPhotoCards(container, selected, startIndex = 0) {
       openLightbox(selected, localIndex, button);
     });
 
-    windowElement.append(picture, metadata, openMark);
-    surface.append(indexLabel, windowElement);
+    windowElement.append(picture, openMark);
+    surface.append(windowElement, indexLabel);
     button.append(surface);
     caption.append(captionTitle, captionDetail);
     figure.append(button, caption);
@@ -1626,7 +1615,7 @@ function setSubsectionExpanded(
   const canister = controls.querySelector(".gallery-film-canister");
   const canisterFocused = document.activeElement === canister;
   if (canister) {
-    const label = minimized ? "Browse archive" : "Hide archive";
+    const label = minimized ? "Browse photos" : "Hide photos";
     canister.setAttribute("aria-expanded", String(!minimized));
     canister.setAttribute("aria-label", label);
     canister.title = label;
@@ -1740,10 +1729,12 @@ function setupSubsectionViewControls(subsection) {
     const header = document.createElement("div");
     header.className = "gallery-subsection-header";
     heading.before(header);
-    header.append(heading);
+    const headingMeta = document.createElement("div");
+    headingMeta.className = "gallery-heading-meta";
+    headingMeta.append(heading, count);
+    header.append(headingMeta);
     const tools = document.createElement("div");
     tools.className = "gallery-view-tools";
-    tools.append(count);
     controls = document.createElement("div");
     controls.className = "gallery-view-selector";
     controls.dataset.view = "strip";
@@ -1752,10 +1743,10 @@ function setupSubsectionViewControls(subsection) {
     const canister = document.createElement("button");
     canister.className = "gallery-film-canister";
     canister.type = "button";
-    canister.setAttribute("aria-label", "Hide archive");
+    canister.setAttribute("aria-label", "Hide photos");
     canister.setAttribute("aria-expanded", "true");
     canister.setAttribute("aria-controls", `${subsection.id}-panel`);
-    canister.title = "Hide archive";
+    canister.title = "Hide photos";
     const spindle = document.createElement("i");
     spindle.className = "gallery-film-spindle";
     spindle.setAttribute("aria-hidden", "true");
@@ -1765,44 +1756,34 @@ function setupSubsectionViewControls(subsection) {
     filmWindow.className = "gallery-film-window";
     const filmStrip = document.createElement("div");
     filmStrip.className = "gallery-film-strip";
-    ["closed", "strip", "sheet"].forEach((view) => {
+    const activeFrame = document.createElement("span");
+    activeFrame.className = "gallery-film-active";
+    activeFrame.setAttribute("aria-hidden", "true");
+    filmStrip.append(activeFrame);
+    ["strip", "sheet"].forEach((view) => {
       const button = document.createElement("button");
       button.type = "button";
       button.dataset.galleryView = view;
       button.setAttribute("aria-pressed", String(view === "strip"));
       button.setAttribute("aria-controls", `${subsection.id}-panel`);
-      button.setAttribute("aria-label", {closed: "Hide archive", strip: "Browse archive", sheet: "Expand archive"}[view]);
-      button.title = {closed: "Hide this album’s photos", strip: "Browse photos with arrows or swiping", sheet: "Show all photos at once"}[view];
-      const icon = document.createElement("span");
-      icon.className = `gallery-view-icon is-${view}`;
-      icon.setAttribute("aria-hidden", "true");
-      if (view !== "closed") {
-        for (let index = 0; index < {strip: 3, sheet: 4}[view]; index += 1) icon.append(document.createElement("i"));
-      }
+      button.setAttribute("aria-label", view === "strip" ? "Browse photos" : "Show all photos");
+      button.title = view === "strip" ? "Browse photos with arrows or swiping" : "Show all photos at once";
       const label = document.createElement("span");
       label.className = "gallery-view-label";
-      const action = document.createElement("span");
-      action.textContent = {closed: "Hide", strip: "Browse", sheet: "Expand"}[view];
-      const archiveLabel = document.createElement("span");
-      archiveLabel.textContent = "archive";
-      label.append(action, archiveLabel);
-      button.append(icon, label);
+      label.textContent = view === "strip" ? "Browse" : "All photos";
+      button.append(label);
       filmStrip.append(button);
     });
     const reopen = document.createElement("button");
     reopen.type = "button";
     reopen.className = "gallery-reopen";
-    reopen.setAttribute("aria-label", "Open archive");
+    reopen.setAttribute("aria-label", "Open photos");
     reopen.setAttribute("aria-controls", `${subsection.id}-panel`);
     reopen.setAttribute("aria-hidden", "true");
     reopen.inert = true;
     const reopenLabel = document.createElement("span");
     reopenLabel.className = "gallery-view-label";
-    const openAction = document.createElement("span");
-    openAction.textContent = "Open";
-    const openArchiveLabel = document.createElement("span");
-    openArchiveLabel.textContent = "archive";
-    reopenLabel.append(openAction, openArchiveLabel);
+    reopenLabel.textContent = "Open";
     reopen.append(reopenLabel);
     filmStrip.prepend(reopen);
     filmWindow.append(filmStrip);
@@ -2068,7 +2049,7 @@ function renderGallery() {
       meta.className = "gallery-subsection-meta";
       const count = document.createElement("span");
       count.className = "gallery-subsection-count";
-      count.textContent = `${String(group.photos.length).padStart(2, "0")} frames`;
+      count.textContent = `${group.photos.length} ${group.photos.length === 1 ? "frame" : "frames"}`;
       const actionLabel = document.createElement("span");
       actionLabel.className = "gallery-subsection-action-label";
       actionLabel.textContent = "Expand collection";
@@ -2076,7 +2057,7 @@ function renderGallery() {
       indicator.className = "gallery-subsection-indicator";
       indicator.setAttribute("aria-hidden", "true");
 
-      titleGroup.append(stamp, title);
+      titleGroup.append(title);
       meta.append(count, actionLabel, indicator);
       toggle.append(titleGroup, meta);
       heading.append(toggle);
@@ -2100,7 +2081,7 @@ function renderGallery() {
       scrollHint.className = "gallery-scroll-hint";
       scrollHint.hidden = true;
       scrollHint.setAttribute("aria-hidden", "true");
-      scrollHint.textContent = "Swipe the contact strip";
+      scrollHint.textContent = "Swipe to browse";
       const previewControls = document.createElement("span");
       previewControls.className = "gallery-scroll-controls";
       const previous = document.createElement("button");
@@ -2446,7 +2427,7 @@ async function updateLightbox({ previewSource = "", opening = false, imageToken 
   const showPhoto = (source) => {
     lightboxPhoto.alt = photo.alt;
     lightboxTitle.textContent = photo.title;
-    lightboxDetail.textContent = photo.detail;
+    lightboxDetail.textContent = photo.detail?.split("·")[0]?.trim() || "";
     lightboxCount.textContent = `Frame ${index + 1} / ${count}`;
     assembleLightboxObjectLabels(photo);
     if (photo.width && photo.height) {

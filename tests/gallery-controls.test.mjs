@@ -23,7 +23,7 @@ test("fully minimizing hides and disables the panel, then restores its preview p
   const frame = {};
   const document = { activeElement: frame };
   let focusOptions;
-  const buttons = ["closed", "strip", "sheet"].map(view => {
+  const buttons = ["strip", "sheet"].map(view => {
     const button = {...attributes(), dataset: {galleryView:view}, addEventListener() {}};
     button.focus = options => {document.activeElement = button;focusOptions=options;};
     return button;
@@ -54,7 +54,7 @@ test("fully minimizing hides and disables the panel, then restores its preview p
   assert.ok(panel.hidden && panel.inert);
   assert.equal(panel.getAttribute("aria-hidden"), "true");
   assert.equal(controls.dataset.view, "closed");
-  assert.equal(buttons[0].getAttribute("aria-pressed"), "true");
+  assert.ok(buttons.every(button => button.getAttribute("aria-pressed") === "false"));
   assert.equal(document.activeElement, reopen);
   assert.equal(reopen.inert, false);
   assert.ok(buttons.every(button => button.inert && button.getAttribute("aria-hidden") === "true"));
@@ -64,9 +64,9 @@ test("fully minimizing hides and disables the panel, then restores its preview p
   assert.ok(!panel.hidden && !panel.inert);
   assert.equal(strip.scrollLeft, 240);
   assert.equal(controls.dataset.view, "strip");
-  assert.equal(buttons[1].getAttribute("aria-pressed"), "true");
+  assert.equal(buttons[0].getAttribute("aria-pressed"), "true");
   assert.equal(reopen.inert, true);
-  assert.equal(document.activeElement, buttons[1]);
+  assert.equal(document.activeElement, buttons[0]);
   assert.ok(buttons.every(button => !button.inert && button.getAttribute("aria-hidden") === "false"));
   runInNewContext("setSubsectionExpanded(subsection, true); setSubsectionExpanded(subsection, false, {minimized:true}); setSubsectionExpanded(subsection, true);", context);
   assert.ok(subsection.classList.contains("is-expanded"));
@@ -97,12 +97,12 @@ test("fully minimizing hides and disables the panel, then restores its preview p
   assert.ok(panel.hidden, "clicking the canister from Show all minimizes the album");
   assert.equal(document.activeElement, canister, "the toggle retains focus for a second keyboard activation");
   assert.equal(canister.getAttribute("aria-expanded"), "false");
-  assert.equal(canister.getAttribute("aria-label"), "Browse archive");
+  assert.equal(canister.getAttribute("aria-label"), "Browse photos");
   canisterClick();
   assert.ok(!panel.hidden && !subsection.classList.contains("is-expanded"));
   assert.equal(controls.dataset.view, "strip", "the canister reopens in Browse");
   assert.equal(canister.getAttribute("aria-expanded"), "true");
-  assert.equal(canister.getAttribute("aria-label"), "Hide archive");
+  assert.equal(canister.getAttribute("aria-label"), "Hide photos");
   assert.equal(document.activeElement, canister);
 });
 

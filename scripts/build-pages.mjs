@@ -118,7 +118,7 @@ async function scanProjects() {
     projects.push({
       id: folder.name,
       title: metadata.title || readableProjectName(folder.name),
-      summary: metadata.summary || "A project from the AJ Shaw working archive.",
+      summary: metadata.summary || "",
       type: metadata.type || (video ? "Film" : "Project"),
       year: String(metadata.year || "2026"),
       location: metadata.location || "",
@@ -150,13 +150,13 @@ function renderProjectsMarkup(projects) {
   }
 
   return projects.map((project, index) => {
-    const metadata = [project.type, project.year, project.location].filter(Boolean).join(" · ");
+    const metadata = [project.type === "Project" ? "" : project.type, project.year, project.location].filter(Boolean).join(" · ");
     const externalLink = project.link
       ? `<a class="project-link" href="${escapeHtml(project.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(project.linkLabel)} <span aria-hidden="true">↗</span></a>`
       : "";
     return `<article class="project-feature${project.featured ? " is-featured" : ""}" id="project-${escapeHtml(project.id)}" style="--project-index:${index}">
-      <div class="project-media">${renderProjectMedia(project, index)}<span class="project-reference" aria-hidden="true">PRJ-${String(index + 1).padStart(2, "0")}</span></div>
-      <div class="project-copy"><p class="project-meta">${escapeHtml(metadata)}</p><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.summary)}</p>${externalLink}</div>
+      <div class="project-media">${renderProjectMedia(project, index)}</div>
+      <div class="project-copy"><p class="project-meta">${escapeHtml(metadata)}</p><h2>${escapeHtml(project.title)}</h2>${project.summary ? `<p>${escapeHtml(project.summary)}</p>` : ""}${externalLink}</div>
     </article>`;
   }).join("");
 }
@@ -164,7 +164,7 @@ function renderProjectsMarkup(projects) {
 function renderProjectPortalPreview(projects) {
   const covers = projects.filter((project) => project.cover).slice(0, 3);
   if (!covers.length) {
-    return `<span class="project-portal-document" aria-hidden="true"><i></i><b>PROJECT<br />FILES</b><small>FILM · DESIGN · RESEARCH</small></span>`;
+    return `<span class="project-portal-document" aria-hidden="true"><i></i><b>▶</b></span>`;
   }
   return covers.map((project, index) =>
     `<span class="category-portal-print" style="--portal-index: ${index}; --cover-aspect: ${project.coverAspect}" aria-hidden="true"><img src="${escapeHtml(project.cover)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" /></span>`,
@@ -245,19 +245,15 @@ function renderPhotoCard(photo, localIndex, globalIndex, category) {
     <figure class="${photoClassNames(photo, globalIndex)}" data-photo-id="${escapeHtml(photo.id)}" style="--photo-ratio: ${ratio}; --card-rotate: ${rotation}deg; --card-delay: ${Math.min(localIndex, 8) * 45}ms; --section-card-delay: ${Math.min(localIndex, 10) * 36}ms">
       <a class="photo-trigger" href="${escapeHtml(photo.src)}" data-photo-index="${localIndex}" aria-label="View ${escapeHtml(photo.title)}, ${escapeHtml(photo.detail)}">
         <span class="photo-surface">
-          <span class="frame-index">${String(localIndex + 1).padStart(2, "0")}</span>
           <span class="photo-window">
             ${renderPicture(photo, {
               sizes: "(max-width: 640px) 88vw, (max-width: 1100px) 44vw, 470px",
               loading,
               fetchPriority,
             })}
-            <span class="photo-metadata" aria-hidden="true">
-              <span class="photo-meta-location">${escapeHtml(location)}</span>
-              <span class="photo-meta-frame">${reference}</span>
-            </span>
             <span class="open-mark" aria-hidden="true">View ↗</span>
           </span>
+          <span class="frame-index">${String(localIndex + 1).padStart(2, "0")}</span>
         </span>
       </a>
       <figcaption><strong>${escapeHtml(photo.title)}</strong><span>${escapeHtml(photo.detail)}</span></figcaption>
@@ -278,16 +274,16 @@ function renderGalleryMarkup(category, groups) {
     return `
       <article class="gallery-subsection${expanded ? " is-expanded" : ""}" id="${subsectionId}" data-default-expanded="${expanded}" style="--subsection-delay: ${Math.min(groupIndex, 6) * 60}ms">
         <div class="gallery-subsection-header">
-          <h2 class="gallery-subsection-heading" id="${subsectionId}-title"><span class="gallery-subsection-title"><span class="gallery-subsection-stamp" aria-hidden="true">${archiveCode}-${String(groupIndex + 1).padStart(2, "0")}</span><span class="gallery-subsection-name">${escapeHtml(group.title)}</span></span></h2>
-          <div class="gallery-view-tools"><span class="gallery-subsection-count">${String(group.photos.length).padStart(2, "0")} frames</span><div class="gallery-view-selector" data-view="strip" role="group" aria-label="Album view for ${escapeHtml(group.title)}">
-            <button class="gallery-film-canister" type="button" aria-label="Hide archive" aria-expanded="true" aria-controls="${subsectionId}-panel" title="Hide archive"><svg class="gallery-film-outline" viewBox="0 0 44 62" aria-hidden="true" focusable="false"><path class="gallery-film-rim" d="M17 5V0h10v5"/><rect class="gallery-film-body" x="6" y="8" width="32" height="46" rx="1"/><rect class="gallery-film-rim" x="2" y="5" width="40" height="6" rx="3"/><rect class="gallery-film-rim" x="2" y="51" width="40" height="6" rx="3"/></svg><i class="gallery-film-spindle" aria-hidden="true"></i></button><div class="gallery-film-window"><div class="gallery-film-strip">
-            <button class="gallery-reopen" type="button" aria-label="Open archive" aria-controls="${subsectionId}-panel" aria-hidden="true" inert><span class="gallery-view-label"><span>Open</span><span>archive</span></span></button>
-            ${["closed", "strip", "sheet"].map((view) => `<button type="button" data-gallery-view="${view}" aria-pressed="${view === "strip"}" aria-controls="${subsectionId}-panel" aria-label="${{closed: "Hide archive", strip: "Browse archive", sheet: "Expand archive"}[view]}" title="${{closed: "Hide this album’s photos", strip: "Browse photos with arrows or swiping", sheet: "Show all photos at once"}[view]}"><span class="gallery-view-icon is-${view}" aria-hidden="true">${view === "closed" ? "" : "<i></i>".repeat({strip: 3, sheet: 4}[view])}</span><span class="gallery-view-label"><span>${{closed: "Hide", strip: "Browse", sheet: "Expand"}[view]}</span><span>archive</span></span></button>`).join("")}
+          <div class="gallery-heading-meta"><h2 class="gallery-subsection-heading" id="${subsectionId}-title"><span class="gallery-subsection-title"><span class="gallery-subsection-name">${escapeHtml(group.title)}</span></span></h2><span class="gallery-subsection-count">${group.photos.length} ${group.photos.length === 1 ? "frame" : "frames"}</span></div>
+          <div class="gallery-view-tools"><div class="gallery-view-selector" data-view="strip" role="group" aria-label="Album view for ${escapeHtml(group.title)}">
+            <button class="gallery-film-canister" type="button" aria-label="Hide photos" aria-expanded="true" aria-controls="${subsectionId}-panel" title="Hide photos"><svg class="gallery-film-outline" viewBox="0 0 44 62" aria-hidden="true" focusable="false"><path class="gallery-film-rim" d="M17 5V0h10v5"/><rect class="gallery-film-body" x="6" y="8" width="32" height="46" rx="1"/><rect class="gallery-film-rim" x="2" y="5" width="40" height="6" rx="3"/><rect class="gallery-film-rim" x="2" y="51" width="40" height="6" rx="3"/></svg><i class="gallery-film-spindle" aria-hidden="true"></i></button><div class="gallery-film-window"><div class="gallery-film-strip"><span class="gallery-film-active" aria-hidden="true"></span>
+            <button class="gallery-reopen" type="button" aria-label="Open photos" aria-controls="${subsectionId}-panel" aria-hidden="true" inert><span class="gallery-view-label">Open</span></button>
+            ${["strip", "sheet"].map((view) => `<button type="button" data-gallery-view="${view}" aria-pressed="${view === "strip"}" aria-controls="${subsectionId}-panel" aria-label="${view === "strip" ? "Browse photos" : "Show all photos"}" title="${view === "strip" ? "Browse photos with arrows or swiping" : "Show all photos at once"}"><span class="gallery-view-label">${view === "strip" ? "Browse" : "All photos"}</span></button>`).join("")}
           </div></div></div></div>
         </div>
         <div class="gallery-subsection-panel" id="${subsectionId}-panel" role="region" aria-labelledby="${subsectionId}-title">
           <div class="gallery-subsection-panel-inner">
-            <div class="gallery-preview-tools" hidden><span class="gallery-scroll-hint" hidden aria-hidden="true">Swipe the contact strip</span><span class="gallery-scroll-controls"><button type="button" data-preview-direction="previous" aria-label="View previous photographs in ${escapeHtml(group.title)}"><span aria-hidden="true">←</span></button><button type="button" data-preview-direction="next" aria-label="View next photographs in ${escapeHtml(group.title)}"><span aria-hidden="true">→</span></button></span></div>
+            <div class="gallery-preview-tools" hidden><span class="gallery-scroll-hint" hidden aria-hidden="true">Swipe to browse</span><span class="gallery-scroll-controls"><button type="button" data-preview-direction="previous" aria-label="View previous photographs in ${escapeHtml(group.title)}"><span aria-hidden="true">←</span></button><button type="button" data-preview-direction="next" aria-label="View next photographs in ${escapeHtml(group.title)}"><span aria-hidden="true">→</span></button></span></div>
             <div class="photo-grid" id="${subsectionId}-strip" tabindex="0" role="group" aria-label="${escapeHtml(group.title)} preview, ${group.photos.length} photographs. Use the left and right arrow keys to browse.">${cards}
             </div>
           </div>
@@ -356,7 +352,7 @@ async function injectBuiltMarkup(manifest) {
   await optimizeProjectVideos(projects);
   const indexPath = path.join(outputDirectory, "index.html");
   let indexHtml = await readFile(indexPath, "utf8");
-  indexHtml = replaceMarker(indexHtml, "HOME:IDENTITY", escapeHtml(manifest.identityLine));
+  indexHtml = replaceMarker(indexHtml, "HOME:IDENTITY", "Massachusetts");
   for (const category of ["events", "travel", "sports"]) {
     indexHtml = replaceMarker(
       indexHtml,

@@ -6272,7 +6272,7 @@ body[data-page="home"] .category-portals-heading {
 
 body[data-page="home"] .category-portals-heading-copy {
   display: grid;
-  gap: 10px;
+  gap: clamp(24px, 3vh, 34px);
 }
 
 body[data-page="home"] .category-portals-heading h1 {
@@ -7603,4 +7603,149 @@ html.theme-changing .site-footer {
   html[data-theme="dark"] .route-curtain.is-revealing {
     background: var(--night-bg);
   }
+}
+
+/* Declutter repeated labels while preserving the original print and film styling. */
+.portfolio-label { grid-template-columns: minmax(0, 1fr); }
+.frame-index { margin: 9px 1px 0; }
+.frame-index::after { content: none; }
+.photo-card figcaption,
+.lightbox-object-labels { display: none; }
+.gallery-scroll-hint { font-size: 0.7rem; letter-spacing: 0.07em; }
+
+/* Browse/all-photos are the display choices; the cartridge hides and reopens. */
+.gallery-view-selector { --view-position: 1; width: 290px; height: 48px; }
+.gallery-view-selector[data-view="closed"] { --view-position: 0; }
+.gallery-view-selector[data-view="sheet"] { --view-position: 2; }
+.gallery-film-window { inset: 2px 34px 2px 0; }
+.gallery-film-strip { grid-template-columns: repeat(3, 1fr); width: 150%; padding: 3px 0; border: 1px solid var(--forest); background: var(--forest); transform: translateX(-33.333333%); }
+.gallery-view-selector[data-view="closed"] .gallery-film-window { clip-path: inset(0 0 0 50% round 3px); }
+.gallery-view-selector[data-view="closed"] .gallery-film-strip { transform: translateX(33.333333%); }
+.gallery-film-strip::before { top: 3px; bottom: 3px; width: 33.333333%; border: 1px solid var(--gold); background: var(--forest-2); }
+.gallery-film-strip::after { opacity: 0.45; background-size: 14px 2px; }
+.gallery-view-selector button { min-height: 36px; padding: 3px 12px; font-size: 0.8rem; }
+.gallery-view-label { display: block; line-height: 1.2; }
+.gallery-view-selector .gallery-film-canister { min-height: 44px; padding: 0; }
+.gallery-film-outline { width: 44px; height: 48px; }
+.gallery-film-spindle { width: 12px; height: 12px; top: calc(50% - 6px); left: calc(50% - 6px); }
+.gallery-film-spindle::after { width: 1px; height: 7px; top: 1px; left: 5px; }
+.gallery-subsection-count { font-size: 0.7rem; letter-spacing: 0.04em; text-transform: none; }
+
+/* Keep large cover prints clear of the titles during rest and shuffle. */
+body[data-page="home"] .category-portal-grid { grid-template-rows: repeat(2, minmax(350px, 1fr)); }
+body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-preview { min-height: 250px; margin-top: 0; margin-bottom: 18px; }
+body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-print { top: 44%; }
+@media (max-width: 860px) {
+  .gallery-view-tools { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+  .gallery-view-selector { width: min(278px, calc(100vw - 32px)); flex: 0 1 278px; }
+  .gallery-view-tools .gallery-subsection-count { align-self: center; }
+  .gallery-view-selector button { font-size: 0.75rem; }
+  body[data-page="home"] .category-portal-grid { grid-template-rows: none; }
+  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-preview { min-height: 0; margin: 0 8px 0 0; }
+  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-print { top: 50%; }
+}
+
+.gallery-heading-meta { display: flex; flex: 1; min-width: 0; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
+.gallery-heading-meta .gallery-subsection-heading { flex: 0 1 auto; max-width: 100%; }
+.gallery-heading-meta .gallery-subsection-count { flex: 0 0 auto; white-space: nowrap; font-family: "AJ Geist Mono", "Courier New", monospace; }
+.gallery-view-tools { margin-left: auto; }
+@media (max-width: 860px) { .gallery-view-tools { align-self: flex-end; } }
+
+/* Use the navigation's framed film treatment for collection display controls. */
+.gallery-view-selector { height: 52px; }
+.gallery-film-window {
+  inset: 0 34px 0 0;
+  border-radius: 8px;
+  clip-path: inset(3px 0 3px 3px round 8px);
+}
+.gallery-view-selector[data-view="closed"] .gallery-film-window {
+  clip-path: inset(3px 0 3px calc(50% + 3px) round 8px);
+}
+.gallery-film-strip {
+  padding: 5px 0;
+  border: 2px solid var(--forest);
+  border-radius: 8px;
+  background: linear-gradient(rgba(250, 246, 233, 0.82), rgba(242, 237, 221, 0.7)), var(--paper-light);
+  box-shadow: inset 0 0 0 1px rgba(250, 246, 233, 0.85);
+}
+.gallery-film-strip::before,
+.gallery-film-strip::after { content: none; }
+.gallery-film-active {
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  bottom: 6px;
+  left: calc(8px + var(--view-position) * (100% - 4px) / 3);
+  width: calc((100% - 4px) / 3 - 12px);
+  border: 2px solid #0f2e23;
+  border-radius: 6px;
+  background: repeating-linear-gradient(90deg, transparent 0 12px, rgba(242, 237, 221, 0.1) 12px 13px), var(--forest);
+  box-shadow: inset 0 0 0 1px rgba(250, 246, 233, 0.13);
+  opacity: 1;
+  transition: left 440ms var(--ease), opacity 160ms ease;
+  pointer-events: none;
+}
+.gallery-film-active::after {
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed var(--gold);
+  border-radius: 3px;
+  content: "";
+}
+.gallery-film-strip button {
+  min-height: 38px;
+  padding: 3px 10px;
+  color: var(--ink);
+  font-family: "Inter", sans-serif;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: color 160ms ease;
+}
+.gallery-film-strip button[aria-pressed="true"] { color: var(--paper-light); }
+.gallery-view-selector[data-view="closed"] .gallery-film-active { opacity: 0; }
+.gallery-film-strip button:hover { background: transparent; }
+.gallery-film-strip button:focus-visible { outline: 2px solid var(--gold); outline-offset: -3px; }
+.gallery-film-outline { height: 52px; }
+html[data-theme="dark"] .gallery-film-strip {
+  border-color: var(--night-border);
+  background: linear-gradient(rgba(34, 67, 54, 0.82), rgba(20, 43, 35, 0.86)), var(--night-panel);
+  box-shadow: inset 0 0 0 1px rgba(241, 232, 212, 0.08);
+}
+html[data-theme="dark"] .gallery-film-active {
+  border-color: var(--gold);
+  background: repeating-linear-gradient(90deg, transparent 0 12px, rgba(241, 232, 212, 0.07) 12px 13px), var(--night-olive);
+  box-shadow: inset 0 0 0 1px rgba(241, 232, 212, 0.1);
+}
+html[data-theme="dark"] .gallery-film-strip button { color: var(--night-cream); }
+@media (prefers-reduced-motion: reduce) { .gallery-film-active { transition: none; } }
+
+.gallery-film-window::after {
+  position: absolute;
+  inset: 3px 0 3px 3px;
+  border: 2px solid var(--forest);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(250, 246, 233, 0.85);
+  pointer-events: none;
+  content: "";
+  transition: left 440ms var(--ease);
+}
+.gallery-view-selector[data-view="closed"] .gallery-film-window::after { left: calc(50% + 3px); }
+html[data-theme="dark"] .gallery-film-window::after {
+  border-color: var(--night-border);
+  box-shadow: inset 0 0 0 1px rgba(241, 232, 212, 0.08);
+}
+@media (prefers-reduced-motion: reduce) { .gallery-film-window::after { transition: none; } }
+
+/* Light film controls balance cream stock with forest-green accents. */
+html:not([data-theme="dark"]) .gallery-film-strip {
+  background: linear-gradient(180deg, #faf6e9, #f2eddd);
+}
+html:not([data-theme="dark"]) .gallery-film-canister {
+  --film-body: #eee6cd;
+  --film-hover: #e3dbc3;
+  --film-ink: var(--forest);
+  --film-outline: var(--forest);
+  --film-rim: #eee6cd;
 }
