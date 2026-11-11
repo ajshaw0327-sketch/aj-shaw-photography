@@ -29,11 +29,17 @@ test("fully minimizing hides and disables the panel, then restores its preview p
     return button;
   });
   const reopen = {...attributes(), inert:true, addEventListener() {}, focus: options => {document.activeElement = reopen;focusOptions=options;}};
+  let collapseClick;
+  const collapse = { hidden: false, addEventListener: (event, handler) => { if (event === "click") collapseClick = handler; } };
   let canisterClick;
   const canister = {...attributes(), addEventListener: (event, handler) => {if (event === "click") canisterClick = handler;}};
   const controls = {dataset: {view:"strip"},
-    contains: element => element === canister || element === reopen || buttons.includes(element),
-    querySelector: selector => selector === ".gallery-film-canister" ? canister : selector === ".gallery-reopen" ? reopen : buttons.find(button => selector.includes(button.dataset.galleryView)),
+    contains: element => [canister, collapse, reopen, ...buttons].includes(element),
+    querySelector: selector => ({
+      ".gallery-film-canister": canister,
+      ".gallery-collapse": collapse,
+      ".gallery-reopen": reopen,
+    })[selector] ?? buttons.find(button => selector.includes(button.dataset.galleryView)),
     querySelectorAll: () => buttons};
   const inner = { getBoundingClientRect: () => ({ height: 200 }) };
   const panel = { ...attributes(), classList: classList(), hidden: false, inert: false,
@@ -104,6 +110,13 @@ test("fully minimizing hides and disables the panel, then restores its preview p
   assert.equal(canister.getAttribute("aria-expanded"), "true");
   assert.equal(canister.getAttribute("aria-label"), "Hide photos");
   assert.equal(document.activeElement, canister);
+
+  document.activeElement = collapse;
+  collapseClick();
+  assert.ok(panel.hidden && collapse.hidden, "the chevron collapses the album and hides itself");
+  assert.equal(document.activeElement, reopen, "focus moves to Open when the chevron hides");
+  canisterClick();
+  assert.ok(!panel.hidden && !collapse.hidden, "reopening restores the chevron");
 });
 
 function keyboardFixture() {

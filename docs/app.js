@@ -1631,6 +1631,8 @@ function setSubsectionExpanded(
     button.setAttribute("aria-hidden", String(minimized));
     button.inert = minimized;
   });
+  const collapse = controls.querySelector(".gallery-collapse");
+  if (collapse) collapse.hidden = minimized;
   const reopen = controls.querySelector(".gallery-reopen");
   if (reopen) {
     reopen.inert = !minimized;
@@ -1794,6 +1796,20 @@ function setupSubsectionViewControls(subsection) {
   }
   if (controls.dataset.enhanced) return;
   controls.dataset.enhanced = "true";
+  let collapse = controls.querySelector(".gallery-collapse");
+  if (!collapse) {
+    collapse = document.createElement("button");
+    collapse.className = "gallery-collapse";
+    collapse.type = "button";
+    collapse.setAttribute("aria-label", "Collapse photos");
+    collapse.setAttribute("aria-controls", `${subsection.id}-panel`);
+    collapse.title = "Collapse photos";
+    controls.querySelector(".gallery-reopen").after(collapse);
+  }
+  collapse.hidden = controls.dataset.view === "closed";
+  collapse.addEventListener("click", () => {
+    setSubsectionExpanded(subsection, false, { minimized: true, updateHash: true });
+  });
   controls.querySelector(".gallery-film-canister")?.addEventListener("click", () => {
     setSubsectionExpanded(subsection, false, {
       minimized: !subsection.classList.contains("is-minimized"), updateHash: true,
