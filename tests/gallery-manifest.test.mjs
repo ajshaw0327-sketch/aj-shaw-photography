@@ -36,6 +36,8 @@ test("folder names become predictable gallery sections without empty or hidden e
     path.join(root, "travel/04-japan/01-tokyo_nights/01-crossing.jpg"),
   );
   await copyFixture(png, path.join(root, "events/02-community_festival/03-strange # name.png"));
+  await copyFixture(landscape, path.join(root, "events/02.5-portraits-2/01-opening-shot.jpg"));
+  await copyFixture(landscape, path.join(root, "events/03-portraits-14/01-opening-shot.jpg"));
   await copyFixture(gif, path.join(root, "sports/01-warm-up.gif"));
   await copyFixture(landscape, path.join(root, "covers/travel/01-curated-second.jpg"));
   await copyFixture(landscape, path.join(root, "covers/travel/02-curated-first.jpg"));
@@ -85,8 +87,9 @@ test("folder names become predictable gallery sections without empty or hidden e
   );
   assert.deepEqual(
     manifest.galleries.events.map((section) => section.title),
-    ["Community Festival"],
+    ["Community Festival", "Portraits II", "Portraits XIV"],
   );
+  assert.equal(manifest.galleries.events[1].id, "02.5-portraits-2");
   assert.equal(manifest.galleries.sports[0].title, "Selected Frames");
   assert.equal(manifest.galleries.sports[0].photos[0].title, "Frame 01");
   assert.deepEqual(

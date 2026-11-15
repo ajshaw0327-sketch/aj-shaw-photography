@@ -88,6 +88,24 @@ export function toDisplayName(value) {
     .join(" ");
 }
 
+const romanNumerals = [
+  [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+
+function galleryTitle(folderName) {
+  // Treat short trailing numbers as album installments and preserve four-digit years.
+  return toDisplayName(folderName).replace(/ ([1-9][0-9]{0,2})$/, (_, suffix) => {
+    let remaining = Number(suffix);
+    let roman = "";
+    for (const [value, numeral] of romanNumerals) {
+      roman += numeral.repeat(Math.floor(remaining / value));
+      remaining %= value;
+    }
+    return ` ${roman}`;
+  });
+}
+
 function encodeRelativePath(relativePath) {
   return relativePath
     .split(path.sep)
@@ -314,7 +332,7 @@ export async function scanPhotoLibrary(photosRoot, configuration = {}) {
     galleries[category] = await Promise.all(
       groups.map(async ({ relativeDirectory, files }) => {
         const title = relativeDirectory
-          ? toDisplayName(path.basename(relativeDirectory))
+          ? galleryTitle(path.basename(relativeDirectory))
           : "Selected Frames";
         const detail = `${title} · ${toDisplayName(category)} journal`;
         return {
