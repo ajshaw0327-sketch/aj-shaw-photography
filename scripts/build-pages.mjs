@@ -227,7 +227,7 @@ function renderCoverPhotographs(category, photographs) {
     const aspect = photo.width && photo.height ? photo.width / photo.height : 1.5;
     return `<span class="category-portal-print" data-cover-id="${escapeHtml(photo.id)}" data-cover-slot="${index}" style="--portal-index: ${index}; --cover-aspect: ${aspect}" aria-hidden="true">${renderPicture(photo, {
       alt: "",
-      sizes: "(max-width: 860px) 176px, (max-width: 1300px) 30vw, 320px",
+      sizes: index === 0 ? "320px" : "auto, 320px",
       loading,
       fetchPriority,
     })}</span>`;

@@ -1115,14 +1115,14 @@ function renderCategoryPreviews() {
         source.srcset = responsiveSources
           .map((candidate) => `${withAssetRoot(candidate.src)} ${candidate.width}w`)
           .join(", ");
-        source.sizes = "(max-width: 860px) 176px, (max-width: 1300px) 30vw, 320px";
+        source.sizes = index === 0 ? "320px" : "auto, 320px";
         picture.append(source);
       }
       const image = document.createElement("img");
       image.alt = "";
       image.loading = index === 0 ? "eager" : "lazy";
       image.decoding = "async";
-      image.sizes = "(max-width: 860px) 176px, (max-width: 1300px) 30vw, 320px";
+      image.sizes = index === 0 ? "320px" : "auto, 320px";
       if (photo.width && photo.height) {
         image.width = photo.width;
         image.height = photo.height;
@@ -1133,6 +1133,21 @@ function renderCategoryPreviews() {
       preview.append(print);
     });
   });
+  if ("ResizeObserver" in window) {
+    const covers = document.querySelectorAll("[data-category-preview] .category-portal-print");
+    if (covers.length) {
+      const observer = new ResizeObserver(entries => {
+        for (const { target, contentRect } of entries) {
+          if (!contentRect.width) continue;
+          const sizes = `${Math.ceil(contentRect.width)}px`;
+          for (const image of target.querySelectorAll("source[sizes], img[sizes]")) {
+            if (image.sizes !== sizes) image.sizes = sizes;
+          }
+        }
+      });
+      covers.forEach(cover => observer.observe(cover));
+    }
+  }
   setupHomeCoverShuffle();
 }
 

@@ -6377,6 +6377,9 @@ body[data-page="home"] .category-portal-preview,
 body[data-page="home"] .category-portal-travel .category-portal-preview,
 body[data-page="home"] .category-portal-events .category-portal-preview,
 body[data-page="home"] .category-portal-sports .category-portal-preview {
+  container-type: size;
+  align-self: stretch;
+  min-width: 0;
   grid-column: 1;
   grid-row: 2;
   min-height: 150px;
@@ -6392,10 +6395,6 @@ body[data-page="home"] .category-portal-projects .category-portal-copy {
   grid-column: 1;
   grid-row: 3;
   align-self: end;
-}
-
-body[data-page="home"] .category-portal-projects .category-portal-print {
-  width: min(88%, 310px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
 }
 
 .project-portal-document {
@@ -6472,8 +6471,10 @@ body[data-page="home"] .category-portal-print {
   left: 50%;
   display: block;
   z-index: calc(var(--portal-index) + 1);
-  --cover-max-height: min(28vh, 235px);
-  width: min(90%, 320px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
+  /* Fit within this tile's photo area, with room for the stack to fan out. */
+  --cover-max-width: 78cqw;
+  --cover-max-height: 74cqh;
+  width: min(var(--cover-max-width), calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
   --cover-rest: translate(-50%, -50%) rotate(calc((var(--portal-index) - 1) * 3deg));
   --cover-fan: var(--cover-rest);
   transform: var(--cover-rest);
@@ -6504,12 +6505,13 @@ body[data-page="home"] .category-portal-travel .category-portal-print[data-cover
 }
 
 body[data-page="home"] .category-portal-events .category-portal-print {
-  width: min(82%, 310px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
+  --cover-max-width: 72cqw;
   --cover-rest: translate(calc(-50% + (var(--portal-index) - 1) * 24px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 2deg));
 }
 
 body[data-page="home"] .category-portal-sports .category-portal-print {
-  width: min(96%, 310px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
+  --cover-max-width: 84cqw;
+  --cover-max-height: 80cqh;
 }
 
 body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="0"] {
@@ -6674,8 +6676,8 @@ body[data-page="home"] .category-portal-copy p {
   body[data-page="home"] .category-portal-events .category-portal-print,
   body[data-page="home"] .category-portal-sports .category-portal-print,
   body[data-page="home"] .category-portal-projects .category-portal-print {
-    --cover-max-height: 132px;
-    width: min(88%, 166px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
+    --cover-max-width: 82cqw;
+    --cover-max-height: 76cqh;
     top: 50%;
     left: 44%;
   }
@@ -6697,10 +6699,6 @@ body[data-page="home"] .category-portal-copy p {
   body[data-page="home"] .category-portal[data-cover-motion="sweep"] .category-portal-print[data-cover-slot] {
     --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -8px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * -4deg));
     --cover-clearance: translate(-86%, -82%) rotate(-9deg);
-  }
-
-  body[data-page="home"] .category-portal-sports .category-portal-print {
-    width: min(94%, 176px, calc(var(--cover-max-height) * var(--cover-aspect, 1.5)));
   }
 
   body[data-page="home"] .category-portal-print img,
@@ -6761,10 +6759,6 @@ body[data-page="home"] .category-portal-copy p {
 
   body[data-page="home"] .category-portal-copy p {
     display: none;
-  }
-
-  body[data-page="home"] .category-portal-print {
-    --cover-max-height: 100px;
   }
 }
 
