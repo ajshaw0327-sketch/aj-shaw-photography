@@ -2994,7 +2994,7 @@ body[data-page="sports"] .portfolio-label h1 {
   width: min(880px, calc(100vw - 48px));
   max-height: calc(100dvh - 48px);
   padding: 13px;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid #0f2e23;
   border-radius: 4px;
   opacity: 0;
@@ -3002,29 +3002,15 @@ body[data-page="sports"] .portfolio-label h1 {
   box-shadow:
     10px 12px 0 var(--gold),
     0 28px 80px rgba(0, 0, 0, 0.32);
-  transform: translateY(12px) scale(0.975) rotate(-0.3deg);
+  transform: translateY(12px) scale(0.975);
   transition:
     opacity 180ms ease,
     transform 220ms var(--ease);
 }
 
-.lightbox-frame::before {
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  width: 88px;
-  height: 18px;
-  content: "";
-  opacity: 0.76;
-  background: rgba(220, 202, 157, 0.82);
-  box-shadow: inset 0 0 0 1px rgba(118, 91, 59, 0.16);
-  pointer-events: none;
-  transform: translateX(-50%) rotate(-1.2deg);
-}
-
 .lightbox.is-open .lightbox-frame {
   opacity: 1;
-  transform: translateY(0) scale(1) rotate(-0.3deg);
+  transform: none;
 }
 
 .lightbox-frame-portrait {
@@ -7871,4 +7857,97 @@ html:not([data-theme="dark"]) .gallery-film-canister {
   .gallery-film-active::after {
     inset-inline: 2px;
   }
+}
+
+/* Reserve space for both control rows. Only the photo stage shrinks to fit. */
+.lightbox-frame {
+  display: flex;
+  flex-direction: column;
+  overscroll-behavior: none;
+}
+
+.lightbox-topline,
+.lightbox-caption {
+  flex: none;
+}
+
+.lightbox-frame,
+.lightbox-frame-portrait {
+  --lightbox-photo-height: max(0px, calc(100dvh - 162px));
+  width: min(1440px, calc(100vw - 48px),
+    max(460px, calc(var(--lightbox-photo-height) * var(--lightbox-aspect, 1.5) + 28px)));
+}
+
+.lightbox-image {
+  position: relative;
+  flex: 0 1 auto;
+  width: 100%;
+  aspect-ratio: var(--lightbox-aspect, 1.5);
+  min-height: 0;
+  max-height: var(--lightbox-photo-height);
+  padding: 0;
+  touch-action: none;
+  cursor: zoom-in;
+}
+
+.lightbox-image.is-zoomed { cursor: grab; }
+.lightbox-image.is-zoomed:active { cursor: grabbing; }
+
+.lightbox-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  box-shadow: none;
+  user-select: none;
+}
+
+.lightbox-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lightbox-topline .lightbox-zoom button {
+  min-width: 44px;
+  padding: 0 5px;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+
+.lightbox-zoom button[aria-disabled="true"] { opacity: 0.5; }
+
+@media (max-width: 640px) {
+  .lightbox { padding: 6px; }
+
+  .lightbox-frame,
+  .lightbox-frame-portrait {
+    --lightbox-photo-height: max(0px, calc(100dvh - 126px));
+    width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+    padding: 6px;
+  }
+
+  .lightbox-topline i { display: none; }
+  .lightbox-topline b {
+    margin-left: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .lightbox-caption {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 6px 0 0;
+  }
+
+  .lightbox-caption > div {
+    grid-column: auto;
+    grid-row: auto;
+    min-width: 0;
+  }
+
+  .lightbox-caption h2 { font-size: 1.15rem; }
+  .lightbox-caption button { padding-inline: 6px; }
+
 }

@@ -468,7 +468,7 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /lightboxSwapTimer/);
   assert.match(script, /function lightboxSourceFor/);
   assert.match(script, /function preloadAdjacentLightboxPhotos/);
-  assert.match(script, /await preloadLightboxSource\(photo\)/);
+  assert.match(script, /await preloadLightboxSource\(photo, \{ source: source\.src \}\)/);
   assert.match(script, /previewImage\?\.currentSrc/);
   assert.match(script, /element\.inert = true/);
   assert.doesNotMatch(script, /positionNavigationMarker|nav-proximity/);

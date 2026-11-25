@@ -61,6 +61,12 @@ const subsectionLayoutFrames = new WeakMap();
 const previewScrollPositions = new WeakMap();
 const subsectionsById = new Map();
 const lightboxImageCache = new Map();
+const lightboxZoom = { scale: 1, x: 0, y: 0 };
+let displayedLightboxPhoto = null;
+let lightboxZoomRequest = 0;
+let lightboxZoomControls;
+let lightboxGesture = null;
+const lightboxPointers = new Map();
 const subsectionPhotos = new WeakMap();
 const previewElements = new WeakMap();
 const previewKeyActions = new WeakMap();
@@ -305,6 +311,10 @@ function normalizePhoto(photo, category, detail, index = 0) {
       ? {
           ...photo.responsive,
           webp: (photo.responsive.webp || []).map((source) => ({
+            ...source,
+            src: withAssetRoot(source.src),
+          })),
+          detail: (photo.responsive.detail || []).map((source) => ({
             ...source,
             src: withAssetRoot(source.src),
           })),
@@ -2305,9 +2315,10 @@ function openLightbox(photos, index, trigger) {
   const previewImage = trigger?.querySelector("img");
   const previewSource = previewImage?.naturalWidth ? previewImage?.currentSrc || previewImage?.src : "";
   if (!previewSource) lightboxPhoto?.removeAttribute("src");
+  lightbox.hidden = false;
+  resetLightboxZoom();
   updateLightbox({ previewSource, opening: true, imageToken: ++lightboxImageToken });
   if (photos[index]?.category === "featured") triggerCameraFlash();
-  lightbox.hidden = false;
   if (!lightboxInertElements.length) {
     lightboxInertElements = [
       ...document.querySelectorAll("body > header, body > main, body > footer, body > dialog"),
@@ -2335,6 +2346,7 @@ function closeLightbox() {
   window.clearTimeout(lightboxCloseTimer);
   lightboxCloseTimer = window.setTimeout(() => {
     lightbox.hidden = true;
+    resetLightboxZoom();
     unlockLightboxScroll();
     lightboxInertElements.forEach((element) => {
       element.inert = false;
@@ -2366,16 +2378,169 @@ function moveLightbox(direction) {
   }, reducedMotion.matches ? 0 : 45);
 }
 
-function lightboxSourceFor(photo) {
-  const sources = [...(photo.responsive?.webp || [])].sort((left, right) => left.width - right.width);
-  if (!sources.length) return photo.src;
-  const requestedWidth = Math.min(1600, Math.max(960, Math.round(window.innerWidth * Math.min(window.devicePixelRatio || 1, 1.5))));
-  return (sources.find((source) => source.width >= requestedWidth) || sources.at(-1)).src;
+function sizeLightboxFor(photo) {
+  const ratio = photo.width && photo.height ? photo.width / photo.height : 1.5;
+  lightboxFrame.style.setProperty("--lightbox-aspect", ratio);
 }
 
-function preloadLightboxSource(photo) {
-  if (!photo) return Promise.resolve("");
-  const source = lightboxSourceFor(photo);
+function resetLightboxZoom() {
+  lightboxZoomRequest += 1;
+  displayedLightboxPhoto = null;
+  lightboxGesture = null;
+  lightboxPointers.clear();
+  Object.assign(lightboxZoom, { scale: 1, x: 0, y: 0 });
+  renderLightboxZoom();
+}
+
+function renderLightboxZoom() {
+  if (!lightboxZoomControls) return;
+  const { scale, x, y } = lightboxZoom;
+  lightboxPhoto.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  lightboxImageContainer.classList.toggle("is-zoomed", scale > 1);
+  // Keep the focused control in the dialog's tab order at either end of the range.
+  const { out, fit, in: zoomIn } = lightboxZoomControls;
+  out.setAttribute("aria-disabled", String(!displayedLightboxPhoto || scale <= 1));
+  zoomIn.setAttribute("aria-disabled", String(!displayedLightboxPhoto || scale >= 4));
+  fit.textContent = scale === 1 ? "Fit" : `${Math.round(scale * 100)}%`;
+}
+
+function setLightboxZoom(scale, anchorX = 0, anchorY = 0, moveX = 0, moveY = 0) {
+  if (!displayedLightboxPhoto || displayedLightboxPhoto.photo !== openPhotographs[openIndex]) return;
+  const next = Math.min(4, Math.max(1, scale));
+  const change = next / lightboxZoom.scale;
+  const { width, height } = lightboxFitSize(displayedLightboxPhoto.photo);
+  const maxX = Math.max(0, (width * next - lightboxImageContainer.clientWidth) / 2);
+  const maxY = Math.max(0, (height * next - lightboxImageContainer.clientHeight) / 2);
+  lightboxZoom.x = Math.max(-maxX, Math.min(maxX, anchorX + (lightboxZoom.x - anchorX) * change + moveX));
+  lightboxZoom.y = Math.max(-maxY, Math.min(maxY, anchorY + (lightboxZoom.y - anchorY) * change + moveY));
+  lightboxZoom.scale = next;
+  renderLightboxZoom();
+}
+
+async function upgradeLightboxZoom() {
+  const displayed = displayedLightboxPhoto;
+  if (!displayed || lightboxCloseTimer ||
+      displayed.photo !== openPhotographs[openIndex]) return;
+  const source = lightboxSourceFor(displayed.photo, { scale: lightboxZoom.scale });
+  if (source.width <= displayed.width) return;
+  const request = ++lightboxZoomRequest;
+  const url = await preloadLightboxSource(displayed.photo, { source: source.src });
+  if (!url || request !== lightboxZoomRequest || displayed !== displayedLightboxPhoto ||
+      displayed.photo !== openPhotographs[openIndex] || lightboxCloseTimer) return;
+  displayed.width = url === displayed.photo.src ? displayed.photo.width || source.width : source.width;
+  lightboxPhoto.src = url;
+}
+
+function lightboxPointerGeometry() {
+  const [first, second] = lightboxPointers.values();
+  if (!first) return null;
+  if (!second) return { x: first.clientX, y: first.clientY, distance: 0 };
+  return {
+    x: (first.clientX + second.clientX) / 2,
+    y: (first.clientY + second.clientY) / 2,
+    distance: Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY),
+  };
+}
+
+function setupLightboxZoom() {
+  const stage = lightboxImageContainer;
+  if (!stage || !lightboxPhoto || !closeButton) return;
+  const toolbar = document.createElement("div");
+  toolbar.className = "lightbox-zoom";
+  toolbar.setAttribute("role", "group");
+  toolbar.setAttribute("aria-label", "Photo zoom");
+  lightboxZoomControls = {};
+  for (const [action, label, text] of [
+    ["out", "Zoom out", "−"], ["fit", "Fit photo to screen", "Fit"], ["in", "Zoom in", "+"],
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = text;
+    button.setAttribute("aria-label", label);
+    button.addEventListener("click", () => {
+      if (button.getAttribute("aria-disabled") === "true") return;
+      setLightboxZoom(action === "fit" ? 1 : lightboxZoom.scale * (action === "in" ? 1.5 : 1 / 1.5));
+      if (action !== "fit") void upgradeLightboxZoom();
+    });
+    toolbar.append(button);
+    lightboxZoomControls[action] = button;
+  }
+  closeButton.before(toolbar);
+  lightboxPhoto.draggable = false;
+  stage.addEventListener("pointerdown", event => {
+    if (event.button !== 0 || !displayedLightboxPhoto || lightboxPointers.size >= 2) return;
+    stage.setPointerCapture(event.pointerId);
+    lightboxPointers.set(event.pointerId, event);
+    lightboxGesture = lightboxPointerGeometry();
+  });
+  stage.addEventListener("pointermove", event => {
+    if (!lightboxPointers.has(event.pointerId) || !lightboxGesture) return;
+    lightboxPointers.set(event.pointerId, event);
+    const previous = lightboxGesture;
+    const next = lightboxPointerGeometry();
+    const rect = stage.getBoundingClientRect();
+    setLightboxZoom(
+      lightboxZoom.scale * (previous.distance > 0 ? next.distance / previous.distance : 1),
+      previous.x - rect.left - rect.width / 2,
+      previous.y - rect.top - rect.height / 2,
+      next.x - previous.x,
+      next.y - previous.y,
+    );
+    lightboxGesture = next;
+  });
+  const finishPointer = event => {
+    if (!lightboxPointers.delete(event.pointerId)) return;
+    lightboxGesture = lightboxPointerGeometry();
+    void upgradeLightboxZoom();
+  };
+  stage.addEventListener("pointerup", finishPointer);
+  stage.addEventListener("pointercancel", finishPointer);
+  stage.addEventListener("lostpointercapture", finishPointer);
+  stage.addEventListener("dblclick", event => {
+    const rect = stage.getBoundingClientRect();
+    setLightboxZoom(lightboxZoom.scale > 1 ? 1 : 2,
+      event.clientX - rect.left - rect.width / 2, event.clientY - rect.top - rect.height / 2);
+    void upgradeLightboxZoom();
+  });
+  window.addEventListener("resize", () => {
+    if (lightbox.hidden || !displayedLightboxPhoto) return;
+    setLightboxZoom(lightboxZoom.scale);
+    void upgradeLightboxZoom();
+  });
+  renderLightboxZoom();
+}
+
+function lightboxFitSize(photo, incoming = false) {
+  const ratio = photo.width && photo.height ? photo.width / photo.height : 1.5;
+  const mobile = window.innerWidth <= 640;
+  const availableWidth = incoming
+    ? Math.min(1410, window.innerWidth - (mobile ? 28 : 78))
+    : lightboxImageContainer.clientWidth;
+  const availableHeight = incoming
+    ? Number.parseFloat(getComputedStyle(lightboxImageContainer).maxHeight)
+    : lightboxImageContainer.clientHeight;
+  const width = Math.min(availableWidth || window.innerWidth, (availableHeight || window.innerHeight) * ratio);
+  return { width, height: width / ratio };
+}
+
+function lightboxNetworkLimit(connection) {
+  if (connection?.saveData || ["slow-2g", "2g"].includes(connection?.effectiveType)) return 480;
+  if (connection?.effectiveType === "3g") return 960;
+  return Infinity;
+}
+
+function lightboxSourceFor(photo, { scale = 1, prefetch = false } = {}) {
+  const sources = [...(photo.responsive?.webp || []), ...(photo.responsive?.detail || [])];
+  if (!sources.length) return { src: photo.src, width: photo.width || 0 };
+  const { width } = lightboxFitSize(photo, true);
+  const limit = prefetch ? 960 : scale > 1 ? Infinity : lightboxNetworkLimit(navigator.connection);
+  const requestedWidth = Math.ceil(width * (window.devicePixelRatio || 1) * scale);
+  const eligible = sources.filter(source => source.width <= limit);
+  const candidates = eligible.length ? eligible : sources.slice(0, 1);
+  return candidates.find(source => source.width >= requestedWidth) || candidates.at(-1);
+}
+
+function preloadLightboxSource(photo, { prefetch = false, source = lightboxSourceFor(photo, { prefetch }).src } = {}) {
   if (lightboxImageCache.has(source)) {
     const entry = lightboxImageCache.get(source);
     lightboxImageCache.delete(source);
@@ -2414,15 +2579,15 @@ function cancelAdjacentLightboxPreload() {
 
 function preloadAdjacentLightboxPhotos() {
   cancelAdjacentLightboxPreload();
-  if (openPhotographs.length < 2 || navigator.connection?.saveData) return;
+  if (openPhotographs.length < 2 || Number.isFinite(lightboxNetworkLimit(navigator.connection))) return;
   const imageToken = lightboxImageToken;
   const previous = openPhotographs[(openIndex - 1 + openPhotographs.length) % openPhotographs.length];
   const next = openPhotographs[(openIndex + 1) % openPhotographs.length];
   const preload = () => {
     lightboxPreloadTask = 0;
     if (lightbox.hidden || imageToken !== lightboxImageToken) return;
-    void preloadLightboxSource(previous);
-    void preloadLightboxSource(next);
+    void preloadLightboxSource(previous, { prefetch: true });
+    void preloadLightboxSource(next, { prefetch: true });
   };
   if ("requestIdleCallback" in window) lightboxPreloadTask = window.requestIdleCallback(preload, { timeout: 500 });
   else lightboxPreloadTask = window.setTimeout(preload, 80);
@@ -2452,15 +2617,27 @@ async function updateLightbox({ previewSource = "", opening = false, imageToken 
     lightboxPhoto.onload = updatePortraitState;
     if (source) lightboxPhoto.src = source;
   };
-  if (opening) showPhoto(previewSource);
-  const displaySource = await preloadLightboxSource(photo);
+  if (opening) {
+    sizeLightboxFor(photo);
+    showPhoto(previewSource);
+  }
+  // Measure the incoming photo against the stage's available layout, including its aspect ratio.
+  const source = lightboxSourceFor(photo);
+  const displaySource = await preloadLightboxSource(photo, { source: source.src });
   if (imageToken !== lightboxImageToken) return;
   if (!displaySource) {
     lightboxDetail.textContent = "This photograph could not load. Try Previous or Next.";
     return;
   }
   // Commit the image, caption, frame number and orientation together after decoding.
+  resetLightboxZoom();
+  displayedLightboxPhoto = {
+    photo,
+    width: displaySource === photo.src ? photo.width || source.width : source.width,
+  };
+  sizeLightboxFor(photo);
   showPhoto(displaySource);
+  renderLightboxZoom();
   if (lightboxPhoto.complete && lightboxPhoto.naturalWidth) {
     queueMicrotask(updatePortraitState);
   }
@@ -2469,6 +2646,7 @@ async function updateLightbox({ previewSource = "", opening = false, imageToken 
 
 function setupLightbox() {
   if (!lightbox || !lightboxFrame) return;
+  setupLightboxZoom();
   closeButton?.addEventListener("click", closeLightbox);
   backdropButton?.addEventListener("click", closeLightbox);
   document.querySelector("#lightbox-previous")?.addEventListener("click", () => moveLightbox(-1));
@@ -2479,6 +2657,12 @@ function setupLightbox() {
     if (event.key === "Escape") {
       event.preventDefault();
       closeLightbox();
+    } else if (event.key === "+" || event.key === "=" || event.key === "-" || event.key === "0") {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      event.preventDefault();
+      const scale = event.key === "0" ? 1 : lightboxZoom.scale * (event.key === "-" ? 1 / 1.5 : 1.5);
+      setLightboxZoom(scale);
+      void upgradeLightboxZoom();
     } else if (event.key === "ArrowLeft") {
       event.preventDefault();
       moveLightbox(-1);

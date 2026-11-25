@@ -312,14 +312,19 @@ function allManifestPhotos(manifest) {
   return [...unique.values()];
 }
 
-async function optimizePhoto(photo, inputDirectory = photosDirectory, outputPrefix = "photos/responsive") {
+async function optimizePhoto(photo, inputDirectory = photosDirectory, outputPrefix = "photos/responsive", includeDetail = false) {
   if (!photo.width || !photo.height || path.extname(photo.id).toLowerCase() === ".gif") return;
   const input = await readFile(path.join(inputDirectory, photo.id));
-  const revision = contentRevision(input);
+  // Include color processing in the revision so existing browser caches refresh.
+  const revision = contentRevision(Buffer.concat([Buffer.from("srgb-icc-v1"), input]));
   const widths = [...new Set([320, 480, 960, Math.min(1600, photo.width)])]
     .filter((width) => width <= photo.width).sort((left, right) => left - right);
-  photo.responsive = { webp: [] };
-  for (const width of widths) {
+  const detailWidths = includeDetail
+    ? [...new Set([2400, 3600].map(width => Math.min(width, photo.width)))].filter(width => width > 1600)
+    : [];
+  photo.responsive = { webp: [], ...(detailWidths.length ? { detail: [] } : {}) };
+  for (const width of [...widths, ...detailWidths]) {
+    const isDetail = width > 1600;
     const relativeOutput = path.posix.join(
       outputPrefix,
       `${photo.id}-${revision}-${width}.webp`,
@@ -329,9 +334,11 @@ async function optimizePhoto(photo, inputDirectory = photosDirectory, outputPref
     const result = await sharp(input)
       .rotate()
       .resize({ width, withoutEnlargement: true })
-      .webp({ quality: 80, effort: 4 })
+      .withIccProfile("srgb")
+      .webp({ quality: isDetail ? 86 : 80, effort: 4 })
       .toFile(absoluteOutput);
-    photo.responsive.webp.push({ src: encodeUrlPath(relativeOutput), width: result.width });
+    const variants = isDetail ? photo.responsive.detail : photo.responsive.webp;
+    variants.push({ src: encodeUrlPath(relativeOutput), width: result.width });
   }
 }
 
@@ -342,7 +349,7 @@ async function optimizeManifestPhotographs(manifest, concurrency = 4) {
     while (nextIndex < photographs.length) {
       const photo = photographs[nextIndex];
       nextIndex += 1;
-      await optimizePhoto(photo);
+      await optimizePhoto(photo, photosDirectory, "photos/responsive", !photo.id.startsWith("covers/"));
     }
   });
   await Promise.all(workers);

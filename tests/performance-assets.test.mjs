@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import sharp from "sharp";
 import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
@@ -65,10 +66,41 @@ test("responsive images have small previews, full useful widths and source-speci
     assert.equal(variants[0].width, Math.min(320, photo.width));
     assert.equal(variants.at(-1).width, Math.min(1600, photo.width));
     assert.equal(new Set(variants.map(({ width }) => width)).size, variants.length);
-    for (const variant of variants) {
+    const detail = photo.responsive.detail || [];
+    assert.deepEqual(detail.map(({ width }) => width),
+      [...new Set([2400, 3600].map(width => Math.min(width, photo.width)))].filter(width => width > 1600));
+    for (const variant of [...variants, ...detail]) {
       assert.match(variant.src, /\.[a-zA-Z0-9]+-[a-f0-9]{12}-\d+\.webp$/);
       assert.ok((await stat(path.join(root, decodeURIComponent(variant.src)))).size > 0);
     }
+  }
+});
+
+test("generated photographs embed the sRGB ICC profile", async () => {
+  const reference = await sharp({ create: {
+    width: 1, height: 1, channels: 3, background: "white",
+  } }).withIccProfile("srgb").webp().toBuffer();
+  const expectedProfile = (await sharp(reference).metadata()).icc;
+  assert.ok(expectedProfile?.length, "the reference must contain an ICC profile");
+  const manifest = JSON.parse(await readFile(path.join(root, "gallery-manifest.json"), "utf8"));
+  const photos = [
+    ...manifest.featured,
+    ...Object.values(manifest.covers).flat(),
+    ...Object.values(manifest.galleries).flatMap(groups => groups.flatMap(group => group.photos)),
+  ];
+  const variants = new Set(photos.flatMap(photo => [...(photo.responsive?.webp || []), ...(photo.responsive?.detail || [])].map(variant => variant.src)));
+  assert.ok(variants.size > 0);
+  for (const src of variants) {
+    const metadata = await sharp(path.join(root, decodeURIComponent(src))).metadata();
+    assert.deepEqual(metadata.icc, expectedProfile, src);
+  }
+  const about = await readFile(path.join(root, "about.html"), "utf8");
+  const portraitSources = [...about.matchAll(/(?:srcset|src)="([^"]*images\/responsive\/[^"]*)"/g)]
+    .flatMap(([, value]) => value.split(",").map(candidate => candidate.trim().split(/\s+/)[0]));
+  assert.ok(portraitSources.length > 0);
+  for (const src of portraitSources) {
+    const metadata = await sharp(path.join(root, decodeURIComponent(src))).metadata();
+    assert.deepEqual(metadata.icc, expectedProfile, src);
   }
 });
 

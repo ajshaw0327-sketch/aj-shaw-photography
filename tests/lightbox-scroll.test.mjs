@@ -35,3 +35,34 @@ test("reopening a locked viewer preserves the original position and closing rest
   assert.equal(root.style.scrollBehavior, "smooth");
   assert.equal(properties.size, 0);
 });
+
+test("the lightbox adapts to screen density, connection and intentional zoom", () => {
+  const sourceHelpers = script.slice(script.indexOf("function lightboxFitSize("),
+    script.indexOf("function preloadLightboxSource("));
+  const photo = { width: 6000, height: 4000, src: "original",
+    responsive: {
+      webp: [320, 480, 960, 1600].map(width => ({ width, src: String(width) })),
+      detail: [2400, 3600].map(width => ({ width, src: String(width) })),
+    },
+  };
+  const context = {
+    lightboxImageContainer: { clientWidth: 1250 },
+    getComputedStyle: () => ({ maxHeight: "840px" }),
+    window: { innerWidth: 1440, innerHeight: 1000, devicePixelRatio: 2 },
+    navigator: { connection: { effectiveType: "4g" } },
+    photo,
+  };
+  runInNewContext(sourceHelpers, context);
+  const selected = (options = "{}") => runInNewContext(`lightboxSourceFor(photo, ${options}).width`, context);
+  assert.equal(selected(), 3600);
+  assert.equal(selected("{ prefetch: true }"), 960);
+  context.navigator.connection.effectiveType = "3g";
+  assert.equal(selected(), 960);
+  context.navigator.connection.saveData = true;
+  assert.equal(selected(), 480);
+  context.window.innerWidth = 378;
+  assert.equal(selected("{ scale: 4 }"), 3600);
+  context.navigator.connection = undefined;
+  assert.equal(selected(), 960);
+  assert.equal(runInNewContext('lightboxSourceFor({ src: "original" }).src', context), "original");
+});
