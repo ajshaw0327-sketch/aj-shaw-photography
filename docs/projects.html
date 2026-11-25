@@ -104,7 +104,7 @@
       <div class="brand-lockup"><a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">AJ Shaw <span>Photography</span></a><span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span></div>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation menu, current section: Projects"><span class="menu-current-page" data-menu-current-page>Projects</span><span class="menu-toggle-symbol" aria-hidden="true">＋</span></button>
       <nav id="primary-navigation" aria-label="Primary navigation">
-        <a href="./" data-route="home">Home</a><a href="events.html" data-route="events">Events</a><a href="travel.html" data-route="travel" aria-label="Portrait &amp; Travel"><span class="nav-stacked-label">Portrait &amp; <br />Travel</span></a><a href="sports.html" data-route="sports">Sports</a><a href="projects.html" data-route="projects">Projects</a><a href="about.html" data-route="about">About / Contact</a>
+        <a href="./" data-route="home">Home</a><a href="events.html" data-route="events">Events</a><a href="portraits.html" data-route="portraits">Portraits</a><a href="sports.html" data-route="sports">Sports</a><a href="projects.html" data-route="projects">Projects</a><a href="about.html" data-route="about">About / Contact</a>
         <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><span class="theme-toggle-track" aria-hidden="true"><span>☀</span><i></i><span>☾</span></span><span class="theme-toggle-label" data-theme-label>Light</span></button>
       </nav>
     </header>
@@ -112,15 +112,35 @@
     <main class="page page-projects">
       <section class="projects-gallery" aria-labelledby="projects-title">
         <header class="projects-heading">
-          <div><h1 id="projects-title">Projects</h1></div>
+          <div><h1 id="projects-title">Projects</h1><a class="project-link" href="#travel">Travel photography <span aria-hidden="true">↓</span></a></div>
         </header>
         <div class="project-features"><!-- BUILD:PROJECTS:ITEMS --></div>
+      </section>
+      <section class="gallery-section project-travel" id="travel" data-gallery-view="travel" aria-labelledby="travel-title">
+        <details class="project-travel-disclosure" open>
+          <summary><h2 id="travel-title">Travel</h2><span class="project-travel-indicator" aria-hidden="true"></span></summary>
+          <div class="gallery-groups" id="photo-grid"><!-- BUILD:PROJECTS:TRAVEL --></div>
+          <p class="gallery-status" id="gallery-status">Loading photos…</p>
+        </details>
       </section>
     </main>
 
     <footer class="site-footer">
       <p>© 2026 AJ Shaw Photography</p><span class="character-sprite character-footer" data-character="flowers" role="button" tabindex="0" aria-label="Play Snoopy flower animation"></span><a href="https://www.instagram.com/aj.phots_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram, @aj.phots_">Instagram @aj.phots_ ↗</a><a href="./">Home ↑</a>
     </footer>
+    <div class="lightbox" id="lightbox" hidden aria-label="Photo viewer backdrop">
+      <button class="lightbox-backdrop" type="button" aria-label="Close photo viewer" tabindex="-1"></button>
+      <div class="lightbox-frame" role="dialog" aria-modal="true" aria-labelledby="lightbox-title" aria-describedby="lightbox-detail">
+        <div class="lightbox-topline"><span><i aria-hidden="true"></i><b id="lightbox-count">Frame 1 / 1</b></span><button type="button" id="lightbox-close">Close ×</button></div>
+        <div class="lightbox-image"><img id="lightbox-photo" alt="" /></div>
+        <div class="lightbox-caption">
+          <button type="button" id="lightbox-previous" aria-label="View previous photograph">← Previous</button>
+          <div><h2 id="lightbox-title"></h2><p id="lightbox-detail"></p></div>
+          <button type="button" id="lightbox-next" aria-label="View next photograph">Next →</button>
+        </div>
+      </div>
+    </div>
+    <script src="gallery-manifest.js?v=20260808a"></script>
     <script src="app.js?v=20260813a"></script>
   </body>
 </html>

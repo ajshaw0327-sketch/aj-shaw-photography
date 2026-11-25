@@ -32,12 +32,12 @@ test("shared production assets compile and cost less to download", async () => {
 test("pages load only their own gallery data and revisioned shared assets", async () => {
   const full = JSON.parse(await readFile(path.join(root, "gallery-manifest.json"), "utf8"));
   const fullBytes = (await stat(path.join(root, "gallery-manifest.js"))).size;
-  for (const page of ["home", "events", "travel", "sports", "projects", "about"]) {
+  for (const page of ["home", "events", "portraits", "sports", "projects", "about"]) {
     const html = await readFile(path.join(root, page === "home" ? "index.html" : `${page}.html`), "utf8");
     for (const asset of ["app.js", "style.css"]) {
       assert.ok(html.includes(`${asset}?v=${revision(await readFile(path.join(root, asset)))}`));
     }
-    if (["projects", "about"].includes(page)) {
+    if (page === "about") {
       assert.doesNotMatch(html, /src="gallery-manifest/);
       continue;
     }
@@ -46,12 +46,14 @@ test("pages load only their own gallery data and revisioned shared assets", asyn
     const data = JSON.parse(script.slice(script.indexOf("=") + 1).trim().replace(/;$/, ""));
     assert.ok(Buffer.byteLength(script) < fullBytes);
     if (page === "home") {
-      assert.deepEqual(data.covers, full.covers);
+      const { travel, ...homeCovers } = full.covers;
+      assert.deepEqual(data.covers, homeCovers);
       assert.deepEqual(data.featured, full.featured);
       assert.deepEqual(data.galleries, {});
     } else {
-      assert.deepEqual(Object.keys(data.galleries), [page]);
-      assert.deepEqual(data.galleries[page], full.galleries[page]);
+      const category = page === "projects" ? "travel" : page;
+      assert.deepEqual(Object.keys(data.galleries), [category]);
+      assert.deepEqual(data.galleries[category], full.galleries[category]);
       assert.deepEqual(data.covers, {});
     }
   }

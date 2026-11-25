@@ -22,6 +22,7 @@ const docsDirectory = path.join(repositoryRoot, "docs");
 const photosDirectory = path.join(repositoryRoot, "photos");
 const projectsDirectory = path.join(repositoryRoot, "projects");
 const configurationPath = path.join(repositoryRoot, "portfolio.config.json");
+const homeGalleryCategories = ["events", "portraits", "sports"];
 const runFile = promisify(execFile);
 
 if (
@@ -263,6 +264,7 @@ function renderPhotoCard(photo, localIndex, globalIndex, category) {
 function renderGalleryMarkup(category, groups) {
   let photoOffset = 0;
   const usedIds = new Set();
+  const headingTag = category === "travel" ? "h3" : "h2";
   return groups.map((group, groupIndex) => {
     const subsectionId = gallerySubsectionId(group, usedIds);
     const expanded = false;
@@ -270,11 +272,11 @@ function renderGalleryMarkup(category, groups) {
       renderPhotoCard(photo, localIndex, photoOffset + localIndex, category),
     ).join("");
     photoOffset += group.photos.length;
-    const archiveCode = { events: "EVT", travel: "TRV", sports: "SPT" }[category] || "AJ";
+    const archiveCode = { events: "EVT", portraits: "POR", travel: "TRV", sports: "SPT" }[category] || "AJ";
     return `
       <article class="gallery-subsection${expanded ? " is-expanded" : ""}" id="${subsectionId}" data-default-expanded="${expanded}" style="--subsection-delay: ${Math.min(groupIndex, 6) * 60}ms">
         <div class="gallery-subsection-header">
-          <div class="gallery-heading-meta"><h2 class="gallery-subsection-heading" id="${subsectionId}-title"><span class="gallery-subsection-title"><span class="gallery-subsection-name">${escapeHtml(group.title)}</span></span></h2><span class="gallery-subsection-count">${group.photos.length} ${group.photos.length === 1 ? "frame" : "frames"}</span></div>
+          <div class="gallery-heading-meta"><${headingTag} class="gallery-subsection-heading" id="${subsectionId}-title"><span class="gallery-subsection-title"><span class="gallery-subsection-name">${escapeHtml(group.title)}</span></span></${headingTag}><span class="gallery-subsection-count">${group.photos.length} ${group.photos.length === 1 ? "frame" : "frames"}</span></div>
           <div class="gallery-view-tools"><div class="gallery-view-selector" data-view="strip" role="group" aria-label="Album view for ${escapeHtml(group.title)}">
             <button class="gallery-film-canister" type="button" aria-label="Hide photos" aria-expanded="true" aria-controls="${subsectionId}-panel" title="Hide photos"><svg class="gallery-film-outline" viewBox="0 0 44 62" aria-hidden="true" focusable="false"><path class="gallery-film-rim" d="M17 5V0h10v5"/><rect class="gallery-film-body" x="6" y="8" width="32" height="46" rx="1"/><rect class="gallery-film-rim" x="2" y="5" width="40" height="6" rx="3"/><rect class="gallery-film-rim" x="2" y="51" width="40" height="6" rx="3"/></svg><i class="gallery-film-spindle" aria-hidden="true"></i></button><div class="gallery-film-window"><div class="gallery-film-strip"><span class="gallery-film-active" aria-hidden="true"></span>
             <button class="gallery-reopen" type="button" aria-label="Open photos" aria-controls="${subsectionId}-panel" aria-hidden="true" inert><span class="gallery-view-label">Open</span></button>
@@ -361,7 +363,7 @@ async function injectBuiltMarkup(manifest) {
   const indexPath = path.join(outputDirectory, "index.html");
   let indexHtml = await readFile(indexPath, "utf8");
   indexHtml = replaceMarker(indexHtml, "HOME:IDENTITY", "Massachusetts");
-  for (const category of ["events", "travel", "sports"]) {
+  for (const category of homeGalleryCategories) {
     indexHtml = replaceMarker(
       indexHtml,
       `HOME:COVERS:${category}`,
@@ -371,7 +373,7 @@ async function injectBuiltMarkup(manifest) {
   indexHtml = replaceMarker(indexHtml, "HOME:PROJECTS:PREVIEW", renderProjectPortalPreview(projects));
   await writeFile(indexPath, indexHtml);
 
-  for (const category of ["events", "travel", "sports"]) {
+  for (const category of homeGalleryCategories) {
     const pagePath = path.join(outputDirectory, `${category}.html`);
     let html = await readFile(pagePath, "utf8");
     html = replaceMarker(
@@ -385,6 +387,7 @@ async function injectBuiltMarkup(manifest) {
   const projectsPath = path.join(outputDirectory, "projects.html");
   let projectsHtml = await readFile(projectsPath, "utf8");
   projectsHtml = replaceMarker(projectsHtml, "PROJECTS:ITEMS", renderProjectsMarkup(projects));
+  projectsHtml = replaceMarker(projectsHtml, "PROJECTS:TRAVEL", renderGalleryMarkup("travel", manifest.galleries.travel));
   await writeFile(projectsPath, projectsHtml);
 
   const aboutPath = path.join(outputDirectory, "about.html");
@@ -448,18 +451,21 @@ async function optimizePageAssets(manifest) {
     await writeFile(assetPath, code);
     sharedAssets[filename] = `${filename}?v=${contentRevision(code)}`;
   }
-  for (const page of ["home", "events", "travel", "sports", "projects", "about"]) {
+  for (const page of ["home", ...homeGalleryCategories, "projects", "about"]) {
     const filename = page === "home" ? "index.html" : `${page}.html`;
     const pagePath = path.join(outputDirectory, filename);
     let html = await readFile(pagePath, "utf8");
     if (html.includes('src="gallery-manifest.js')) {
       // Static markup remains the fallback. Enhancement data only needs this page's photos.
+      const category = page === "projects" ? "travel" : page;
       const data = {
         version: manifest.version,
         identityLine: manifest.identityLine,
         featured: page === "home" ? manifest.featured : [],
-        covers: page === "home" ? manifest.covers : {},
-        galleries: page === "home" ? {} : { [page]: manifest.galleries[page] },
+        covers: page === "home"
+          ? Object.fromEntries(homeGalleryCategories.map((category) => [category, manifest.covers[category]]))
+          : {},
+        galleries: page === "home" ? {} : { [category]: manifest.galleries[category] },
       };
       const script = `window.__AJ_PHOTO_MANIFEST__ = ${JSON.stringify(data)};\n`;
       const scriptName = `gallery-manifest-${page}.js`;

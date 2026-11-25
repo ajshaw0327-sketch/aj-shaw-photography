@@ -11,7 +11,7 @@ export const SUPPORTED_IMAGE_EXTENSIONS = new Set([
   ".avif",
 ]);
 
-const categories = ["events", "travel", "sports"];
+const galleryCategories = ["events", "portraits", "travel", "sports"];
 const naturalSort = new Intl.Collator("en", {
   numeric: true,
   sensitivity: "base",
@@ -326,7 +326,7 @@ export async function scanPhotoLibrary(photosRoot, configuration = {}) {
   );
 
   const galleries = {};
-  for (const category of categories) {
+  for (const category of galleryCategories) {
     const categoryRoot = path.join(photosRoot, category);
     const groups = await imageGroupsInside(categoryRoot);
     galleries[category] = await Promise.all(
@@ -355,7 +355,7 @@ export async function scanPhotoLibrary(photosRoot, configuration = {}) {
   }
 
   const covers = {};
-  for (const category of categories) {
+  for (const category of galleryCategories) {
     const coverFiles = await imageFilesDirectlyInside(
       path.join(photosRoot, "covers", category),
     );

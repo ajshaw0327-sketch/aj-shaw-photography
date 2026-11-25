@@ -11,6 +11,7 @@ const characterAnimations = {
   woodstock: { gif: "woodstock-spin.gif", duration: 2000 },
 };
 const archiveCodes = {
+  portraits: "POR",
   travel: "TRV",
   events: "EVT",
   sports: "SPT",
@@ -27,7 +28,7 @@ const routeLoadingThresholdMs = routeTitleHoldMs + 400;
 const routeTransitionMeta = {
   home: { code: "HOME / 00", title: "Home" },
   events: { code: "EVT / 01", title: "Events" },
-  travel: { code: "TRV / 02", title: "Portrait & Travel" },
+  portraits: { code: "POR / 02", title: "Portraits" },
   sports: { code: "SPT / 03", title: "Sports" },
   projects: { code: "PRJ / 04", title: "Projects" },
   about: { code: "ABOUT / 05", title: "About" },
@@ -87,6 +88,8 @@ const grid = document.querySelector("#photo-grid");
 const status = document.querySelector("#gallery-status");
 const heroMosaic = document.querySelector("#hero-mosaic");
 const gallerySection = document.querySelector("[data-gallery-view]");
+const galleryCategory = gallerySection?.dataset.galleryView || currentPage;
+const travelDisclosure = document.querySelector(".project-travel-disclosure");
 const lightbox = document.querySelector("#lightbox");
 const lightboxFrame = lightbox?.querySelector(".lightbox-frame");
 const lightboxImageContainer = lightbox?.querySelector(".lightbox-image");
@@ -326,7 +329,7 @@ function normalizePhoto(photo, category, detail, index = 0) {
 function applyManifest(manifest) {
   archiveManifest = manifest;
   const featured = Array.isArray(manifest?.featured) ? manifest.featured : [];
-  const rawGroups = manifest?.galleries?.[currentPage];
+  const rawGroups = manifest?.galleries?.[galleryCategory];
 
   if (currentPage === "home") {
     photographs = featured.map((photo, index) =>
@@ -346,8 +349,8 @@ function applyManifest(manifest) {
           photos: group.photos.map((photo, index) =>
             normalizePhoto(
               photo,
-              currentPage,
-              `${group.title} · ${currentPage} journal`,
+              galleryCategory,
+              `${group.title} · ${galleryCategory} journal`,
               index,
             ),
           ),
@@ -986,7 +989,7 @@ function homeSequencePhotos() {
   const sequence = [...photographs];
   const usedSources = new Set(sequence.map((photo) => photo.src));
 
-  ["events", "travel", "sports"].forEach((category) => {
+  ["events", "portraits", "sports"].forEach((category) => {
     const groups = archiveManifest?.galleries?.[category];
     if (!Array.isArray(groups)) return;
     for (const group of groups) {
@@ -1152,15 +1155,24 @@ function renderCategoryPreviews() {
 }
 
 function setupHomeCoverShuffle() {
-  document.querySelectorAll("[data-category-preview]").forEach((portal) => {
+  const motions = {
+    events: { duration: 1100, exchange: 0.48, distance: 0.73, curve: 0.07, turn: 2, stagger: 0.035 },
+    portraits: { duration: 1240, exchange: 0.54, distance: 0.61, curve: 0.15, turn: 5, stagger: 0.045 },
+    sports: { duration: 960, exchange: 0.46, distance: 0.65, curve: -0.06, turn: 1, stagger: 0.015 },
+    projects: { duration: 1120, exchange: 0.5, distance: 0.59, curve: 0.1, turn: 4, stagger: 0.028 },
+  };
+  const fanEasing = "cubic-bezier(0.26, 0.48, 0.32, 1)";
+  const departureEasing = "cubic-bezier(0.28, 0.18, 0.5, 1)";
+  const settleEasing = "cubic-bezier(0.32, 0, 0.3, 1)";
+  document.querySelectorAll("[data-category-preview], .category-portal-projects").forEach((portal) => {
     if (portal.dataset.coverShuffleReady) return;
     const prints = [...portal.querySelectorAll(".category-portal-print")];
     if (prints.length < 2) return;
     portal.dataset.coverShuffleReady = "true";
     portal.classList.add("has-cover-shuffle");
-    const duration = { events: 1640, travel: 1600, sports: 1560 }[portal.dataset.categoryPreview] || 1600;
-    const departureEasing = portal.dataset.categoryPreview === "events"
-      ? "cubic-bezier(0.22, 0.18, 0.24, 1)" : "cubic-bezier(0.32, 0, 0.4, 1)";
+    const profile = motions[portal.dataset.categoryPreview] || motions.projects;
+    const { duration, exchange, stagger } = profile;
+    const timelineExchange = (1 + exchange) / 2;
     let pointerInside = false;
     let keyboardFocused = false;
     let preparing = false;
@@ -1181,17 +1193,18 @@ function setupHomeCoverShuffle() {
     };
 
     const directionalClearance = (direction, currentPose) => {
-      const rect = prints.at(-1).getBoundingClientRect();
+      const front = prints.at(-1);
       const variation = {
-        fan: { distance: 0.66, curve: 0.02, turn: 3 },
-        lift: { distance: 0.56, curve: -0.1, turn: -5 },
-        sweep: { distance: 0.72, curve: 0.1, turn: 6 },
+        fan: { distance: 0, curve: 0, turn: 0 },
+        lift: { distance: -0.05, curve: -0.05, turn: -1 },
+        sweep: { distance: 0.05, curve: 0.04, turn: 1 },
       }[previousMotion];
-      const distance = (direction.x ? rect.width : rect.height) * variation.distance;
-      const cross = distance * variation.curve;
+      const distance = (direction.x ? front.offsetWidth : front.offsetHeight) *
+        (profile.distance + variation.distance);
+      const cross = distance * (profile.curve + variation.curve);
       const x = direction.x * distance - direction.y * cross;
       const y = direction.y * distance + direction.x * cross;
-      const turn = (direction.x || -direction.y) * variation.turn;
+      const turn = (direction.x || -direction.y) * (profile.turn + variation.turn);
       // Translate in page axes from the exact current pose, including early exits.
       return `translate(${x}px, ${y}px) ${currentPose} rotate(${turn}deg)`;
     };
@@ -1227,9 +1240,8 @@ function setupHomeCoverShuffle() {
       if (commit) rotateStack();
       // Apply the final CSS slots while transitions are still disabled, before
       // removing the animation's fill. This keeps the handoff at the same pose.
-      prints.forEach((print) => { void getComputedStyle(print).transform; });
       motion.animations.forEach((animation) => animation.cancel());
-      prints.forEach((print) => { void getComputedStyle(print).transform; });
+      void getComputedStyle(prints[0]).transform;
       motion.styles.forEach(({ print, transition }) => { print.style.transition = transition; });
       sequence = null;
       if (pointerInside || keyboardFocused) void fanOut();
@@ -1249,12 +1261,12 @@ function setupHomeCoverShuffle() {
             const pose = motion.poses[index];
             const departing = pose.clearance && index === prints.length - 1;
             const frames = track % 2 === 0 ? [
-              { transform: currentPoses[index], offset: 0, easing: departing ? departureEasing : "cubic-bezier(0.4, 0, 0.2, 1)" },
-              ...(departing ? [{ transform: departure || pose.clearance, offset: 0.44, easing: "cubic-bezier(0.4, 0, 0.2, 1)" }] : []),
+              { transform: currentPoses[index], offset: 0, easing: departing ? departureEasing : settleEasing },
+              ...(departing ? [{ transform: departure || pose.clearance, offset: exchange, easing: settleEasing }] : []),
               { transform: pose.compact, offset: 1 },
             ] : [
               { zIndex: index + 1, offset: 0, easing: "steps(1, end)" },
-              { zIndex: pose.nextSlot + 1, offset: 0.44 },
+              { zIndex: pose.nextSlot + 1, offset: exchange },
               { zIndex: pose.nextSlot + 1, offset: 1 },
             ];
             animation.effect.setKeyframes(frames);
@@ -1282,41 +1294,48 @@ function setupHomeCoverShuffle() {
         return;
       }
       preparing = true;
+      const ready = await Promise.all(prints.map(async (print) => {
+        const image = print.querySelector("img");
+        if (!image) return false;
+        image.loading = "eager";
+        try { await image.decode(); } catch { return false; }
+        return image.naturalWidth > 0;
+      }));
+      preparing = false;
+      if (!ready.every(Boolean) || (!pointerInside && !keyboardFocused)) return;
       try {
-        const ready = await Promise.all(prints.map(async (print) => {
-          const image = print.querySelector("img");
-          if (!image) return false;
-          image.loading = "eager";
-          try { await image.decode(); } catch { return false; }
-          return image.naturalWidth > 0;
-        }));
-        if (!ready.every(Boolean) || (!pointerInside && !keyboardFocused)) return;
         chooseMotion();
         const styles = prints.map((print) => ({ print, transition: print.style.transition }));
         const starts = prints.map((print) => getComputedStyle(print).transform);
         prints.forEach((print) => { print.style.transition = "none"; });
         const poses = prints.map((print, index) => {
-          const spread = getComputedStyle(print).getPropertyValue("--cover-fan");
-          const clearance = getComputedStyle(print).getPropertyValue("--cover-clearance").trim();
-          const nextSlot = (index + 1) % prints.length;
-          // Sample the next compact slot before paint; retain the current stack until it settles.
-          writeSlot(print, nextSlot);
-          const compact = getComputedStyle(print).getPropertyValue("--cover-rest");
-          writeSlot(print, index);
-          return { spread, compact, nextSlot, clearance };
+          const style = getComputedStyle(print);
+          return {
+            spread: style.getPropertyValue("--cover-fan"),
+            clearance: style.getPropertyValue("--cover-clearance").trim(),
+            nextSlot: (index + 1) % prints.length,
+          };
         });
+        // Batch slot writes and pose reads so the browser resolves style once for each stack.
+        prints.forEach((print, index) => writeSlot(print, poses[index].nextSlot));
+        prints.forEach((print, index) => {
+          poses[index].compact = getComputedStyle(print).getPropertyValue("--cover-rest");
+        });
+        prints.forEach(writeSlot);
         const motion = { animations: [], styles, poses, held: false, returning: false };
         sequence = motion;
         motion.animations = prints.flatMap((print, index) => {
           const pose = poses[index];
           const departing = pose.clearance && index === prints.length - 1;
+          const follows = (prints.length - 1 - index) * stagger;
           const frames = [
-            { transform: starts[index], offset: 0, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" },
-            { transform: pose.spread, offset: 0.5, easing: departing ? departureEasing : "cubic-bezier(0.4, 0, 0.2, 1)" },
+            { transform: starts[index], offset: 0, easing: fanEasing },
+            ...(follows ? [{ transform: starts[index], offset: follows, easing: fanEasing }] : []),
+            { transform: pose.spread, offset: 0.5, easing: departing ? departureEasing : settleEasing },
           ];
           if (departing) {
             // Lift the front print outward before tucking it behind the stack.
-            frames.push({ transform: pose.clearance, offset: 0.72, easing: "cubic-bezier(0.4, 0, 0.2, 1)" });
+            frames.push({ transform: pose.clearance, offset: timelineExchange, easing: settleEasing });
           }
           frames.push({ transform: pose.compact, offset: 1 });
           const timing = {
@@ -1329,7 +1348,7 @@ function setupHomeCoverShuffle() {
           // values independently creates ties and flashes the wrong print on top.
           const layers = [
             { zIndex: index + 1, offset: 0, easing: "steps(1, end)" },
-            { zIndex: pose.nextSlot + 1, offset: 0.72 },
+            { zIndex: pose.nextSlot + 1, offset: timelineExchange },
             { zIndex: pose.nextSlot + 1, offset: 1 },
           ];
           return [print.animate(frames, timing), print.animate(layers, timing)];
@@ -1348,8 +1367,6 @@ function setupHomeCoverShuffle() {
         }
       } catch {
         if (sequence) cleanUp(sequence, false);
-      } finally {
-        preparing = false;
       }
     };
 
@@ -1942,6 +1959,8 @@ function setupSubsectionPreview(subsection) {
 function openHashedSubsection({ scroll = false, animate = true } = {}) {
   const target = subsectionsById.get(decodedLocationHash());
   if (!target) return false;
+  const disclosure = target.closest("details");
+  if (disclosure) disclosure.open = true;
   setSubsectionExpanded(target, true, { animate, updateHash: false });
   if (scroll) {
     requestAnimationFrame(() => {
@@ -1959,6 +1978,7 @@ function scrollToStaticPageAnchor() {
   if (!hash || subsectionsById.has(hash)) return false;
   const target = document.getElementById(hash);
   if (!target) return false;
+  if (hash === "travel" && travelDisclosure) travelDisclosure.open = true;
   requestAnimationFrame(() => {
     target.scrollIntoView({ block: "start", behavior: "auto" });
   });
@@ -2069,7 +2089,7 @@ function renderGallery() {
       subsectionsById.set(subsection.id, subsection);
       if (subsection.id === requestedHash) requestedSubsection = subsection;
 
-      const heading = document.createElement("h2");
+      const heading = document.createElement(currentPage === "projects" ? "h3" : "h2");
       heading.className = "gallery-subsection-heading";
       const toggle = document.createElement("button");
       toggle.type = "button";
@@ -2081,7 +2101,7 @@ function renderGallery() {
       const stamp = document.createElement("span");
       stamp.className = "gallery-subsection-stamp";
       stamp.setAttribute("aria-hidden", "true");
-      stamp.textContent = `${archiveCodes[currentPage] || "AJ"}-${String(groupIndex + 1).padStart(2, "0")}`;
+      stamp.textContent = `${archiveCodes[galleryCategory] || "AJ"}-${String(groupIndex + 1).padStart(2, "0")}`;
       const title = document.createElement("span");
       title.className = "gallery-subsection-name";
       title.textContent = group.title;
@@ -2700,6 +2720,9 @@ function setupLightbox() {
 }
 
 cleanLegacyContactRedirect();
+document.querySelector('.projects-heading a[href="#travel"]')?.addEventListener("click", () => {
+  if (travelDisclosure) travelDisclosure.open = true;
+});
 setupThemeToggle();
 setupCharacterAnimations();
 setupLightbox();

@@ -43,20 +43,23 @@ Add photographs under the category where they should appear:
 photos/
 ├── events/
 │   └── 02-belmont-stem-night-2026/
-├── travel/                            # Portrait & Travel on the website
+├── portraits/
 │   ├── 01-Sam-g-senior-portraits/
 │   ├── 03 AJ-Shaw-Senior-Portraits-1/
 │   └── 04 AJ-Shaw-Senior-Portraits-2/
+├── travel/                            # Travel section on the Projects page
+│   ├── 07-providence/
+│   └── 08-puerto-rico/
 ├── sports/
 │   └── 01-5:28:26-ultimate-game/
 ├── covers/                            # Curated homepage photo stacks
 │   ├── events/
-│   ├── travel/
+│   ├── portraits/
 │   └── sports/
 └── featured/
 ```
 
-- Create a folder inside `events`, `travel`, or `sports` to make an album.
+- Create a folder inside `events`, `portraits`, `travel`, or `sports` to make an album.
   Nested folders containing photos also become albums.
 - Put photos directly in an album folder. Images directly inside a category
   appear in a **Selected Frames** album.
@@ -97,7 +100,7 @@ on phones.
 
 ### Homepage photo stacks
 
-Copy the chosen photographs into `photos/covers/events`, `photos/covers/travel`,
+Copy the chosen photographs into `photos/covers/events`, `photos/covers/portraits`,
 or `photos/covers/sports`. Edit the `covers` entries in `portfolio.config.json`
 to set their initial order. Paths are relative to `photos/` and must match the
 actual filenames, including capitalization:
@@ -106,7 +109,7 @@ actual filenames, including capitalization:
 {
   "covers": {
     "events": ["covers/events/01-laying-of-hands-2.jpg"],
-    "travel": ["covers/travel/01-Elissa.JPG"],
+    "portraits": ["covers/portraits/DSCF6461.jpg"],
     "sports": ["covers/sports/01-tall-pass.jpg"]
   }
 }
@@ -171,7 +174,7 @@ The deployment workflow installs FFmpeg automatically.
 | --- | --- |
 | Homepage headings and links | `docs/index.html` |
 | About text, camera mention, and contact details | `docs/about.html` |
-| Gallery page headings | `docs/events.html`, `docs/travel.html`, `docs/sports.html` |
+| Gallery page headings | `docs/events.html`, `docs/portraits.html`, `docs/sports.html`, `docs/projects.html` |
 | Projects page layout | `docs/projects.html` |
 | Colors, typography, frames, and responsive layout | `docs/style.css` |
 | Film controls, photo viewer, menu, and animations | `docs/app.js` |

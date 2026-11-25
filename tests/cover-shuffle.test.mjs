@@ -7,12 +7,12 @@ const script = await readFile(new URL("../docs/app.js", import.meta.url), "utf8"
 const setup = script.slice(script.indexOf("function setupHomeCoverShuffle("), script.indexOf("function setupLivingHero("));
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-function fixture(random = Math.random, reduced = false) {
+function fixture(random = Math.random, reduced = false, category = "events") {
   const listeners = new Map();
   const animations = [];
   const prints = Array.from({ length: 3 }, (_, index) => ({
     dataset: {}, style: { transition: "", setProperty() {} }, pose: `partial-${index}`,
-    getBoundingClientRect: () => ({ width: 300, height: 200 }),
+    offsetWidth: 300, offsetHeight: 200,
     querySelector: () => ({ decode: async () => {}, naturalWidth: 960 }),
     animate(frames, timing) {
       let finish;
@@ -29,7 +29,7 @@ function fixture(random = Math.random, reduced = false) {
       return animation;
     },
   }));
-  const portal = { dataset: { categoryPreview: "events" }, classList: { add() {} },
+  const portal = { dataset: { categoryPreview: category }, classList: { add() {} },
     getBoundingClientRect: () => ({ left: 100, top: 100, width: 600, height: 300 }),
     querySelectorAll: () => prints, addEventListener: (name, callback) => listeners.set(name, callback),
   };
@@ -52,10 +52,10 @@ test("leaving an unfinished fan immediately shuffles from its current pose witho
   animations.forEach((animation, track) => {
     assert.equal(animation.plays, 1, "return begins in the pointerleave handler");
     assert.equal(animation.currentTime, 0);
-    assert.equal(animation.timing.duration, 820);
+    assert.equal(animation.timing.duration, 550);
     assert.equal(animation.timing.iterations, 1);
     if (track % 2 === 0) assert.equal(animation.frames[0].transform, prints[Math.floor(track / 2)].pose);
-    else assert.equal(animation.frames[1].offset, 0.44, "all layers exchange together");
+    else assert.equal(animation.frames[1].offset, 0.48, "all layers exchange together");
   });
   animations.forEach(animation => animation.finish());
   await flush();
@@ -130,8 +130,8 @@ test("each exit edge steers every variation from the current pose, for short and
         assert.equal(returning.frames[0].transform, front.pose);
         assert.equal(returning.currentTime, 0);
         assert.equal(returning.plays, 1);
-        assert.equal(returning.timing.duration, 820);
-        assert.ok(tracks.filter((_, index) => index % 2).every(animation => animation.frames[1].offset === 0.44));
+        assert.equal(returning.timing.duration, 550);
+        assert.ok(tracks.filter((_, index) => index % 2).every(animation => animation.frames[1].offset === 0.48));
         variations.add(portal.dataset.coverMotion);
         tracks.forEach(animation => animation.finish());
         await flush();
@@ -149,6 +149,25 @@ test("keyboard departures retain the archive's original route without pointer co
   animations.forEach(animation => animation.finish());
   await flush();
   listeners.get("blur")();
-  assert.ok(animations.every(animation => animation.currentTime === 820));
+  assert.ok(animations.every(animation => animation.currentTime === 550));
   assert.equal(animations[4].frames[2].transform, "clearance");
+});
+
+test("each archive has its own timing, stagger and return arc", async () => {
+  const profiles = [];
+  for (const category of ["events", "portraits", "sports", "projects"]) {
+    const { listeners, animations } = fixture(() => 0.5, false, category);
+    listeners.get("pointerenter")({ pointerType: "mouse" });
+    await flush();
+    const followOffset = animations[0].frames[1].offset;
+    listeners.get("pointerleave")({ clientX: 701, clientY: 250 });
+    const { duration } = animations[4].timing;
+    const { transform, offset } = animations[4].frames[1];
+    assert.match(transform, /^translate\([\d.]+px, [-\d.]+px\)/);
+    assert.ok(animations.filter((_, i) => i % 2).every(track => track.frames[1].offset === offset));
+    profiles.push({ duration, followOffset, transform, offset });
+  }
+  for (const key of ["duration", "followOffset", "transform", "offset"]) {
+    assert.equal(new Set(profiles.map(profile => profile[key])).size, profiles.length);
+  }
 });

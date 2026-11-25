@@ -3354,6 +3354,62 @@ body.lightbox-open {
   gap: clamp(74px, 10vw, 160px);
 }
 
+.project-travel {
+  padding-top: 0;
+  scroll-margin-top: 104px;
+}
+
+.project-travel-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--forest);
+  color: var(--forest);
+  list-style: none;
+  cursor: pointer;
+}
+
+.project-travel-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.project-travel-disclosure[open] > summary {
+  margin: 0 0 clamp(24px, 4vw, 48px);
+}
+
+.project-travel-disclosure h2 {
+  margin: 0;
+  color: inherit;
+  font-size: clamp(3rem, 6vw, 6rem);
+  line-height: 0.95;
+}
+
+.project-travel-indicator {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.project-travel-indicator::before {
+  content: "+";
+}
+
+.project-travel-disclosure[open] .project-travel-indicator::before {
+  content: "−";
+}
+
+html[data-theme="dark"] .project-travel-disclosure > summary {
+  color: var(--night-cream);
+  border-color: var(--night-border);
+}
+
 .project-feature {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(290px, 0.55fr);
@@ -4885,7 +4941,7 @@ html[data-theme="dark"] .projects-empty p {
     transform 230ms var(--ease);
 }
 
-.category-portal-travel {
+.category-portal-portraits {
   grid-column: 8 / 13;
   background: #ece3c8;
 }
@@ -4931,11 +4987,11 @@ html[data-theme="dark"] .projects-empty p {
   transition: transform 270ms var(--ease);
 }
 
-.category-portal-travel .category-portal-preview img:nth-child(1) {
+.category-portal-portraits .category-portal-preview img:nth-child(1) {
   transform: translate(-58%, -48%) rotate(-5deg);
 }
 
-.category-portal-travel .category-portal-preview img:nth-child(2) {
+.category-portal-portraits .category-portal-preview img:nth-child(2) {
   transform: translate(-42%, -52%) rotate(4deg);
 }
 
@@ -5035,13 +5091,13 @@ html[data-theme="dark"] .projects-empty p {
   transform: translate(4px, -3px);
 }
 
-.category-portal-travel:hover .category-portal-preview img:nth-child(1),
-.category-portal-travel:focus-visible .category-portal-preview img:nth-child(1) {
+.category-portal-portraits:hover .category-portal-preview img:nth-child(1),
+.category-portal-portraits:focus-visible .category-portal-preview img:nth-child(1) {
   transform: translate(-72%, -50%) rotate(-8deg);
 }
 
-.category-portal-travel:hover .category-portal-preview img:nth-child(2),
-.category-portal-travel:focus-visible .category-portal-preview img:nth-child(2) {
+.category-portal-portraits:hover .category-portal-preview img:nth-child(2),
+.category-portal-portraits:focus-visible .category-portal-preview img:nth-child(2) {
   transform: translate(-30%, -54%) rotate(7deg);
 }
 
@@ -5850,13 +5906,13 @@ html[data-theme="dark"] .projects-empty p {
     margin-top: 45px;
   }
 
-  .category-portal-travel,
+  .category-portal-portraits,
   .category-portal-events,
   .category-portal-sports {
     grid-column: 1 / 13;
   }
 
-  .category-portal-travel,
+  .category-portal-portraits,
   .category-portal-events {
     grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1.2fr);
     align-items: center;
@@ -5867,12 +5923,12 @@ html[data-theme="dark"] .projects-empty p {
     margin: 0;
   }
 
-  .category-portal-travel .category-portal-preview,
+  .category-portal-portraits .category-portal-preview,
   .category-portal-events .category-portal-preview {
     grid-column: 2;
   }
 
-  .category-portal-travel .category-portal-copy,
+  .category-portal-portraits .category-portal-copy,
   .category-portal-events .category-portal-copy {
     grid-column: 1;
     grid-row: 2;
@@ -6034,7 +6090,7 @@ html[data-theme="dark"] .projects-empty p {
   }
 
   .category-portal,
-  .category-portal-travel,
+  .category-portal-portraits,
   .category-portal-events,
   .category-portal-sports {
     display: grid;
@@ -6044,7 +6100,7 @@ html[data-theme="dark"] .projects-empty p {
   }
 
   .category-portal-preview,
-  .category-portal-travel .category-portal-preview,
+  .category-portal-portraits .category-portal-preview,
   .category-portal-events .category-portal-preview,
   .category-portal-sports .category-portal-preview {
     grid-column: 1;
@@ -6053,7 +6109,7 @@ html[data-theme="dark"] .projects-empty p {
   }
 
   .category-portal-copy,
-  .category-portal-travel .category-portal-copy,
+  .category-portal-portraits .category-portal-copy,
   .category-portal-events .category-portal-copy {
     grid-column: 1;
     grid-row: 3;
@@ -6327,13 +6383,18 @@ body[data-page="home"] .category-portal {
   padding: clamp(12px, 1.7vw, 24px);
 }
 
-body[data-page="home"] .category-portal-travel,
+body[data-page="home"] .category-portal:is(:hover, :focus-visible) {
+  /* Keep the pointer boundary and photo stack still while the prints move. */
+  transform: none;
+}
+
+body[data-page="home"] .category-portal-portraits,
 body[data-page="home"] .category-portal-events {
   grid-template-columns: 1fr;
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-body[data-page="home"] .category-portal-travel {
+body[data-page="home"] .category-portal-portraits {
   grid-column: 8 / 13;
   grid-row: 1;
   margin-top: clamp(5px, 1vh, 10px);
@@ -6374,7 +6435,7 @@ body[data-page="home"] .category-portal-code {
 }
 
 body[data-page="home"] .category-portal-preview,
-body[data-page="home"] .category-portal-travel .category-portal-preview,
+body[data-page="home"] .category-portal-portraits .category-portal-preview,
 body[data-page="home"] .category-portal-events .category-portal-preview,
 body[data-page="home"] .category-portal-sports .category-portal-preview {
   container-type: size;
@@ -6409,8 +6470,9 @@ body[data-page="home"] .category-portal-projects .category-portal-copy {
   color: var(--forest);
   background: var(--paper-light);
   box-shadow: 7px 9px 0 rgba(25, 63, 49, 0.22);
-  transform: translate(-50%, -50%) rotate(-2deg);
-  transition: transform 270ms var(--ease), box-shadow 210ms var(--ease);
+  transform: translate(-50%, -50%) perspective(520px) rotateY(0deg) rotateZ(-2deg);
+  transform-origin: 22% 75%;
+  transition: transform 420ms cubic-bezier(0.2, 0.65, 0.32, 1), box-shadow 420ms var(--ease);
 }
 
 .project-portal-document::before,
@@ -6461,8 +6523,8 @@ body[data-page="home"] .category-portal-projects .category-portal-copy {
 
 body[data-page="home"] .category-portal-projects:hover .project-portal-document,
 body[data-page="home"] .category-portal-projects:focus-visible .project-portal-document {
-  box-shadow: 11px 13px 0 rgba(25, 63, 49, 0.25);
-  transform: translate(-50%, -53%) rotate(1deg);
+  box-shadow: 9px 12px 0 rgba(25, 63, 49, 0.25);
+  transform: translate(-48%, -54%) perspective(520px) rotateY(-12deg) rotateZ(1deg);
 }
 
 body[data-page="home"] .category-portal-print {
@@ -6496,11 +6558,11 @@ body[data-page="home"] .category-portal-print img {
   transform: none !important;
 }
 
-body[data-page="home"] .category-portal-travel .category-portal-print[data-cover-slot="0"] {
+body[data-page="home"] .category-portal-portraits .category-portal-print[data-cover-slot="0"] {
   --cover-rest: translate(-60%, -48%) rotate(-5deg);
 }
 
-body[data-page="home"] .category-portal-travel .category-portal-print[data-cover-slot="1"] {
+body[data-page="home"] .category-portal-portraits .category-portal-print[data-cover-slot="1"] {
   --cover-rest: translate(-42%, -52%) rotate(4deg);
 }
 
@@ -6514,64 +6576,76 @@ body[data-page="home"] .category-portal-sports .category-portal-print {
   --cover-max-height: 80cqh;
 }
 
-body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="0"] {
-  --cover-fan: translate(-72%, -51%) rotate(-7deg);
+body[data-page="home"] .category-portal {
+  --fan-spread: 1;
 }
 
-body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="1"] {
-  --cover-fan: translate(-30%, -53%) rotate(6deg);
+body[data-page="home"] .category-portal[data-cover-motion="lift"] {
+  --fan-spread: 0.84;
 }
 
-body[data-page="home"] .category-portal .category-portal-print[data-cover-slot="2"] {
-  --cover-fan: translate(-49%, -45%) rotate(1deg);
+body[data-page="home"] .category-portal[data-cover-motion="sweep"] {
+  --fan-spread: 1.13;
 }
 
-body[data-page="home"] .category-portal.category-portal-travel .category-portal-print {
-  --cover-clearance: translate(-94%, -57%) rotate(-6deg);
+/* Keep the lead print upright and give the prints behind it more room. */
+body[data-page="home"] .category-portal-events .category-portal-print {
+  --event-spread: calc(clamp(24px, 15cqw, 112px) * min(1.08, var(--fan-spread)));
+  --cover-clearance: translate(29%, -54%) rotate(4deg);
 }
 
-body[data-page="home"] .category-portal.category-portal-travel .category-portal-print[data-cover-slot="2"] {
-  --cover-fan: translate(-64%, -46%) rotate(-3deg);
+body[data-page="home"] .category-portal-events .category-portal-print[data-cover-slot="0"] {
+  --cover-fan: translate(calc(-50% - var(--event-spread) * 1.14), calc(-50% + 2px)) rotate(-4deg);
 }
 
-body[data-page="home"] .category-portal.category-portal-events .category-portal-print {
-  --cover-clearance: translate(44%, -53%) rotate(6deg);
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 42px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * 5deg));
+body[data-page="home"] .category-portal-events .category-portal-print[data-cover-slot="1"] {
+  --cover-fan: translate(calc(-50% + var(--event-spread) * 0.84), calc(-50% + 2px)) rotate(7deg);
 }
 
-body[data-page="home"] .category-portal.category-portal-sports .category-portal-print {
-  --cover-clearance: translate(-138%, -64%) rotate(-6deg);
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -28px), calc(-50% + (var(--portal-index) - 1) * -14px)) rotate(calc((var(--portal-index) - 1) * -5deg));
+body[data-page="home"] .category-portal-events .category-portal-print[data-cover-slot="2"] {
+  --cover-fan: translate(-50%, calc(-50% - 10px)) rotate(1deg);
 }
 
-body[data-page="home"] .category-portal[data-cover-motion="lift"] .category-portal-print[data-cover-slot] {
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 18px), calc(-50% + (var(--portal-index) - 1) * -18px)) rotate(calc((var(--portal-index) - 1) * 4deg));
-  --cover-clearance: translate(-48%, -116%) rotate(9deg);
+/* Portraits: open around the bottom of the stack like prints held in one hand. */
+body[data-page="home"] .category-portal-portraits .category-portal-print {
+  --fan-x: clamp(12px, 9cqw, 44px);
+  --cover-clearance: translate(-93%, -66%) rotate(-11deg);
 }
 
-body[data-page="home"] .category-portal-events[data-cover-motion="lift"] .category-portal-print[data-cover-slot] {
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 20px), calc(-50% + (var(--portal-index) - 1) * -18px)) rotate(calc((var(--portal-index) - 1) * -4deg));
-  --cover-clearance: translate(-56%, -112%) rotate(-10deg);
+body[data-page="home"] .category-portal-portraits .category-portal-print[data-cover-slot="0"] {
+  --cover-fan: translate(calc(-60% - var(--fan-x) * var(--fan-spread)), -44%) rotate(-11deg);
 }
 
-body[data-page="home"] .category-portal-sports[data-cover-motion="lift"] .category-portal-print[data-cover-slot] {
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -18px), calc(-50% + (var(--portal-index) - 1) * -20px)) rotate(calc((var(--portal-index) - 1) * -3deg));
-  --cover-clearance: translate(-60%, -115%) rotate(-8deg);
+body[data-page="home"] .category-portal-portraits .category-portal-print[data-cover-slot="1"] {
+  --cover-fan: translate(calc(-42% + var(--fan-x) * var(--fan-spread)), -46%) rotate(10deg);
 }
 
-body[data-page="home"] .category-portal[data-cover-motion="sweep"] .category-portal-print[data-cover-slot] {
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -22px), calc(-50% + (var(--portal-index) - 1) * 16px)) rotate(calc((var(--portal-index) - 1) * -6deg));
-  --cover-clearance: translate(6%, -58%) rotate(8deg);
+body[data-page="home"] .category-portal-portraits .category-portal-print[data-cover-slot="2"] {
+  --cover-fan: translate(-50%, -56%) rotate(1deg);
 }
 
-body[data-page="home"] .category-portal-events[data-cover-motion="sweep"] .category-portal-print[data-cover-slot] {
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -28px), calc(-50% + (var(--portal-index) - 1) * 12px)) rotate(calc((var(--portal-index) - 1) * -7deg));
-  --cover-clearance: translate(-120%, -64%) rotate(-10deg);
+/* Sports: move the prints away from the center while keeping their tilt. */
+body[data-page="home"] .category-portal-sports .category-portal-print {
+  --fan-x: calc(clamp(8px, 8cqw, 42px) * var(--fan-spread));
+  --fan-y: calc(clamp(6px, 7cqh, 22px) * var(--fan-spread));
+  --cover-clearance: translate(-79%, -101%) rotate(3deg);
 }
 
-body[data-page="home"] .category-portal-sports[data-cover-motion="sweep"] .category-portal-print[data-cover-slot] {
-  --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 22px), calc(-50% + (var(--portal-index) - 1) * 10px)) rotate(calc((var(--portal-index) - 1) * 6deg));
-  --cover-clearance: translate(22%, -60%) rotate(9deg);
+body[data-page="home"] .category-portal-sports .category-portal-print[data-cover-slot="0"] {
+  --cover-fan: translate(calc(-50% - var(--fan-x)), calc(-50% + var(--fan-y))) rotate(-3deg);
+}
+
+body[data-page="home"] .category-portal-sports .category-portal-print[data-cover-slot="1"] {
+  --cover-fan: translate(calc(-50% + var(--fan-x)), calc(-50% + var(--fan-y)));
+}
+
+body[data-page="home"] .category-portal-sports .category-portal-print[data-cover-slot="2"] {
+  --cover-fan: translate(-50%, calc(-50% - var(--fan-y))) rotate(3deg);
+}
+
+body[data-page="home"] .category-portal-projects .category-portal-print {
+  --cover-fan: translate(calc(-50% + var(--portal-index) * 4px), calc(-55% - var(--portal-index) * 9px)) rotate(calc(-4deg + var(--portal-index) * 4deg));
+  --cover-clearance: translate(-44%, -105%) rotate(8deg);
 }
 
 body[data-page="home"] .category-portal:not(.has-cover-shuffle):is(:hover, :focus-visible) .category-portal-print {
@@ -6579,7 +6653,7 @@ body[data-page="home"] .category-portal:not(.has-cover-shuffle):is(:hover, :focu
 }
 
 body[data-page="home"] .category-portal-copy,
-body[data-page="home"] .category-portal-travel .category-portal-copy,
+body[data-page="home"] .category-portal-portraits .category-portal-copy,
 body[data-page="home"] .category-portal-events .category-portal-copy {
   grid-column: 1;
   grid-row: 3;
@@ -6641,7 +6715,7 @@ body[data-page="home"] .category-portal-copy p {
   }
 
   body[data-page="home"] .category-portal,
-  body[data-page="home"] .category-portal-travel,
+  body[data-page="home"] .category-portal-portraits,
   body[data-page="home"] .category-portal-events,
   body[data-page="home"] .category-portal-sports,
   body[data-page="home"] .category-portal-projects {
@@ -6662,7 +6736,7 @@ body[data-page="home"] .category-portal-copy p {
   }
 
   body[data-page="home"] .category-portal-preview,
-  body[data-page="home"] .category-portal-travel .category-portal-preview,
+  body[data-page="home"] .category-portal-portraits .category-portal-preview,
   body[data-page="home"] .category-portal-events .category-portal-preview,
   body[data-page="home"] .category-portal-sports .category-portal-preview,
   body[data-page="home"] .category-portal-projects .category-portal-preview {
@@ -6683,22 +6757,13 @@ body[data-page="home"] .category-portal-copy p {
   }
 
   body[data-page="home"] .category-portal-events .category-portal-print {
+    --event-spread: calc(10cqw * var(--fan-spread));
     --cover-rest: translate(calc(-50% + (var(--portal-index) - 1) * 12px), calc(-50% + (var(--portal-index) - 1) * 6px)) rotate(calc((var(--portal-index) - 1) * 2deg));
+    left: 50%;
   }
 
-  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel, .category-portal-sports) .category-portal-print[data-cover-slot] {
-    --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * 8px), calc(-50% + (var(--portal-index) - 1) * -9px)) rotate(calc((var(--portal-index) - 1) * 3deg));
-    --cover-clearance: translate(-65%, -108%) rotate(-6deg);
-  }
-
-  body[data-page="home"] .category-portal[data-cover-motion="lift"] .category-portal-print[data-cover-slot] {
-    --cover-fan: translate(-50%, calc(-50% + (var(--portal-index) - 1) * -14px)) rotate(calc((var(--portal-index) - 1) * 2deg));
-    --cover-clearance: translate(-52%, -122%) rotate(6deg);
-  }
-
-  body[data-page="home"] .category-portal[data-cover-motion="sweep"] .category-portal-print[data-cover-slot] {
-    --cover-fan: translate(calc(-50% + (var(--portal-index) - 1) * -8px), calc(-50% + (var(--portal-index) - 1) * 8px)) rotate(calc((var(--portal-index) - 1) * -4deg));
-    --cover-clearance: translate(-86%, -82%) rotate(-9deg);
+  body[data-page="home"] .category-portal-portraits .category-portal-print {
+    --fan-x: 5cqw;
   }
 
   body[data-page="home"] .category-portal-print img,
@@ -6709,7 +6774,7 @@ body[data-page="home"] .category-portal-copy p {
   }
 
   body[data-page="home"] .category-portal-copy,
-  body[data-page="home"] .category-portal-travel .category-portal-copy,
+  body[data-page="home"] .category-portal-portraits .category-portal-copy,
   body[data-page="home"] .category-portal-events .category-portal-copy,
   body[data-page="home"] .category-portal-sports .category-portal-copy,
   body[data-page="home"] .category-portal-projects .category-portal-copy {
@@ -6763,7 +6828,8 @@ body[data-page="home"] .category-portal-copy p {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body[data-page="home"] .category-portal-print {
+  body[data-page="home"] .category-portal-print,
+  .project-portal-document {
     transition: none;
   }
 }
@@ -7144,7 +7210,7 @@ html[data-theme="dark"] .category-portal {
   box-shadow: 8px 10px 0 var(--night-shadow);
 }
 
-html[data-theme="dark"] .category-portal-travel {
+html[data-theme="dark"] .category-portal-portraits {
   background: var(--night-panel);
 }
 
@@ -7626,16 +7692,16 @@ html.theme-changing .site-footer {
 
 /* Keep large cover prints clear of the titles during rest and shuffle. */
 body[data-page="home"] .category-portal-grid { grid-template-rows: repeat(2, minmax(350px, 1fr)); }
-body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-preview { min-height: 250px; margin-top: 0; margin-bottom: 18px; }
-body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-print { top: 44%; }
+body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-portraits) .category-portal-preview { min-height: 250px; margin-top: 0; margin-bottom: 18px; }
+body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-portraits) .category-portal-print { top: 44%; }
 @media (max-width: 860px) {
   .gallery-view-tools { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
   .gallery-view-selector { width: min(318px, calc(100vw - 34px)); flex: 0 1 auto; }
   .gallery-view-tools .gallery-subsection-count { align-self: center; }
   .gallery-view-selector button { font-size: 0.75rem; }
   body[data-page="home"] .category-portal-grid { grid-template-rows: none; }
-  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-preview { min-height: 0; margin: 0 8px 0 0; }
-  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-travel) .category-portal-print { top: 50%; }
+  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-portraits) .category-portal-preview { min-height: 0; margin: 0 8px 0 0; }
+  body[data-page="home"] .category-portal:is(.category-portal-events, .category-portal-portraits) .category-portal-print { top: 50%; }
 }
 
 .gallery-heading-meta { display: flex; flex: 1; min-width: 0; align-items: center; flex-wrap: wrap; gap: 10px 18px; }

@@ -17,157 +17,24 @@
         root.dataset.theme = theme;
         root.style.colorScheme = theme;
         document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#142b23" : "#f2eddd");
-        window.__ajThemePreference = { storageKey, theme };
       })();
     </script>
     <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
     <style id="critical-route-colors">
-      :root { --route-panel-top: 72px; color-scheme: light; background: #f2eddd; }
+      :root { color-scheme: light; background: #f2eddd; }
       :root[data-theme="dark"] { color-scheme: dark; background: #142b23; }
-      html, body { min-height: 100%; margin: 0; background-color: #f2eddd; }
+      html, body { min-height: 100%; margin: 0; color: #1c2c25; background-color: #f2eddd; }
       html[data-theme="dark"], html[data-theme="dark"] body { color: #f2ead7; background-color: #142b23; }
-      .route-curtain { position: fixed; top: var(--route-panel-top); right: 0; bottom: 0; left: 0; z-index: 45; display: grid; place-items: center; visibility: hidden; pointer-events: none; color: #faf6e9; border-top: 3px solid #102e24; background: #193f31; transform: translate3d(0, calc(100% + 30px), 0); transition: transform 360ms cubic-bezier(0.24, 0.82, 0.3, 1); }
-      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading, .route-curtain.is-revealing { visibility: visible; }
-      html[data-route-arrival="true"] .route-curtain, html[data-route-loading] .route-curtain, .route-curtain.is-covering, .route-curtain.is-loading { pointer-events: auto; transform: translate3d(0, 0, 0); }
-      .route-curtain.is-revealing { pointer-events: auto; transform: translate3d(0, calc(100% + 30px), 0); }
-      @media (max-width: 520px) { :root { --route-panel-top: calc(64px + env(safe-area-inset-top, 0px)); } }
-      @media (prefers-reduced-motion: reduce) { .route-curtain { transform: none !important; transition: opacity 140ms ease; } .route-curtain.is-revealing { opacity: 0; background: #f2eddd; } }
     </style>
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content="0; url=projects.html#travel" />
+    <link rel="canonical" href="projects.html#travel" />
+    <title>Travel — AJ Shaw Photography</title>
     <script>
-      (() => {
-        try {
-          const transitionKey = "aj-shaw-route-transition-v1";
-          const startedKey = "aj-shaw-route-transition-started-v1";
-          const navigationEntry = window.performance?.getEntriesByType?.("navigation")?.[0];
-          const isHistoryVisit = navigationEntry?.type === "back_forward";
-          if (isHistoryVisit && window.sessionStorage.getItem(transitionKey) !== "1") {
-            window.sessionStorage.setItem(transitionKey, "1");
-            window.sessionStorage.setItem(startedKey, String(Date.now()));
-            document.documentElement.dataset.routeHistory = "true";
-          }
-          if (window.sessionStorage.getItem(transitionKey) === "1") {
-            document.documentElement.dataset.routeArrival = "true";
-            const started = Number(window.sessionStorage.getItem(startedKey));
-            if (started) window.setTimeout(() => {
-              if (document.documentElement.dataset.routeArrival === "true") document.documentElement.dataset.routeLoading = "";
-            }, Math.max(0, 650 - (Date.now() - started)));
-          }
-        } catch {}
-      })();
+      window.location.replace("projects.html" + (window.location.hash || "#travel"));
     </script>
-    <meta name="description" content="Portrait and travel photography by AJ Shaw, collecting people, city light, coastal weather, and places encountered in passing." />
-    <link rel="canonical" href="https://ajshaw0327-sketch.github.io/aj-shaw-photography/travel.html" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://ajshaw0327-sketch.github.io/aj-shaw-photography/travel.html" />
-    <meta property="og:title" content="Portrait & Travel — AJ Shaw Photography" />
-    <meta property="og:description" content="City light, coastal weather, roadside details, and places encountered in passing." />
-    <meta property="og:image" content="https://ajshaw0327-sketch.github.io/aj-shaw-photography/photos/covers/travel/01-providence-light.jpg" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Portrait &amp; Travel — AJ Shaw Photography" />
-    <meta name="twitter:description" content="A field-journal archive of portrait and travel photography by AJ Shaw." />
-    <meta name="twitter:image" content="https://ajshaw0327-sketch.github.io/aj-shaw-photography/photos/covers/travel/01-providence-light.jpg" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"AJ Shaw","jobTitle":"Photographer","url":"https://ajshaw0327-sketch.github.io/aj-shaw-photography/","image":"https://ajshaw0327-sketch.github.io/aj-shaw-photography/aj-portrait.jpg","homeLocation":{"@type":"Place","name":"Massachusetts"},"sameAs":["https://www.instagram.com/aj.phots_/"]}</script>
-    <title>Portrait &amp; Travel — AJ Shaw Photography</title>
-    <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="fonts/playfair-display-variable.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260813a" />
   </head>
-  <body data-page="travel" data-asset-root="./">
-    <div class="route-curtain" id="route-curtain" aria-hidden="true">
-      <div class="route-curtain-panel">
-        <span class="route-curtain-code" data-route-curtain-code>TRV / 02</span>
-        <strong class="route-curtain-title" data-route-curtain-title>Portrait &amp; Travel</strong>
-        <span class="route-curtain-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-        <div class="route-curtain-progress">
-          <span class="route-curtain-status" data-route-curtain-status aria-live="polite">Preparing archive</span>
-          <span class="route-curtain-progress-track" aria-hidden="true"></span>
-        </div>
-      </div>
-    </div>
-    <section class="launch-sequence" id="launch-sequence" hidden aria-labelledby="launch-title">
-      <h1 class="launch-title" id="launch-title" aria-label="AJ Shaw Photography">
-        <span class="launch-name-line"><span data-typewriter-name aria-hidden="true"></span><i class="launch-typewriter-cursor" aria-hidden="true"></i></span>
-        <span class="launch-photography" data-launch-photography aria-hidden="true">Photography</span>
-      </h1>
-      <p class="launch-screenreader-copy" data-intro-announcement aria-live="polite" aria-atomic="true"></p>
-    </section>
-    <script>
-      (() => {
-        const launch = document.querySelector("#launch-sequence");
-        const navigationEntry = window.performance?.getEntriesByType?.("navigation")?.[0];
-        const isReload = navigationEntry?.type === "reload";
-        const arrivingFromSite = document.documentElement.dataset.routeArrival === "true";
-        if (!launch || (arrivingFromSite && !isReload)) return;
-
-        const reveal = () => {
-          document.documentElement.classList.remove("intro-active");
-          launch.hidden = true;
-          launch.setAttribute("aria-hidden", "true");
-          window.clearTimeout(window.__ajArchiveIntroSafety);
-          window.removeEventListener("error", reveal);
-          window.removeEventListener("unhandledrejection", reveal);
-        };
-
-        window.__ajSimpleIntroFailSafe = reveal;
-        document.documentElement.classList.add("intro-active");
-        launch.hidden = false;
-        launch.setAttribute("aria-hidden", "false");
-        window.addEventListener("error", reveal, { once: true });
-        window.addEventListener("unhandledrejection", reveal, { once: true });
-        window.__ajArchiveIntroSafety = window.setTimeout(reveal, 3500);
-      })();
-    </script>
-    <header class="site-header">
-      <div class="brand-lockup">
-        <a class="wordmark" href="./" aria-label="AJ Shaw Photography, home">AJ Shaw <span>Photography</span></a>
-        <span class="character-sprite character-header" data-character="woodstock" role="button" tabindex="0" aria-label="Play Woodstock animation"></span>
-      </div>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation menu, current section: Portrait &amp; Travel"><span class="menu-current-page" data-menu-current-page>Portrait &amp; Travel</span><span class="menu-toggle-symbol" aria-hidden="true">＋</span></button>
-      <nav id="primary-navigation" aria-label="Primary navigation">
-        <a href="./" data-route="home">Home</a>
-        <a href="events.html" data-route="events">Events</a>
-        <a href="travel.html" data-route="travel" aria-label="Portrait &amp; Travel"><span class="nav-stacked-label">Portrait &amp; <br />Travel</span></a>
-        <a href="sports.html" data-route="sports">Sports</a><a href="projects.html" data-route="projects">Projects</a>
-        <a href="about.html" data-route="about">About / Contact</a>
-        <button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle>
-          <span class="theme-toggle-track" aria-hidden="true"><span>☀</span><i></i><span>☾</span></span>
-          <span class="theme-toggle-label" data-theme-label>Light</span>
-        </button>
-      </nav>
-    </header>
-
-    <main class="page page-portfolio">
-      <section class="gallery-section" data-gallery-view="travel" aria-labelledby="gallery-title">
-        <div class="portfolio-label">
-          <div>
-            <h1 id="gallery-title">Portrait &amp; Travel</h1>
-          </div>
-        </div>
-        <div class="gallery-groups" id="photo-grid"><!-- BUILD:GALLERY:GROUPS --></div>
-        <p class="gallery-status" id="gallery-status">Loading photos…</p>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <p>© 2026 AJ Shaw Photography</p>
-      <span class="character-sprite character-footer" data-character="walk" role="button" tabindex="0" aria-label="Play Snoopy flower animation"></span>
-      <a href="https://www.instagram.com/aj.phots_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram, @aj.phots_">Instagram @aj.phots_ ↗</a>
-      <a href="./">Home ↑</a>
-    </footer>
-
-    <div class="lightbox" id="lightbox" hidden aria-label="Photo viewer backdrop">
-      <button class="lightbox-backdrop" type="button" aria-label="Close photo viewer" tabindex="-1"></button>
-      <div class="lightbox-frame" role="dialog" aria-modal="true" aria-labelledby="lightbox-title" aria-describedby="lightbox-detail">
-        <div class="lightbox-topline"><span><i aria-hidden="true"></i><b id="lightbox-count">Frame 1 / 1</b></span><button type="button" id="lightbox-close">Close ×</button></div>
-        <div class="lightbox-image"><img id="lightbox-photo" alt="" /></div>
-        <div class="lightbox-caption">
-          <button type="button" id="lightbox-previous" aria-label="View previous photograph">← Previous</button>
-          <div><h2 id="lightbox-title"></h2><p id="lightbox-detail"></p></div>
-          <button type="button" id="lightbox-next" aria-label="View next photograph">Next →</button>
-        </div>
-      </div>
-    </div>
-    <script src="gallery-manifest.js?v=20260808a"></script>
-    <script src="app.js?v=20260813a"></script>
+  <body>
+    <p>Find the travel albums in <a href="projects.html#travel">Projects</a>.</p>
   </body>
 </html>

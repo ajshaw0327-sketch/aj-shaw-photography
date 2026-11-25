@@ -8,7 +8,7 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const outputRoot = path.join(repositoryRoot, ".site");
 const pages = [
   ["index.html", "home"],
-  ["travel.html", "travel"],
+  ["portraits.html", "portraits"],
   ["events.html", "events"],
   ["sports.html", "sports"],
   ["projects.html", "projects"],
@@ -16,7 +16,7 @@ const pages = [
 ];
 const routePanels = {
   home: ["HOME / 00", "Home"],
-  travel: ["TRV / 02", "Portrait &amp; Travel"],
+  portraits: ["POR / 02", "Portraits"],
   events: ["EVT / 01", "Events"],
   sports: ["SPT / 03", "Sports"],
   projects: ["PRJ / 04", "Projects"],
@@ -75,7 +75,8 @@ test("every rendered route includes the minimal automatic typewriter introductio
     assert.match(html, /fonts\/cormorant-garamond-latin\.woff2/);
     assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
     assert.match(html, /data-route="home"/);
-    assert.match(html, /data-route="travel"/);
+    assert.match(html, /href="portraits\.html" data-route="portraits">Portraits<\/a>/);
+    assert.doesNotMatch(html, /data-route="travel"/);
     assert.match(html, /data-route="events"/);
     assert.match(html, /data-route="sports"/);
     assert.match(html, /data-route="projects"/);
@@ -160,12 +161,12 @@ test("about and contact form one route while the legacy contact URL redirects", 
   assert.doesNotMatch(home, /<footer class="site-footer">/);
 });
 
-test("Events precedes Travel in navigation and on the home archive", async () => {
+test("Events precedes Portraits in navigation and on the home archive", async () => {
   for (const [filename] of pages) {
     const html = await readFile(path.join(outputRoot, filename), "utf8");
     assert.ok(
-      html.indexOf('data-route="events"') < html.indexOf('data-route="travel"'),
-      `${filename} must place Events before Travel in the navigation`,
+      html.indexOf('data-route="events"') < html.indexOf('data-route="portraits"'),
+      `${filename} must place Events before Portraits in the navigation`,
     );
     assert.ok(
       html.indexOf('data-route="projects"') < html.indexOf('data-route="about"'),
@@ -175,17 +176,18 @@ test("Events precedes Travel in navigation and on the home archive", async () =>
 
   const home = await readFile(path.join(outputRoot, "index.html"), "utf8");
   assert.ok(
-    home.indexOf('data-category-preview="events"') < home.indexOf('data-category-preview="travel"'),
-    "the Events archive card must precede the Travel archive card",
+    home.indexOf('data-category-preview="events"') < home.indexOf('data-category-preview="portraits"'),
+    "the Events archive card must precede the Portraits archive card",
   );
   assert.doesNotMatch(home, /class="category-portal-code"/);
+  assert.doesNotMatch(home, /href="travel\.html"/);
 
 });
 
 test("portfolio routes retain generated galleries and the themed lightbox", async () => {
-  for (const route of ["travel", "events", "sports"]) {
+  for (const route of ["portraits", "projects", "events", "sports"]) {
     const html = await readFile(path.join(outputRoot, `${route}.html`), "utf8");
-    assert.match(html, new RegExp(`data-gallery-view="${route}"`));
+    assert.match(html, new RegExp(`data-gallery-view="${route === "projects" ? "travel" : route}"`));
     assert.match(html, /id="photo-grid"/);
     assert.match(html, /id="lightbox"/);
     assert.match(html, /class="lightbox-backdrop"/);
@@ -232,7 +234,14 @@ test("Projects is a large-format, folder-driven project gallery", async () => {
   assert.doesNotMatch(html, /BUILD:PROJECTS:ITEMS/);
   assert.match(html, /class="project-feature/);
   assert.match(html, /<video controls preload="metadata"/);
-  assert.doesNotMatch(html, /gallery-subsection|photo-grid|gallery-manifest\.js/);
+  assert.match(html, /href="#travel">Travel photography/);
+  assert.match(html, /id="travel" data-gallery-view="travel"/);
+  assert.match(html, /<details class="project-travel-disclosure" open>\s*<summary>/);
+  assert.match(html, /id="gallery-07-providence"/);
+  assert.match(html, /id="gallery-08-puerto-rico"/);
+  const legacyTravel = await readFile(path.join(outputRoot, "travel.html"), "utf8");
+  assert.match(legacyTravel, /window\.location\.replace\("projects\.html" \+ \(window\.location\.hash \|\| "#travel"\)\)/);
+  assert.match(legacyTravel, /href="projects\.html#travel"/);
   assert.match(css, /\.project-feature\s*\{[\s\S]*grid-template-columns/);
   assert.match(css, /\.project-media img,[\s\S]*\.project-media video/);
   assert.match(css, /html\[data-theme="dark"\] \.project-media/);
@@ -250,10 +259,15 @@ test("homepage covers are curated, responsive, and present without JavaScript", 
   assert.equal((html.match(/category-portal-preview"><span/g) || []).length, 4);
   assert.match(html, /class="project-portal-document"/);
   assert.match(html, /photos\/responsive\/covers\/events\//);
-  assert.match(html, /photos\/responsive\/covers\/travel\//);
+  assert.match(html, /photos\/responsive\/covers\/portraits\//);
   assert.match(html, /photos\/responsive\/covers\/sports\//);
-  assert.deepEqual(Object.keys(manifest.covers), ["events", "travel", "sports"]);
+  assert.deepEqual(Object.keys(manifest.covers), ["events", "portraits", "travel", "sports"]);
   Object.values(manifest.covers).forEach((covers) => assert.equal(covers.length, 3));
+  assert.ok(manifest.covers.portraits.every((photo) => photo.id.startsWith("covers/portraits/")));
+  assert.ok(manifest.galleries.portraits.every((album) => album.title.includes("Portraits")));
+  assert.ok(manifest.galleries.travel.some((album) => album.title === "Providence"));
+  assert.ok(manifest.galleries.travel.some((album) => album.title === "Puerto Rico"));
+  assert.ok(manifest.galleries.travel.every((album) => !album.title.includes("Portraits")));
 });
 
 test("major pages include canonical sharing metadata and photographer data", async () => {
@@ -308,7 +322,7 @@ test("all built page links and image candidates resolve inside the Pages artifac
 });
 
 test("each gallery collection has one film selector with two display choices and a hide toggle", async () => {
-  for (const page of ["events", "travel", "sports"]) {
+  for (const page of ["events", "portraits", "projects", "sports"]) {
     const html = await readFile(path.join(outputRoot, `${page}.html`), "utf8");
     const groups = (html.match(/class="gallery-view-selector"/g) || []).length;
     const buttons = [...html.matchAll(/data-gallery-view="(strip|sheet)" aria-pressed="(true|false)" aria-controls="([^"]+)"/g)];
@@ -479,7 +493,7 @@ test("interaction styles use content-sized archive drawers and reduced-motion fa
   assert.match(script, /document\.documentElement\.classList\.add\("gallery-enhanced"\)/);
   assert.match(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}min-height:\s*100dvh;[\s\S]{0,120}overflow-y:\s*auto/);
   assert.doesNotMatch(css, /body\[data-page="home"\]\s*\{[\s\S]{0,220}\n\s*height:\s*100dvh/);
-  assert.match(css, /body\[data-page="home"\] \.category-portal-travel\s*\{[\s\S]*grid-column:\s*8 \/ 13/);
+  assert.match(css, /body\[data-page="home"\] \.category-portal-portraits\s*\{[\s\S]*grid-column:\s*8 \/ 13/);
   assert.match(css, /body\[data-page="home"\] \.category-portal-sports\s*\{[\s\S]*grid-column:\s*1 \/ 8/);
   assert.match(css, /body\[data-page="home"\] \.category-portal-projects\s*\{[\s\S]*grid-column:\s*8 \/ 13/);
   assert.match(css, /\.photo-card\s*\{[\s\S]{0,180}opacity:\s*1/);
